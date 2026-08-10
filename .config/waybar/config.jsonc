@@ -26,7 +26,10 @@
     },
 
     "custom/proxy": {
-        "format": "󰦛",
+        "exec": "echo '󰦛'",
+        "exec-if": "pgrep -x mihomo-party",
+        "interval": 5,
+        "hide-empty-text": true,
         "on-click": "/opt/clash-party/mihomo-party",
         "tooltip-format": "Mihomo Party (proxy client)"
     },
