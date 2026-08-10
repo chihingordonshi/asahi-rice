@@ -8,13 +8,9 @@ mapfile -t wallpapers < <(find "$WALLPAPER_DIR" -maxdepth 1 -type f \( -iname '*
 
 pick="${wallpapers[RANDOM % ${#wallpapers[@]}]}"
 
-# swaybg has no IPC to swap its image live. It's launched as its own
-# transient systemd scope (via systemd-run) so it survives after this
-# oneshot service's cgroup is torn down between timer runs -- backgrounding
-# it with plain `&` inside a Type=oneshot service does NOT protect it, the
-# whole cgroup gets killed when the service exits. pkill also covers the
-# flat-color swaybg that autostart.lua launches directly at boot, before
-# the first timer tick.
-pkill -x swaybg 2>/dev/null || true
-systemctl --user stop swaybg-wallpaper.service 2>/dev/null || true
-systemd-run --user --collect --unit=swaybg-wallpaper -- swaybg -i "$pick" -m fill
+# Runs as the foreground process of swaybg-wallpaper.service (Restart=always),
+# so systemd tracks swaybg's own PID directly and respawns it -- with a fresh
+# random pick -- any time it dies, including when the compositor destroys its
+# output out from under it (observed once after a hypridle restart glitch,
+# not just at boot or on a rotation timer tick).
+exec swaybg -i "$pick" -m fill
