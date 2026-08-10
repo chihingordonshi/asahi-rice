@@ -7,32 +7,64 @@
   "modules": [
     "title",
     "separator",
-    "os",
-    "host",
-    "kernel",
-    "uptime",
-    "packages",
-    "shell",
-    "display",
-    "de",
-    "wm",
-    "wmtheme",
-    "theme",
-    "icons",
-    "font",
-    "cursor",
-    "terminal",
-    "terminalfont",
-    "cpu",
-    "gpu",
-    "memory",
-    "swap",
-    "disk",
-    "localip",
-    "battery",
-    "poweradapter",
-    "locale",
+    {
+      "type": "os",
+      "key": "󰣛 OS"
+    },
+    {
+      "type": "kernel",
+      "key": "├󰒓 "
+    },
+    {
+      "type": "packages",
+      "key": "├󰏗 "
+    },
+    {
+      "type": "shell",
+      "key": "└󰐣 "
+    },
     "break",
+    {
+      "type": "wm",
+      "key": "󰖯 DE/WM"
+    },
+    {
+      "type": "theme",
+      "key": "├󰏘 "
+    },
+    {
+      "type": "icons",
+      "key": "├󰠱 "
+    },
+    {
+      "type": "terminal",
+      "key": "└󰆍 "
+    },
+    "break",
+    {
+      "type": "host",
+      "key": "󰌢 PC"
+    },
+    {
+      "type": "cpu",
+      "key": "├󰻠 "
+    },
+    {
+      "type": "gpu",
+      "key": "├󰢮 "
+    },
+    {
+      "type": "memory",
+      "key": "├󰍛 "
+    },
+    {
+      "type": "uptime",
+      "key": "├󰅐 "
+    },
+    {
+      "type": "display",
+      "key": "└󰍹 "
+    },
     "colors"
   ]
 }
