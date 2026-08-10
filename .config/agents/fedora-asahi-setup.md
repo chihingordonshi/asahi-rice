@@ -103,6 +103,18 @@ with that plus the above, a macOS partition around **60–80GB** is comfortable 
 Fedora. Switching OS is always a cold reboot through Apple's own native firmware picker — there
 is no rEFInd/GRUB-style theming available, and no way to suspend one OS and wake into the other.
 
+### Shared data partition (idea, not yet built)
+
+Since switching OS is always a cold reboot, files (lecture notes exported as PDF, Docs
+attachments) that need to be readable from both sides are worth putting on a third, filesystem-
+neutral partition rather than duplicating them or shuttling via cloud sync alone. **exFAT** is
+the practical choice — natively read/write on both macOS and Fedora, no kernel driver hoops on
+either side (unlike NTFS, and unlike trying to read APFS from Linux, which is read-only/lossy).
+A modest size (10–20GB) carved out alongside the macOS and Fedora partitions during the Asahi
+installer's disk setup would cover this without meaningfully starving either OS. Not implemented
+yet — this is a plan to execute during the actual Asahi install/partitioning step, not a live
+change to make on an already-installed system.
+
 ## Practical bootstrap notes
 
 - Dotfiles are a **bare git repo**: `github.com/chihingordonshi/dot-files`, worktree = `$HOME`.

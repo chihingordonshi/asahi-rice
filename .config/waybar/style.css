@@ -16,7 +16,7 @@ window#waybar {
     padding: 0 14px;
 }
 
-#cpu, #memory {
+#cpu, #memory, #backlight, #pulseaudio {
     color: #c6c4e0;
     padding: 0 8px;
 }
@@ -36,7 +36,7 @@ window#waybar {
     padding: 0 8px;
 }
 
-#custom-kill, #custom-bluetooth, #custom-lock, #custom-wallpaper, #custom-proxy,
+#custom-kill, #custom-bluetooth, #custom-proxy,
 #power-profiles-daemon {
     color: #c6c4e0;
     padding: 0 8px;
@@ -44,7 +44,7 @@ window#waybar {
     border-radius: 6px;
 }
 
-#custom-kill:hover, #custom-bluetooth:hover, #custom-lock:hover,
-#custom-wallpaper:hover, #custom-proxy:hover, #power-profiles-daemon:hover {
+#custom-kill:hover, #custom-bluetooth:hover,
+#custom-proxy:hover, #power-profiles-daemon:hover {
     background-color: #201f23;
 }

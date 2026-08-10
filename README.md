@@ -325,3 +325,85 @@ twice already today (Papirus-Dark, `#id` CSS selectors). `workspace overview`
 (caelestia's other widget) maps to the official `hyprexpo` Hyprland plugin, but that
 needs a source compile via `hyprpm` — flagged as a separate, slower step, not done in
 this batch. `safeeyes` and Cloudflare WARP remain flagged-not-installed from earlier.
+
+## 2026-08-10 (evening) — mihomo scaling, kitty blur, wallpaper rotation, autolock, monitor-scale keybind, waybar icons
+
+**Mihomo Party window scaling.** The caelestia-widget proxy button opens mihomo-party at
+its natural (oversized-for-this-panel) Electron window size. Went looking for a Hyprland
+window-rule "scale" mechanism first — grepped `/usr/share/hypr/stubs/hl.meta.lua`
+exhaustively and confirmed the only `scale` fields anywhere are monitor scale, gesture-zoom
+scale, and shadow scale; no per-window content-scale rule exists, confirmed a second way via
+`strings` on the Hyprland binary itself. Tried `pseudo = true` (the real "tiled but natural
+size" mechanism) with a `size` rule alongside it — hit a known upstream bug
+(hyprwm/Hyprland#7690) where `size` has no effect once `pseudo` is set, confirmed empirically.
+Removed the window rule entirely and solved it on the Electron side instead:
+`--force-device-scale-factor=0.75`, applied both to the waybar `proxy` button's `on-click`
+and via a user-level `.desktop` override at
+`~/.local/share/applications/mihomo-party.desktop` (XDG user overrides win over
+`/usr/share/applications/` without needing `update-desktop-database`).
+
+**Kitty blur.** Wasn't rendering despite the real `background_opacity` config being
+deployed correctly and the intentional `opaque = true` window rule for `class:terminal`
+being unrelated to blur. Root cause: the wallpaper was a flat solid color, so blur had
+nothing behind the window to visibly blur — not a config bug at all.
+
+**Random wallpaper rotation.** `~/.local/bin/random-wallpaper.sh` (mirrors the dot-files
+reference exactly) plus `random-wallpaper.service`/`.timer` (`OnBootSec=1min`,
+`OnUnitActiveSec=30min`, matches the reference's cadence). Hit a real systemd trap: a
+`Type=oneshot` service kills its entire cgroup on exit, so backgrounding swaybg with plain
+`setsid ... & disown` inside the script silently didn't survive — `pgrep` showed no swaybg
+process after the service exited cleanly. Fixed with
+`systemd-run --user --collect --unit=swaybg-wallpaper -- swaybg -i "$pick" -m fill`, which
+spins up an independent transient unit that outlives the oneshot parent's cgroup teardown.
+
+**hypridle 15-minute autolock.** Installed from the same COPR already providing Hyprland.
+First pass put the config at `~/.config/hypridle/hypridle.conf` (following the
+mako/kitty-style per-app-directory convention) — wrong; hypridle actually searches
+`~/.config/hypr/` alongside `hyprland.conf`. Moved it, service came up clean. This build's
+`hyprctl dispatch` parses its argument as a Lua expression (confirmed against the machine's
+own shipped `/usr/share/doc/hypridle/example.conf`), so the `after_sleep_cmd`/DPMS calls use
+`hyprctl dispatch 'hl.dsp.dpms({action = "on"})'`, not the plain `dpms on/off` syntax from
+generic hypridle docs. Autolock only, on purpose — no manual lock keybind or waybar button
+was added; hypridle's 15-minute timeout is the sole way this machine locks now (the
+caelestia-widget `lock` button from the earlier session was removed as part of this).
+
+**Monitor-scale keybind**, iterated through several rounds of spec changes to land on:
+1.6x is the panel's default/base scale (not 1x, not 2x — this took explicit correction
+mid-session). `mainMod+L` toggles 1.6x↔1x, `mainMod+SHIFT+L` toggles 1.6x↔2x, both
+independently relative to the 1.6x base, implemented as two small toggle functions in
+`monitors.lua` referenced by name from `keybindings.lua`.
+
+**Waybar**: moved `cpu`/`memory` to `modules-right`, removed the wallpaper-picker and lock
+buttons (lock per the hypridle-only decision above; wallpaper picker had no remaining
+purpose once the timer-driven rotation above shipped). Added real `pulseaudio` and
+`backlight` modules (not custom scripts — both have built-in scroll-to-adjust, confirmed via
+`waybar-pulseaudio(5)`/`waybar-backlight(5)`, no manual `wpctl`/`brightnessctl` wiring
+needed) and replaced every module's plain-text/placeholder formatting with real Nerd Font
+glyphs — verified against this machine's actual installed
+`JetBrainsMonoNerdFontMono-Regular.ttf` cmap via `fc-query -f '%{charset}'` rather than
+assumed from a generic cheatsheet (two initially-planned icons, skull for `kill` and shield
+for `proxy`, turned out to be missing from this font's coverage and were swapped for
+covered alternatives).
+
+**Process note**: waybar must never be `pkill`'d to force a config reload — save the file
+and let it be reloaded manually. `hyprctl reload` remains fine for Hyprland-owned Lua config
+changes. Also: don't disruptively kill/relaunch apps the user has open on their live session
+while testing config changes — edit and validate the file, then ask, rather than poking at
+a window the user is actively watching.
+
+**Also this session**: documented a shared exFAT partition idea (for files needed on both
+the macOS and Fedora sides, given switching OS is always a cold reboot with no
+suspend-and-swap) in `.config/agents/fedora-asahi-setup.md`'s macOS section — not built yet,
+planned for the actual Asahi install/partition step. Worked out (but did not execute) a
+partition-shrink procedure for freeing space on this already-installed machine's Fedora
+`btrfs` partition, kept informational-only given the destructive/hard-to-reverse nature of
+resizing a live root filesystem. Audited installed KDE apps against what's already been
+ported from the XPS16 and proposed (not yet executed) removing `konsole`/`konsole-part` and
+`plasma-systemmonitor` as genuinely redundant with kitty and btop; kept everything else,
+including the `plasma-desktop`/`plasma-workspace` core, since the setup doc's own documented
+fallback plan (if the Hyprland COPR ever breaks) depends on that core staying installed.
+Also surfaced, as a side finding, that both screenshot keybinds
+(`Print`→`mac-screenshot`, `CTRL+Print`→`screengrab`) are currently dead — neither binary
+exists on disk despite `grim`/`slurp` being installed as the intended backend — so Spectacle
+is, for now, the only actually-working screenshot tool on this machine and was excluded from
+the KDE removal list on that basis.
