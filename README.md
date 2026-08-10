@@ -464,3 +464,38 @@ prep) had registered itself as the default `application/pdf` handler, leaving Ok
 installed but unused. Removed Okular (+ okular-part/okular-libs and now-unused deps
 djvulibre-libs, ebook-tools-libs, libspectre) per explicit go-ahead; WPS stays default
 for PDFs.
+
+## 2026-08-11 (later still) — executed the partition shrink, new shared exFAT drive
+
+Went ahead with the previously-informational-only partition shrink, now with actual
+target numbers: shrink the Fedora btrfs volume (`nvme0n1p6`, was 597GiB with only 24GiB
+used) by 256GiB and turn that into a new exFAT partition shared between Fedora and
+macOS. Live sector math at this disk's native 4096B sector size:
+
+1. `btrfs filesystem resize` shrunk the mounted root+home btrfs filesystem online to
+   340.56GiB first — has to happen before the partition table edit so the filesystem
+   never extends past the partition's new boundary.
+2. `parted resizepart` on the still-mounted `p6` refused non-interactively
+   (`--script` correctly aborted on the "partition is in use" warning, zero changes
+   written) — forced through with `yes | parted ---pretend-input-tty ... resizepart`
+   after confirming this is standard/safe: it's a pure GPT metadata edit, not a write
+   to filesystem data blocks, since the filesystem was already shrunk to fit. Needed a
+   reboot afterward for the kernel to cleanly pick up the smaller live root partition
+   size rather than trying to hot-reread it.
+3. Created `p8` (256GiB) in the freed space. First attempt's start sector wasn't
+   1MiB-aligned (parted wants the start divisible by 256 sectors at this sector size)
+   — recomputed to the next aligned sector, second attempt succeeded clean.
+4. Formatted `p8` exFAT (`exfatprogs`, already installed) labeled `SharedData`.
+5. Mounted at `~/data` (moved from an initial `/mnt/shared`) via `/etc/fstab`, with
+   explicit `uid=1000,gid=1000,umask=022` — exFAT has no native Unix permissions, so
+   without these the kernel driver mounts it root-owned and unwritable by a normal
+   user. `nofail` so a missing/failed device doesn't hang boot.
+
+This is the shared-partition idea from the macOS setup notes, finally built rather
+than just planned. `/etc/fstab` itself isn't tracked in this repo (system file, not
+under `$HOME`) — only the decision and mount options are recorded here.
+
+Also added a `wallpaper()` zsh function (`.zsh_functions`) as a manual trigger for the
+existing `random-wallpaper.service`/`.timer` rotation — just calls
+`~/.local/bin/random-wallpaper.sh` directly rather than duplicating its random-pick
+logic, so it changes wallpaper on demand instead of waiting for the 30-minute timer.
