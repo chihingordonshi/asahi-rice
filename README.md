@@ -35,10 +35,18 @@ live `$HOME`. Review before actually deploying anything on the M1.
 - **Sweet-Purple icon theme** — cosmetic, skipped to keep this minimal per the "not a
   rice project" goal in the setup notes.
 
+## Decisions log
+
+- **2026-08-10 — Panel/bar: ironbar.** The setup notes left this open, defaulting toward
+  waybar (safest) or ironbar (a bit more visual headroom, same "no Quickshell dependency"
+  risk profile) over HyprPanel/Wayle (archived/unproven) or eww (build-it-yourself). Chi Hin
+  chose **ironbar** over the waybar default. No ironbar config exists in this repo yet —
+  add it under `.config/ironbar/` once written.
+
 ## Status
 
 Staged, not deployed. Nothing here has been installed into a real `.config` on any
-machine.
+machine. Panel choice is decided (ironbar) but not yet configured.
 
 ## Provenance — exactly what was done
 
