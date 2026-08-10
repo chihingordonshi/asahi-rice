@@ -17,7 +17,7 @@
 
     "modules-left": ["custom/kill", "custom/proxy", "custom/fcitx5", "custom/power-profile", "hyprland/workspaces"],
     "modules-center": ["clock"],
-    "modules-right": ["cpu", "memory", "custom/bluetooth", "backlight", "pulseaudio", "network", "battery"],
+    "modules-right": ["tray", "cpu", "memory", "custom/bluetooth", "backlight", "pulseaudio", "network", "battery"],
 
     "hyprland/workspaces": {
         "format": "{id} {windows}",
@@ -38,6 +38,11 @@
         },
         "on-click": "activate",
         "sort-by": "number"
+    },
+
+    "tray": {
+        "icon-size": 18,
+        "spacing": 10
     },
 
     "custom/kill": {

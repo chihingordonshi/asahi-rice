@@ -69,14 +69,17 @@ hl.window_rule({
     opaque = true,
 })
 
--- WeChat (wechat-bin) runs under XWayland and advertises
--- _KDE_NET_WM_WINDOW_TYPE_OVERRIDE, which Hyprland's auto-float
--- heuristic treats like an override-redirect popup, forcing it
--- floating even though its size hints allow tiling. Override that.
+-- WeChat runs as the com.tencent.WeChat flatpak now (not the wechat-bin
+-- XWayland binary the old comment here assumed -- that class never
+-- matched, which is why this rule silently did nothing). Its
+-- auto-float heuristic (or _KDE_NET_WM_WINDOW_TYPE_OVERRIDE under
+-- XWayland, if that build ever comes back) forces it floating even
+-- though its size hints allow tiling. Override that; regex covers both
+-- the flatpak app-id and the old lowercase class just in case.
 hl.window_rule({
     name = "wechat-tile",
     match = {
-        class = "wechat"
+        class = "[Ww]e[Cc]hat"
     },
     tile = true,
 })
