@@ -23,7 +23,7 @@
         "format": "{id} {windows}",
         "window-rewrite-default": "󰀻",
         "window-rewrite": {
-            "kitty": "󰆍",
+            "class<^(kitty|terminal)$>": "󰆍",
             "class<org.mozilla.firefox>": "󰈹",
             "class<[Gg]oogle-[Cc]hrome.*>": "󰊯",
             "class<org.kde.dolphin>": "󰉋",
