@@ -9,7 +9,8 @@
     "separator",
     {
       "type": "os",
-      "key": "󰣛 OS"
+      "key": "󰣛 OS",
+      "format": "Fedora Linux Asahi Remix 44"
     },
     {
       "type": "kernel",
