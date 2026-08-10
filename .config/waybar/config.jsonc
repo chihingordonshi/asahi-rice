@@ -32,13 +32,7 @@
     },
 
     "power-profiles-daemon": {
-        "format": "{icon}",
-        "format-icons": {
-            "default": "󰀑",
-            "performance": "󰓄",
-            "balanced": "󰔳",
-            "power-saver": "󰑈"
-        },
+        "format": "{profile}",
         "tooltip-format": "Power profile: {profile}\\nClick to cycle"
     },
 
