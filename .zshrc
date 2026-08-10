@@ -28,6 +28,7 @@ alias ping='gping'
 alias ..='cd ..'
 alias top='btop'
 alias lg='lazygit'
+alias vim='nvim'
 
 alias dotbackup='/usr/bin/git --git-dir=$HOME/.dotfiles --work-tree=$HOME'
 alias gitlogin='git config --global user.email chihin.gordon.shi@gmail.com \

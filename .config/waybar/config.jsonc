@@ -1,0 +1,83 @@
+// waybar config — top bar only: time/date, cpu/mem, wifi, keyboard layout, battery.
+// Same spec as the ironbar bar it replaces. Verified against the real man pages
+// (waybar-clock/cpu/memory/network/hyprland-language/battery(5)), not guessed.
+{
+    "layer": "top",
+    "position": "top",
+    "height": 36,
+
+    "modules-left": ["cpu", "memory", "custom/kill", "custom/bluetooth", "custom/lock", "custom/wallpaper", "custom/proxy", "power-profiles-daemon"],
+    "modules-center": ["clock"],
+    "modules-right": ["network", "hyprland/language", "battery"],
+
+    "custom/kill": {
+        "format": "kill",
+        "on-click": "hyprctl kill",
+        "tooltip-format": "Force-kill an unresponsive window (click to target)"
+    },
+
+    "custom/bluetooth": {
+        "format": "bt",
+        "on-click": "kcmshell6 kcm_bluetooth",
+        "tooltip-format": "Bluetooth settings (bluedevil)"
+    },
+
+    "custom/lock": {
+        "format": "lock",
+        "on-click": "hyprlock",
+        "tooltip-format": "Lock screen"
+    },
+
+    "custom/wallpaper": {
+        "format": "wallpaper",
+        "on-click": "waypaper",
+        "tooltip-format": "Wallpaper picker"
+    },
+
+    "custom/proxy": {
+        "format": "proxy",
+        "on-click": "/opt/clash-party/mihomo-party",
+        "tooltip-format": "Mihomo Party (proxy client)"
+    },
+
+    "power-profiles-daemon": {
+        "format": "{icon}",
+        "format-icons": {
+            "default": "power",
+            "performance": "performance",
+            "balanced": "balanced",
+            "power-saver": "power-saver"
+        },
+        "tooltip-format": "Power profile: {profile}\\nClick to cycle"
+    },
+
+    "clock": {
+        "format": "{:%a %d %b   %H:%M}"
+    },
+
+    "cpu": {
+        "interval": 3,
+        "format": "cpu:{usage}%"
+    },
+
+    "memory": {
+        "interval": 5,
+        "format": "memory:{percentage}%"
+    },
+
+    "network": {
+        "format-wifi": "{essid} ({signalStrength}%)",
+        "format-ethernet": "{ifname}",
+        "format-disconnected": "disconnected",
+        "tooltip-format": "{ifname}: {ipaddr}",
+        "on-click": "nm-connection-editor"
+    },
+
+    "hyprland/language": {
+        "format": "{short}"
+    },
+
+    "battery": {
+        "format": "{capacity}%"
+    }
+}

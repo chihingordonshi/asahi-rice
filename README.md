@@ -206,6 +206,122 @@ each push).
    agent has no path to a root shell.
 
 To verify: diff any file here against the same path in `dot-files` at the commit above —
-they should be byte-identical copies, not rewrites. For `.config/ironbar/`, there is no
-comparison source; it's new, and should be checked against a real running ironbar
-instance before being trusted.
+they should be byte-identical copies, not rewrites.
+
+## 2026-08-10 (later same day) — real hypr config landed, panel switched to waybar, more app gaps closed
+
+`dot-files` commit `5dedba7` ("Track nvim/fish/niri/fuzzel/wireplumber/tide-island/zed
+configs...") added real content to all 14 `.config/hypr/*.lua` submodules that were empty
+when this repo was first built — Chi Hin's dotbackup-cron only tracks changes to already-
+tracked files, so these existed on the XPS16 the whole time but were never pushed until
+this commit. Everything in `.config/hypr/` here was rebuilt against that real content:
+
+- `keybindings.lua`, `appearance.lua`, `animations.lua`, `layouts.lua`, `misc.lua`,
+  `transparency.lua`, `permissions.lua`, `workspace-rules.lua`, `window-rules.lua` copied
+  **verbatim** (checked each for hardware/app-specific refs first — none found beyond
+  standard XF86 media keys, which are hardware-generic).
+- `monitors.lua`, `input.lua` kept hardware-pinned to this machine (`eDP-1 2560x1600@60
+  scale=2`, `kb_layout=us` confirmed via `localectl`) but adopted real preferences that
+  aren't hardware-specific: `kb_options=caps:super`, `sensitivity=0.2`, `natural_scroll`,
+  `disable_while_typing`, `tap_to_click=false`, 3-finger-swipe workspace gesture.
+  `monitors.lua` also had to gain a `resize_monitor` global function (referenced by
+  `keybindings.lua`'s SUPER+L bind) since copying keybindings.lua verbatim without it
+  would break config load.
+- `programs.lua` rewritten to match the real config's bare-global variable style
+  (`terminal`/`fileManager`/`browser`, no `local`/`return`) since `keybindings.lua` and
+  `autostart.lua` reference these as globals — my first-draft `programs.lua` used a
+  `return {...}` module pattern that was silently incompatible and caused real config
+  errors once the real `keybindings.lua` was copied over. `fileManager`/`browser`
+  adapted to what's actually installed (`dolphin`/`firefox`, not `nautilus`/
+  `google-chrome-stable`).
+- `autostart.lua`: `caelestia shell -d` → `waybar` (see below), kept
+  `nm-applet`/`hyprpolkitagent`/terminal/`fcitx5`, dropped `tide-island`/`wayvnc`/
+  `mihomo-party` (not installed, matches how the real file already had some of these
+  commented out), `safeeyes` commented out (not packaged for Fedora, no COPR/dnf path
+  found). Kept the M1-specific `dbus-update-activation-environment`/`kwalletd6`/`swaybg`
+  lines since those fix problems unique to this machine.
+- `environment.lua`: adopted the real fcitx5 IME env vars (`XMODIFIERS`, `QT_IM_MODULE`,
+  deliberately no `GTK_IM_MODULE` — same reasoning as the real config's comment about
+  native Wayland GTK apps vs XWayland/Qt). Cursor stayed Adwaita — Bibata-Original-Ice
+  isn't packaged for Fedora and no COPR was found.
+- Asked before removing anything "too fancy" (custom animation curves/springs, blur/
+  shadow/glow decoration) — answer was keep everything as copied, not simplified.
+
+**Panel: switched from ironbar to waybar.** Same spec as before (clock+date, cpu/mem,
+wifi, keyboard layout, battery, top position only) but rebuilt against waybar's real man
+pages (`waybar-clock/cpu/memory/network/hyprland-language/battery(5)`), not guessed.
+`.config/ironbar/` removed from this repo. cpu/memory formats are `cpu:{usage}%` /
+`mem:{percentage}%` per request. Network module has `on-click: nm-connection-editor`.
+
+**App gaps closed, each verified working, not just installed:**
+- **Launcher**: `rofi` installed, bound to SUPER+D (was calling `caelestia shell drawers
+  toggle launcher`, a no-op here).
+- **Sticky notes**: the real config's SUPER+V bind calls a D-Bus method on `org.x.sticky`
+  — identified as `linuxmint/sticky` (not in Fedora repos). Found via the
+  `yselkowitz/xapps` COPR (`fedora-44-aarch64` build succeeded), but that RPM's spec has
+  a naming bug (`Requires: python3-xapps-override`, singular — nothing provides that
+  exact capability, the real package is `python3-xapps-overrides`, plural), so `dnf`
+  refused it outright. Downloaded the RPM directly and installed with
+  `rpm -i --nodeps`, then chased two genuinely real missing runtime deps one at a time
+  (`gspell`, `python3-xapp`) until it actually launched and `NewNoteBlank` produced a
+  real note on screen (confirmed via screenshot, not just "no error").
+- **Chinese Pinyin input**: `fcitx5-chinese-addons` installed (the XPS16 package list
+  showed `fcitx5-chinese-addons`/`fcitx5-pinyin-zhwiki`, base `fcitx5` alone isn't enough
+  for CJK input). `fcitx5-pinyin-zhwiki` (an enhanced dictionary) isn't packaged for
+  Fedora — base Pinyin still works without it.
+- **`power-profiles-daemon`**: skipped — `tuned-ppd` (already installed as a transitive
+  dependency earlier) provides the same `ppd-service` D-Bus interface and the two
+  packages hard-conflict by design; installing it would just mean removing `tuned-ppd`
+  for no functional gain.
+- **`cloudflare-warp-bin`**: present on the XPS16 but not referenced by any of the real
+  config files (not an autostart entry, no keybind) — flagged, not installed, since a VPN
+  client is a bigger standalone decision than an app-launcher/notes-app gap.
+- **Touch Bar**: `tiny-dfr` (the Asahi Touch Bar daemon) was already installed and
+  running with defaults — it already fully supports a volume/brightness/media-keys
+  layer, just not shown by default (`MediaLayerDefault = false`, so F1-F12 shows unless
+  Fn is held). Wrote `/etc/tiny-dfr/config.toml` with `MediaLayerDefault = true` to flip
+  that, restarted the service. Not something to touch in this repo (system-level, not
+  user `$HOME` config).
+
+## 2026-08-10 (later still) — deployed the rest of the app configs, caelestia-widget replacements on the bar
+
+The `kitty`/`cava`/`btop`/`qt6ct`/`Kvantum`/`kdeglobals`/`pavucontrol.ini`/`.zshrc`/
+`.p10k.zsh` files curated into this repo on day one were never actually deployed to this
+machine's real `~/.config` — only `.config/hypr/` and the bar config had been. That's why
+kitty had no transparency despite the real `background_opacity 0.4` being tracked here the
+whole time. Re-cloned `dot-files` fresh (it had grown substantially since the first pull —
+`fish`, `fuzzel`, `niri`, `nvim`, `wireplumber`, `zed`, systemd units, `.zsh_functions`
+were all added in the meantime) and deployed everything non-hardware-specific:
+`kitty`, `cava`, `neofetch`, `btop`, `qt6ct`, `Kvantum`, `wireplumber` (bluetooth
+HFP-disable tweak), `fish`, `fuzzel`, `nvim`, `kdeglobals`, `pavucontrol.ini`, `.zshrc`,
+`.p10k.zsh`, `.zsh_functions`. `.gitconfig` deliberately **not** deployed over the real
+one — saved as `~/.gitconfig-dotfiles-reference` instead, since this machine's actual
+`.gitconfig` has the `gh` credential-helper setup that fixes the auth issue from earlier
+in the day, and blindly overwriting it would break that again. `niri`/`zed`/`tide-island`
+configs skipped (different compositor / editor / caelestia-adjacent, not part of this
+machine's stack).
+
+**Caelestia-widget replacements**: caelestia normally provides quick-access
+widgets for a bunch of things (force-kill unresponsive windows, bluetooth, lock screen,
+wallpaper picker, proxy client, power profile, wifi settings, workspace overview) —
+none of that exists here since caelestia isn't installed. Mapped each to a real tool and
+put them as **clickable buttons directly on the waybar bar** (first attempt used
+keybinds instead, per instruction that was wrong — undone, redone as bar buttons only):
+
+| Caelestia widget | Bar button | Backing tool |
+|---|---|---|
+| Kill unresponsive window | `kill` | `hyprctl kill` (built into Hyprland, click-to-target) |
+| Bluetooth | `bt` | `kcmshell6 kcm_bluetooth` (bluedevil, already installed) |
+| Lock screen | `lock` | `hyprlock` (installed) |
+| Wallpaper picker | `wallpaper` | `waypaper` (installed) |
+| Proxy client | `proxy` | `/opt/clash-party/mihomo-party` (already installed) |
+| Power profile | shows current profile, click to cycle | waybar's native `power-profiles-daemon` module, backed by `tuned-ppd` |
+| Wifi settings | (already existed) | `nm-connection-editor` via the network module's `on-click` |
+
+Icon glyphs deliberately avoided for these buttons and for the power-profile module
+(plain text labels instead) — waybar's default power-profile icons need FontAwesome,
+which isn't in this bar's `font-family` stack, and guessing icon setups has been wrong
+twice already today (Papirus-Dark, `#id` CSS selectors). `workspace overview`
+(caelestia's other widget) maps to the official `hyprexpo` Hyprland plugin, but that
+needs a source compile via `hyprpm` — flagged as a separate, slower step, not done in
+this batch. `safeeyes` and Cloudflare WARP remain flagged-not-installed from earlier.

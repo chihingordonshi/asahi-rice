@@ -1,0 +1,637 @@
+timelapse() {
+    local input="" speed="" duration="" output=""
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -s|--speed)    speed="$2";    shift ;;
+            -t|--time)     duration="$2"; shift ;;
+            -o|--output)   output="$2";   shift ;;
+            -*) echo "Unknown option: $1"; return 1 ;;
+            *)  input="$1" ;;
+        esac
+        shift
+    done
+
+    [[ -z "$input" ]]  && { echo "Usage: timelapse <input> [-s speed] [-t time] [-o output]"; return 1; }
+    [[ -z "$speed" ]]  && { echo "Error: -s <speed> required (e.g. 16 = 1/16x duration)"; return 1; }
+
+    # Parse duration: accept MM:SS or plain seconds
+    local target_secs=""
+    if [[ -n "$duration" ]]; then
+        if [[ "$duration" == *:* ]]; then
+            local m="${duration%%:*}" s="${duration##*:}"
+            target_secs=$(( 10#$m * 60 + 10#$s ))
+        else
+            target_secs="$duration"
+        fi
+    fi
+
+    # Derive PTS factor: speed=16 → pts=1/16 → video plays 16x faster
+    # setpts=PTS/speed makes the video speed*faster
+    local pts_expr="PTS/${speed}"
+
+    # If a target duration is given, compute the needed speed from source duration
+    if [[ -n "$target_secs" ]]; then
+        local src_secs
+        src_secs=$(ffprobe -v error -select_streams v:0 \
+            -show_entries stream=duration -of csv=p=0 "$input" 2>/dev/null | head -1)
+        src_secs=$(printf "%.0f" "$src_secs")
+        speed=$(( src_secs / target_secs ))
+        [[ $speed -lt 1 ]] && speed=1
+        pts_expr="PTS/${speed}"
+        echo "Source: ${src_secs}s  Target: ${target_secs}s  Speed: ${speed}x"
+    fi
+
+    [[ -z "$output" ]] && output="${input%.*}_timelapse.mp4"
+
+    ffmpeg -i "$input" \
+        -vf "setpts=${pts_expr}" \
+        -an \
+        -c:v libx264 -preset fast -crf 18 \
+        "$output"
+
+    echo "Done → $output"
+}
+
+ytdl() {
+    local url="${1:?Usage: ytdl <url> [output_dir]}"
+    local out="${2:-.}"
+    local -a extra=()
+    [[ "$url" == *bilibili.com* ]] && extra+=(
+        --add-header "Origin:https://www.bilibili.com"
+        --add-header "Referer:https://www.bilibili.com"
+    )
+    PATH="/usr/bin:/bin:/usr/sbin:/sbin:$PATH" \
+    yt-dlp --cookies-from-browser chrome \
+        "${extra[@]}" \
+        -f "bv*+ba/b" \
+        --merge-output-format mp4 \
+        -o "${out}/%(title)s.%(ext)s" \
+        "$url"
+}
+
+
+yta() {
+    # Usage: yta <url> [output_dir] [max_new_downloads]
+    # max_new_downloads (optional) caps how many *new* files this call fetches -
+    # already-downloaded items (tracked in .yta-archive.txt) are skipped and don't
+    # count against the cap. Leave unset to fetch everything in one go.
+    local url="${1:?Usage: yta <url> [output_dir] [max_new_downloads]}"
+    local out="${2:-.}"
+    local max="${3:-0}"
+    local -a extra=()
+    [[ "$url" == *bilibili.com* ]] && extra+=(
+        --add-header "Origin:https://www.bilibili.com"
+        --add-header "Referer:https://www.bilibili.com"
+    )
+    local -a limit=()
+    (( max > 0 )) && limit=(--max-downloads "$max")
+    mkdir -p "$out"
+    PATH="/usr/bin:/bin:/usr/sbin:/sbin:$PATH" \
+    yt-dlp --cookies-from-browser chrome \
+        "${extra[@]}" \
+        -x --audio-format best \
+        --download-archive "${out}/.yta-archive.txt" \
+        --sleep-requests 2 \
+        --sleep-interval 20 --max-sleep-interval 60 \
+        --limit-rate 1.5M \
+        --retries 3 --ignore-errors \
+        "${limit[@]}" \
+        -o "${out}/%(playlist_index)03d - %(title)s.%(ext)s" \
+        "$url"
+}
+
+bg() {
+    nohup $1 > /dev/null 2>&1 &
+}
+
+logout() {
+    # kill leaked compositor-specific portal backends regardless of which
+    # session we're leaving from - they can survive an sddm re-login
+    systemctl --user stop xdg-desktop-portal-hyprland.service xdg-desktop-portal-gnome.service 2>/dev/null
+
+    if pgrep -x Hyprland >/dev/null; then
+        pkill -f "qs -c caelestia"
+        systemctl --user stop tide-island.service
+        setsid -f sddm >/dev/null 2>&1
+        hyprctl dispatch "hl.dsp.exit()"
+    elif pgrep -x niri >/dev/null; then
+        pkill -x noctalia
+        setsid -f sddm >/dev/null 2>&1
+        niri msg action quit -s
+    elif pgrep -x cosmic-comp >/dev/null; then
+        setsid -f sddm >/dev/null 2>&1
+        pkill -x cosmic-comp
+    else
+        builtin logout
+    fi
+}
+
+EC2_IP=""
+EC2_IID="i-0578c4259a5f972f9"
+
+EC2_PORT="${EC2_PORT:-443}"
+
+ec2() {
+    local KEY="$HOME/Ubuntu Key Pair/Ubuntu 22.04 Key Pair.pem"
+    local user="ubuntu"
+    local port="$EC2_PORT"
+
+    local cmd="$1"
+    shift
+
+    # -------------------------
+    # HELPERS
+    # -------------------------
+    refresh_ip() {
+        [[ -z "$EC2_IID" ]] && return 1
+
+        local ip
+        ip=$(aws ec2 describe-instances \
+            --instance-ids "$EC2_IID" \
+            --query 'Reservations[0].Instances[0].PublicIpAddress' \
+            --output text 2>/dev/null)
+
+        [[ "$ip" == "None" || -z "$ip" ]] && return 1
+
+        EC2_IP="$ip"
+        echo "Refreshed IP: $EC2_IP"
+    }
+
+    ensure_ip() {
+        # If instance ID exists, try refresh first but don't fail immediately
+        if [[ -n "$EC2_IID" ]]; then
+            refresh_ip || true
+        fi
+
+        # fallback: require static IP
+        [[ -z "$EC2_IP" ]] && {
+            echo "Missing IP (set instance-id or IP)"
+            return 1
+        }
+
+        return 0
+    }
+
+    # -------------------------
+    # SESSION
+    # -------------------------
+    case "$cmd" in
+        set-ip)
+            EC2_IP="$1"
+            echo "EC2 IP set to: $EC2_IP"
+            return
+            ;;
+
+        show-ip)
+            echo "$EC2_IP"
+            return
+            ;;
+
+        clear-ip)
+            EC2_IP=""
+            echo "EC2 IP cleared"
+            return
+            ;;
+
+        set-iid)
+            EC2_IID="$1"
+            echo "EC2 Instance ID set to: $EC2_IID"
+            return
+            ;;
+
+        set-port)
+            EC2_PORT="$1"
+            echo "EC2 port set to: $EC2_PORT"
+            return
+            ;;
+
+        show-port)
+            echo "$EC2_PORT"
+            return
+            ;;
+
+        show-iid)
+            echo "$EC2_IID"
+            return
+            ;;
+
+        clear-iid)
+            EC2_IID=""
+            echo "EC2 Instance ID cleared"
+            return
+            ;;
+
+        # -------------------------
+        # START INSTANCE + AUTO REFRESH IP
+        # -------------------------
+        start)
+            local iid="${1:-$EC2_IID}"
+
+            [[ -z "$iid" ]] && {
+                echo "Missing instance ID"
+                return 1
+            }
+
+            EC2_IID="$iid"
+
+            aws ec2 start-instances --instance-ids "$iid" >/dev/null
+            echo "Starting $iid..."
+
+            aws ec2 wait instance-running --instance-ids "$iid"
+
+            refresh_ip
+            echo "Instance running → $EC2_IP"
+            ;;
+
+        # -------------------------
+        # STOP INSTANCE
+        # -------------------------
+        stop)
+            local iid="${1:-$EC2_IID}"
+
+            [[ -z "$iid" ]] && {
+                echo "Missing instance ID"
+                return 1
+            }
+
+            EC2_IID="$iid"
+
+            aws ec2 stop-instances --instance-ids "$iid" >/dev/null
+            echo "Stopping $iid..."
+
+            aws ec2 wait instance-stopped --instance-ids "$iid"
+            echo "Instance stopped."
+
+            EC2_IP=""
+            ;;
+        
+        status)
+            local iid="${1:-$EC2_IID}"
+
+            [[ -z "$iid" ]] && {
+                echo "Missing instance ID"
+                return 1
+            }
+
+            EC2_IID="$iid"
+
+            local state
+            state=$(aws ec2 describe-instances \
+                --instance-ids "$iid" \
+                --query 'Reservations[0].Instances[0].State.Name' \
+                --output text 2>/dev/null)
+
+            if [[ -z "$state" || "$state" == "None" ]]; then
+                echo "Unable to determine instance state."
+                return 1
+            fi
+
+            echo "Status: $state"
+    ;;
+
+        # -------------------------
+        # CONNECT (AUTO REFRESH IP)
+        # -------------------------
+        connect)
+            local ip="${1:-$EC2_IP}"
+
+            if [[ -n "$EC2_IID" ]]; then
+                refresh_ip
+                ip="$EC2_IP"
+            fi
+
+            [[ -z "$ip" ]] && {
+                echo "Missing IP / IID"
+                return 1
+            }
+
+            EC2_IP="$ip"
+
+            ssh -tt \
+                -i "$KEY" \
+                -p "$port" \
+                "$user@$ip"
+            ;;
+
+        # -------------------------
+        # EXEC
+        # -------------------------
+        exec)
+            local ip="$EC2_IP"
+            local cmdline=""
+
+            ensure_ip || return 1
+
+            while [[ $# -gt 0 ]]; do
+                case "$1" in
+                    -ip) ip="$2"; shift ;;
+                    *) cmdline="$cmdline $1" ;;
+                esac
+                shift
+            done
+
+            ssh -i "$KEY" -p "$port" "$user@$ip" "$cmdline"
+            ;;
+
+        # -------------------------
+        # DOWNLOAD
+        # -------------------------
+        download)
+            local ip="$EC2_IP"
+            local from=""
+            local to="./"
+            local full_path=false
+            local recursive=""
+
+            ensure_ip || return 1
+
+            while [[ $# -gt 0 ]]; do
+                case "$1" in
+                    -ip) ip="$2"; shift ;;
+                    -from) from="$2"; shift ;;
+                    -to) to="$2"; shift ;;
+                    -fp|--full-path) full_path=true ;;
+                    -r|--recursive) recursive="-r" ;;
+                esac
+                shift
+            done
+
+            [[ -z "$from" ]] && { echo "Missing -from"; return 1; }
+
+            local remote_from="$from"
+            [[ "$full_path" != true ]] && remote_from="/home/$user/$from"
+
+            scp $recursive -i "$KEY" -P "$port" \
+                "$user@$ip:$remote_from" \
+                "$to"
+            ;;
+
+        # -------------------------
+        # UPLOAD
+        # -------------------------
+        upload)
+            local ip="$EC2_IP"
+            local from=""
+            local to=""
+            local full_path=false
+            local recursive=""
+
+            ensure_ip || return 1
+
+            while [[ $# -gt 0 ]]; do
+                case "$1" in
+                    -ip) ip="$2"; shift ;;
+                    -from) from="$2"; shift ;;
+                    -to) to="$2"; shift ;;
+                    -fp|--full-path) full_path=true ;;
+                    -r|--recursive) recursive="-r" ;;
+                esac
+                shift
+            done
+
+            [[ -z "$from" || -z "$to" ]] && {
+                echo "Missing -from/-to"
+                return 1
+            }
+
+            local remote_to="$to"
+            [[ "$full_path" != true ]] && remote_to="/home/$user/$to"
+
+            scp $recursive -i "$KEY" -P "$port" \
+                "$from" \
+                "$user@$ip:$remote_to"
+            ;;
+
+        # -------------------------
+        # LOGS
+        # -------------------------
+        logs)
+            ensure_ip || return 1
+
+            local ip="$EC2_IP"
+            local file=""
+            local journal=false
+
+            while [[ $# -gt 0 ]]; do
+                case "$1" in
+                    -f) file="$2"; shift ;;
+                    -j) journal=true ;;
+                esac
+                shift
+            done
+
+            if [[ "$journal" == true ]]; then
+                ssh -i "$KEY" -p "$port" "$user@$ip" "sudo journalctl -f"
+            else
+                ssh -i "$KEY" -p "$port" "$user@$ip" "tail -f $file"
+            fi
+            ;;
+
+        # -------------------------
+        # SYNC
+        # -------------------------
+        sync)
+            ensure_ip || return 1
+
+            local ip="$EC2_IP"
+            local from=""
+            local to=""
+            local pull=false
+
+            while [[ $# -gt 0 ]]; do
+                case "$1" in
+                    -from) from="$2"; shift ;;
+                    -to) to="$2"; shift ;;
+                    -pull) pull=true ;;
+                esac
+                shift
+            done
+
+            if [[ "$pull" == true ]]; then
+                rsync -avz -e "ssh -i $KEY -p $port" \
+                    "$user@$ip:$from" "$to"
+            else
+                rsync -avz -e "ssh -i $KEY -p $port" \
+                    "$from" "$user@$ip:$to"
+            fi
+            ;;
+
+        # -------------------------
+        # TUNNEL
+        # -------------------------
+        tunnel)
+            ensure_ip || return 1
+
+            local ip="$EC2_IP"
+            local L=""
+            local R=""
+
+            while [[ $# -gt 0 ]]; do
+                case "$1" in
+                    -L) L="$2"; shift ;;
+                    -R) R="$2"; shift ;;
+                esac
+                shift
+            done
+
+            if [[ -n "$L" ]]; then
+                ssh -i "$KEY" -p "$port" -L "$L" "$user@$ip"
+            else
+                ssh -i "$KEY" -p "$port" -R "$R" "$user@$ip"
+            fi
+            ;;
+
+        # -------------------------
+        # PING
+        # -------------------------
+        ping)
+            ensure_ip || return 1
+
+            ping -c 8 "$EC2_IP"
+            ;;
+
+        # -------------------------
+        # ALLOW CURRENT IP (SG INGRESS, PORTS 22 + 443)
+        # -------------------------
+        allow)
+            local iid="${1:-$EC2_IID}"
+
+            [[ -z "$iid" ]] && {
+                echo "Missing instance ID"
+                return 1
+            }
+
+            local sg
+            sg=$(aws ec2 describe-instances \
+                --instance-ids "$iid" \
+                --query 'Reservations[0].Instances[0].SecurityGroups[0].GroupId' \
+                --output text 2>/dev/null)
+
+            [[ -z "$sg" || "$sg" == "None" ]] && {
+                echo "Unable to determine security group"
+                return 1
+            }
+
+            local my_ip
+            my_ip=$(curl -s https://checkip.amazonaws.com)
+
+            [[ -z "$my_ip" ]] && {
+                echo "Unable to determine current IP"
+                return 1
+            }
+
+            echo "Allowing ${my_ip} on ports 22 and 443 for ${sg}..."
+
+            aws ec2 authorize-security-group-ingress \
+                --group-id "$sg" \
+                --ip-permissions \
+                    "IpProtocol=tcp,FromPort=22,ToPort=22,IpRanges=[{CidrIp=${my_ip}/32,Description=zsh-ec2-allow}]" \
+                    "IpProtocol=tcp,FromPort=443,ToPort=443,IpRanges=[{CidrIp=${my_ip}/32,Description=zsh-ec2-allow}]"
+            ;;
+
+        # -------------------------
+        # HELP
+        # -------------------------
+        *)
+            cat <<EOF
+EC2 MINI CLI
+
+Instance:
+  ec2 set-iid <id>
+  ec2 show-iid
+  ec2 clear-iid
+  ec2 set-port <port>   (default 22, use 443 on restrictive networks)
+  ec2 show-port
+  ec2 start
+  ec2 stop
+  ec2 status
+  ec2 allow             (open current IP on ports 22 + 443)
+
+Connection:
+  ec2 connect
+  ec2 exec <cmd>
+
+Transfer:
+  ec2 download -from X -to Y
+  ec2 upload -from X -to Y
+  ec2 sync -from X -to Y [-pull]
+
+Debug:
+  ec2 logs [-j | -f file]
+  ec2 ping
+
+State:
+  ec2 set-ip <ip>
+  ec2 show-ip
+EOF
+            ;;
+    esac
+}
+
+tools() {
+    # Lists installed terminal TUI tools (not toys - see `toys`) grouped by
+    # category, and how to run them. Only shows what's actually on PATH.
+    local BOLD=$'\033[1m' CYAN=$'\033[36m' YELLOW=$'\033[33m' DIM=$'\033[2m' RESET=$'\033[0m'
+
+    local -a bins cats cmds descs
+    bins=(btop nvtop ncdu lnav systemd-manager-tui lazygit delta lazydocker dive claws sshm termscp bluetuith impala nmtui wiremix yazi glow tokei tmux pudb claude-monitor csvlens mcfly mocp chafa)
+    cats=(System System System System System Git Git Docker Docker Remote Remote Remote Hardware Hardware Hardware Hardware Files Files Dev Dev Dev Dev Data Shell Media Media)
+    cmds=(
+        "btop" "nvtop" "ncdu" "lnav <logfile>" "systemd-manager-tui"
+        "lazygit" "git diff"
+        "lazydocker" "dive <image>"
+        "claws" "sshm" "termscp"
+        "bluetuith" "impala" "nmtui" "wiremix"
+        "yazi" "glow README.md"
+        "tokei" "tmux" "pudb <script.py>" "claude-monitor"
+        "csvlens <file.csv>"
+        "ctrl-r"
+        "mocp" "chafa <image>"
+    )
+    descs=(
+        "Full system resource monitor: CPU, mem, disk, net, processes"
+        "GPU monitor: usage, memory, temp, processes (NVIDIA/AMD/Intel)"
+        "Interactive disk usage analyzer, drill into what's eating space"
+        "Advanced log viewer/analyzer with SQL queries and syntax highlighting"
+        "Browse, start/stop/enable/disable systemd services"
+        "TUI for git: stage, commit, branch, rebase, stash, visually"
+        "Syntax-highlighting diff pager, already wired as git's default pager"
+        "TUI for Docker: containers, images, volumes, logs"
+        "Explore each layer of a Docker image, find what's bloating it"
+        "TUI for AWS resources (EC2, S3, etc.) with vim keybindings"
+        "SSH connection manager: browse, edit, connect to hosts"
+        "TUI file explorer over SFTP/SCP/FTP/S3"
+        "TUI Bluetooth manager: scan, pair, connect, trust devices"
+        "TUI wifi manager built on NetworkManager"
+        "ncurses NetworkManager UI: edit connections, VPNs, wifi"
+        "TUI audio mixer for PipeWire (streams, devices, profiles)"
+        "Fast terminal file manager with image/media preview"
+        "Render markdown files nicely in the terminal"
+        "Code stats: lines of code per language in a project"
+        "Terminal multiplexer: persistent sessions, panes, splits"
+        "Console-based visual debugger for Python"
+        "Live Claude Code token usage monitor"
+        "less-like TUI viewer for CSV files"
+        "Context-aware shell history search (replaces default ctrl-r)"
+        "Console music player (aliased as 'music')"
+        "Renders images as ANSI/Unicode art directly in the terminal"
+    )
+
+    echo "${BOLD}Installed terminal tools:${RESET}"
+    echo
+    local last_cat=""
+    local i
+    for (( i=1; i<=$#bins; i++ )); do
+        if command -v "${bins[i]}" >/dev/null 2>&1; then
+            if [[ "${cats[i]}" != "$last_cat" ]]; then
+                [[ -n "$last_cat" ]] && echo
+                echo "  ${YELLOW}${cats[i]}${RESET}"
+                last_cat="${cats[i]}"
+            fi
+            printf "    ${CYAN}%-22s${RESET} %s\n" "${cmds[i]}" "${descs[i]}"
+        fi
+    done
+    echo
+    echo "${DIM}Run any command above directly. See 'toys' for terminal eye-candy/games.${RESET}"
+}
