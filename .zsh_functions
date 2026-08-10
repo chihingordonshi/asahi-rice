@@ -1,3 +1,7 @@
+wallpaper() {
+    ~/.local/bin/random-wallpaper.sh
+}
+
 timelapse() {
     local input="" speed="" duration="" output=""
 
