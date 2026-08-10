@@ -1,28 +1,36 @@
 // waybar config — top bar only: workspaces, time/date, cpu/mem, wifi, input method, battery,
 // volume, brightness. Same spec as the ironbar bar it replaces. Verified against the real
-// man pages (waybar-clock/cpu/memory/network/hyprland-workspaces/hyprland-language/battery/
-// pulseaudio/backlight/power-profiles-daemon(5)), not guessed. Icon codepoints verified present
-// in the installed JetBrainsMono Nerd Font Mono via `fc-query -f '%{charset}'` against its
-// actual cmap and cross-checked against nerd-fonts' own glyphnames.json, not assumed from a
-// generic Nerd Font cheatsheet.
+// man pages (waybar-clock/cpu/memory/network/hyprland-workspaces/battery/pulseaudio/backlight
+// (5)), not guessed. Icon codepoints verified present in the installed JetBrainsMono Nerd Font
+// Mono via `fc-query -f '%{charset}'` against its actual cmap and cross-checked against
+// nerd-fonts' own glyphnames.json. Only Supplementary Private Use Area-A codepoints (U+F0000+)
+// are used here -- the older single-codepoint Nerd Font range (U+E000-U+F8FF) was found to get
+// silently dropped when this file is written by tooling, so it's avoided entirely.
+//
+// power-profiles-daemon's built-in waybar module wasn't rendering its {icon} format-icons
+// lookup reliably in testing, so custom/power-profile (waybar-power-profile.sh) reads/cycles
+// the profile directly over dbus instead.
 {
     "layer": "top",
     "position": "top",
     "height": 36,
 
-    "modules-left": ["hyprland/workspaces"],
+    "modules-left": ["custom/kill", "custom/proxy", "custom/fcitx5", "custom/power-profile", "hyprland/workspaces"],
     "modules-center": ["clock"],
-    "modules-right": ["custom/kill", "custom/bluetooth", "custom/proxy", "power-profiles-daemon", "custom/fcitx5", "cpu", "memory", "backlight", "pulseaudio", "network", "battery"],
+    "modules-right": ["cpu", "memory", "custom/bluetooth", "backlight", "pulseaudio", "network", "battery"],
 
     "hyprland/workspaces": {
-        "format": "{id}{windows}",
-        "window-rewrite-default": "",
+        "format": "{id} {windows}",
+        "window-rewrite-default": "󰀻",
         "window-rewrite": {
-            "kitty": "",
-            "class<org.mozilla.firefox>": "",
-            "class<org.kde.dolphin>": "",
-            "[Ww]e[Cc]hat": "",
-            "class<[Gg]imp>": "",
+            "kitty": "󰆍",
+            "class<org.mozilla.firefox>": "󰈹",
+            "class<[Gg]oogle-[Cc]hrome.*>": "󰊯",
+            "class<org.kde.dolphin>": "󰉋",
+            "[Ww]e[Cc]hat": "󰘑",
+            "class<^mpv$>": "󰎁",
+            "class<[Pp]inta>": "󰏘",
+            "class<[Gg]imp>": "󰋩",
             "class<.*[Ww][Pp][Ss].*>": "󰈙",
             "class<[Ll]ibre[Oo]ffice.*>": "󰈙",
             "class<org.pulseaudio.pavucontrol>": "󰕾"
@@ -38,9 +46,12 @@
     },
 
     "custom/bluetooth": {
-        "format": "",
+        "exec": "~/.local/bin/waybar-bluetooth.sh",
+        "interval": 5,
+        "return-type": "json",
+        "format": "{}",
         "on-click": "kcmshell6 kcm_bluetooth",
-        "tooltip-format": "Bluetooth settings (bluedevil)"
+        "tooltip": true
     },
 
     "custom/proxy": {
@@ -52,14 +63,13 @@
         "tooltip-format": "Mihomo Party (proxy client)"
     },
 
-    "power-profiles-daemon": {
-        "format": "{icon}",
-        "format-icons": {
-            "performance": "",
-            "balanced": "",
-            "power-saver": ""
-        },
-        "tooltip-format": "Power profile: {profile}\\nClick to cycle"
+    "custom/power-profile": {
+        "exec": "~/.local/bin/waybar-power-profile.sh",
+        "interval": 3,
+        "return-type": "json",
+        "format": "{}",
+        "on-click": "~/.local/bin/waybar-power-profile-cycle.sh",
+        "tooltip": true
     },
 
     "custom/fcitx5": {
@@ -72,7 +82,7 @@
     },
 
     "clock": {
-        "format": "󰥔  {:%a %d %b   %H:%M}"
+        "format": "󰥔  {:%a %d %b %H:%M}"
     },
 
     "cpu": {

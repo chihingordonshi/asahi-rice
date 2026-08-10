@@ -31,9 +31,13 @@ window#waybar {
     padding: 0 8px;
 }
 
+#workspaces {
+    margin-left: 10px;
+}
+
 #workspaces button {
     color: #c6c4e0;
-    padding: 0 10px;
+    padding: 0 10px 0 4px;
     margin: 4px 2px;
     border-radius: 6px;
 }
@@ -53,7 +57,7 @@ window#waybar {
 }
 
 #custom-kill, #custom-bluetooth, #custom-proxy,
-#power-profiles-daemon {
+#custom-power-profile {
     color: #c6c4e0;
     padding: 0 8px;
     margin: 0 2px;
@@ -61,7 +65,7 @@ window#waybar {
 }
 
 #custom-kill:hover, #custom-bluetooth:hover,
-#custom-proxy:hover, #power-profiles-daemon:hover,
+#custom-proxy:hover, #custom-power-profile:hover,
 #custom-fcitx5:hover {
     background-color: #201f23;
 }
