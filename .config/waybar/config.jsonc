@@ -1,17 +1,35 @@
-// waybar config — top bar only: time/date, cpu/mem, wifi, keyboard layout, battery,
+// waybar config — top bar only: workspaces, time/date, cpu/mem, wifi, input method, battery,
 // volume, brightness. Same spec as the ironbar bar it replaces. Verified against the real
-// man pages (waybar-clock/cpu/memory/network/hyprland-language/battery/pulseaudio/
-// backlight(5)), not guessed. Icon codepoints verified present in the installed
-// JetBrainsMono Nerd Font Mono via `fc-query -f '%{charset}'` against its actual cmap,
-// not assumed from a generic Nerd Font cheatsheet.
+// man pages (waybar-clock/cpu/memory/network/hyprland-workspaces/hyprland-language/battery/
+// pulseaudio/backlight/power-profiles-daemon(5)), not guessed. Icon codepoints verified present
+// in the installed JetBrainsMono Nerd Font Mono via `fc-query -f '%{charset}'` against its
+// actual cmap and cross-checked against nerd-fonts' own glyphnames.json, not assumed from a
+// generic Nerd Font cheatsheet.
 {
     "layer": "top",
     "position": "top",
     "height": 36,
 
-    "modules-left": ["custom/kill", "custom/bluetooth", "custom/proxy", "power-profiles-daemon", "hyprland/language"],
+    "modules-left": ["hyprland/workspaces"],
     "modules-center": ["clock"],
-    "modules-right": ["cpu", "memory", "backlight", "pulseaudio", "network", "battery"],
+    "modules-right": ["custom/kill", "custom/bluetooth", "custom/proxy", "power-profiles-daemon", "custom/fcitx5", "cpu", "memory", "backlight", "pulseaudio", "network", "battery"],
+
+    "hyprland/workspaces": {
+        "format": "{id}{windows}",
+        "window-rewrite-default": "",
+        "window-rewrite": {
+            "kitty": "",
+            "class<org.mozilla.firefox>": "",
+            "class<org.kde.dolphin>": "",
+            "[Ww]e[Cc]hat": "",
+            "class<[Gg]imp>": "",
+            "class<.*[Ww][Pp][Ss].*>": "󰈙",
+            "class<[Ll]ibre[Oo]ffice.*>": "󰈙",
+            "class<org.pulseaudio.pavucontrol>": "󰕾"
+        },
+        "on-click": "activate",
+        "sort-by": "number"
+    },
 
     "custom/kill": {
         "format": "󰅙",
@@ -20,7 +38,7 @@
     },
 
     "custom/bluetooth": {
-        "format": "",
+        "format": "",
         "on-click": "kcmshell6 kcm_bluetooth",
         "tooltip-format": "Bluetooth settings (bluedevil)"
     },
@@ -35,12 +53,26 @@
     },
 
     "power-profiles-daemon": {
-        "format": "{profile}",
+        "format": "{icon}",
+        "format-icons": {
+            "performance": "",
+            "balanced": "",
+            "power-saver": ""
+        },
         "tooltip-format": "Power profile: {profile}\\nClick to cycle"
     },
 
+    "custom/fcitx5": {
+        "exec": "~/.local/bin/waybar-fcitx5.sh",
+        "interval": 1,
+        "return-type": "json",
+        "format": "󰌌  {}",
+        "on-click": "fcitx5-remote -t",
+        "tooltip": true
+    },
+
     "clock": {
-        "format": "󰥔 {:%a %d %b   %H:%M}"
+        "format": "󰥔  {:%a %d %b   %H:%M}"
     },
 
     "cpu": {
@@ -67,19 +99,15 @@
     },
 
     "network": {
-        "format-wifi": "󰖩  {essid} ({signalStrength}%)",
+        "format-wifi": "󰖩  {essid}",
         "format-ethernet": "󰈀  {ifname}",
         "format-disconnected": "󰖪  disconnected",
         "tooltip-format": "{ifname}: {ipaddr}",
         "on-click": "nm-connection-editor"
     },
 
-    "hyprland/language": {
-        "format": "󰌌  {short}"
-    },
-
     "battery": {
         "format": "󰁹  {capacity}%",
-        "format-charging": "󰂄  {capacity}%"
+        "format-charging": "󱐋  {capacity}%"
     }
 }
