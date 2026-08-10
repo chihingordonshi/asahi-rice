@@ -56,6 +56,13 @@ window#waybar {
     padding: 0 8px;
 }
 
+#tray {
+    background-color: rgb(127, 127, 127);
+    padding: 0 8px;
+    margin: 0 2px;
+    border-radius: 6px;
+}
+
 #custom-kill, #custom-bluetooth, #custom-proxy,
 #custom-power-profile {
     color: #c6c4e0;
