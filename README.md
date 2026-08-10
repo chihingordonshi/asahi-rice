@@ -416,3 +416,23 @@ user override entirely (confirmed the underlying `/usr/share/applications/mihomo
 has no flag, so removing the override fully restores default launch behavior). Left as a
 recorded dead end rather than erased, since the investigation into why no Hyprland-side scale
 mechanism exists is still accurate and reusable if this ever comes up again for a different app.
+
+## 2026-08-10 (later still) — waybar polish, fcitx5 Pinyin actually turned on
+
+Widened the icon-to-text gap on the right-side waybar modules (waybar's `format` is a
+single text node, no separate icon/label CSS split — the fix is literally an extra
+space character in each format string). Swapped the power-profile module's icons for
+its own `{profile}` text string, per request — simpler than maintaining an icon map.
+Moved `hyprland/language` to `modules-left`; it still shows Hyprland's own XKB layout
+state, unchanged.
+
+**fcitx5 Pinyin**: the env vars (`XMODIFIERS`/`QT_IM_MODULE`) and autostart entry were
+already in place from an earlier session, but fcitx5 had never actually been run, so no
+profile existed and it was only running a bare `keyboard-us` layer. Wrote
+`~/.config/fcitx5/profile` enabling `keyboard-us` + `pinyin`, confirmed Cloud Pinyin
+loads automatically (it's an optional dependency of the pinyin addon, already enabled by
+default — checked via `fcitx5-diagnose`'s addon list rather than guessing at config
+syntax) and explicitly pinned the trigger key with `~/.config/fcitx5/config`
+(`[Hotkey]\nTriggerKeys=Control+space`) rather than relying on fcitx5's undocumented-here
+default, even though it happens to match. `.config/fcitx5` added to
+`asahi-rice-sync`'s `LIVE_PATHS` since this is a genuinely new top-level config path.

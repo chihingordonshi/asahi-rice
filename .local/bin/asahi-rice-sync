@@ -18,6 +18,7 @@ LIVE_PATHS=(
     .config/autostart
     .config/btop
     .config/cava
+    .config/fcitx5
     .config/fish
     .config/fuzzel
     .config/hypr
