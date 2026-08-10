@@ -103,17 +103,27 @@ with that plus the above, a macOS partition around **60–80GB** is comfortable 
 Fedora. Switching OS is always a cold reboot through Apple's own native firmware picker — there
 is no rEFInd/GRUB-style theming available, and no way to suspend one OS and wake into the other.
 
-### Shared data partition (idea, not yet built)
+### Shared data partition — built 2026-08-11
 
-Since switching OS is always a cold reboot, files (lecture notes exported as PDF, Docs
-attachments) that need to be readable from both sides are worth putting on a third, filesystem-
-neutral partition rather than duplicating them or shuttling via cloud sync alone. **exFAT** is
-the practical choice — natively read/write on both macOS and Fedora, no kernel driver hoops on
-either side (unlike NTFS, and unlike trying to read APFS from Linux, which is read-only/lossy).
-A modest size (10–20GB) carved out alongside the macOS and Fedora partitions during the Asahi
-installer's disk setup would cover this without meaningfully starving either OS. Not implemented
-yet — this is a plan to execute during the actual Asahi install/partitioning step, not a live
-change to make on an already-installed system.
+Implemented, not just planned. Fedora's btrfs volume (`nvme0n1p6`) had ~570GB free out of
+597GB, so rather than carving this out during install as originally planned, it was done
+live on the already-installed system: shrunk the btrfs filesystem online, shrunk the GPT
+partition to match (had to force past parted's "partition in use" warning since it's the
+live root device, then reboot for the kernel to pick up the new boundary cleanly), then
+created a new 256GB partition (`nvme0n1p8`) in the freed space and formatted it **exFAT**
+(label `SharedData`, UUID `EA7B-B480`) — natively read/write on both macOS and Fedora, no
+kernel driver hoops on either side (unlike NTFS, and unlike trying to read APFS from Linux,
+which is read-only/lossy). On Fedora it's mounted at `~/data` via `/etc/fstab`
+(`uid=1000,gid=1000,umask=022,nofail` — exFAT has no native Unix permissions, so without
+these options the kernel driver mounts it root-owned and unwritable by a normal user).
+
+**If you're the M1 agent on the macOS side**: this same physical partition shows up in
+Disk Utility as an exFAT volume named `SharedData`. macOS auto-mounts exFAT volumes at
+`/Volumes/SharedData` by default rather than anywhere under `$HOME` — set up a symlink or
+login-item so it's reachable at `~/Desktop/shared` for consistency with how it's used on
+the Fedora side (e.g. `ln -s /Volumes/SharedData ~/Desktop/shared`, or handle the mount
+point directly if there's a cleaner native way to do this on macOS — check before assuming
+the symlink approach is the best one).
 
 ## Practical bootstrap notes
 

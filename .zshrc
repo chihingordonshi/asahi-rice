@@ -34,23 +34,28 @@ alias dotbackup='/usr/bin/git --git-dir=$HOME/.dotfiles --work-tree=$HOME'
 alias gitlogin='git config --global user.email chihin.gordon.shi@gmail.com \
     && git config --global user.name chihingordonshi'
 
-source /usr/share/zsh/plugins/zsh-autocomplete/zsh-autocomplete.plugin.zsh
+[[ -f /usr/share/zsh/plugins/zsh-autocomplete/zsh-autocomplete.plugin.zsh ]] && source /usr/share/zsh/plugins/zsh-autocomplete/zsh-autocomplete.plugin.zsh
+[[ -f ~/.local/share/zsh-autocomplete/zsh-autocomplete.plugin.zsh ]] && source ~/.local/share/zsh-autocomplete/zsh-autocomplete.plugin.zsh
 source ~/.zsh_functions
 
 # Must run before zoxide's `cd` override below: nvm.sh detects NVM_DIR via
 # `\cd -q ...`, which skips aliases but not shell functions, so zoxide's `cd`
 # would otherwise intercept it and leave NVM_DIR unset.
-source /usr/share/nvm/nvm.sh
+[[ -f /usr/share/nvm/nvm.sh ]] && source /usr/share/nvm/nvm.sh
 
 eval "$(direnv hook zsh)"
 eval "$(navi widget zsh)"
-eval "$(mcfly init zsh)"
+command -v mcfly >/dev/null && eval "$(mcfly init zsh)"
 eval "$(zoxide init zsh --cmd cd)"
 source <(fzf --zsh)
 
 # End of lines added by compinstall
 export PATH="$HOME/.local/bin:$HOME/go/bin:$PATH"
-source /usr/share/zsh-theme-powerlevel10k/powerlevel10k.zsh-theme
+if [[ -f /usr/share/zsh-theme-powerlevel10k/powerlevel10k.zsh-theme ]]; then
+  source /usr/share/zsh-theme-powerlevel10k/powerlevel10k.zsh-theme
+elif [[ -f ~/.local/share/powerlevel10k/powerlevel10k.zsh-theme ]]; then
+  source ~/.local/share/powerlevel10k/powerlevel10k.zsh-theme
+fi
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 
