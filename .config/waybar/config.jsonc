@@ -42,21 +42,21 @@
 
     "cpu": {
         "interval": 3,
-        "format": "󰘚 {usage}%"
+        "format": "󰘚  {usage}%"
     },
 
     "memory": {
         "interval": 5,
-        "format": "󰍛 {percentage}%"
+        "format": "󰍛  {percentage}%"
     },
 
     "backlight": {
-        "format": "󰃜 {percent}%"
+        "format": "󰃜  {percent}%"
     },
 
     "pulseaudio": {
-        "format": "{icon} {volume}%",
-        "format-muted": "󰖁 muted",
+        "format": "{icon}  {volume}%",
+        "format-muted": "󰖁  muted",
         "format-icons": ["󰕿", "󰖀", "󰕾"],
         "on-click": "pavucontrol",
         "on-click-right": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
@@ -64,19 +64,19 @@
     },
 
     "network": {
-        "format-wifi": "󰖩 {essid} ({signalStrength}%)",
-        "format-ethernet": "󰈀 {ifname}",
-        "format-disconnected": "󰖪 disconnected",
+        "format-wifi": "󰖩  {essid} ({signalStrength}%)",
+        "format-ethernet": "󰈀  {ifname}",
+        "format-disconnected": "󰖪  disconnected",
         "tooltip-format": "{ifname}: {ipaddr}",
         "on-click": "nm-connection-editor"
     },
 
     "hyprland/language": {
-        "format": "󰌌 {short}"
+        "format": "󰌌  {short}"
     },
 
     "battery": {
-        "format": "󰁹 {capacity}%",
-        "format-charging": "󰂄 {capacity}%"
+        "format": "󰁹  {capacity}%",
+        "format-charging": "󰂄  {capacity}%"
     }
 }
