@@ -21,6 +21,7 @@ live `$HOME`. Review before actually deploying anything on the M1.
 | `.config/pavucontrol.ini` | Audio mixer settings |
 | `.zshrc`, `.p10k.zsh` | Shell + prompt |
 | `.config/agents/fedora-asahi-setup.md` | The research/decisions briefing this backup is staged against |
+| `.config/ironbar/` | Hand-written (not ported from `dot-files` — caelestia never had an ironbar config), matched to the Material-You palette in `.config/hypr/scheme/current.lua` |
 
 ## Deliberately left out
 
@@ -40,13 +41,38 @@ live `$HOME`. Review before actually deploying anything on the M1.
 - **2026-08-10 — Panel/bar: ironbar.** The setup notes left this open, defaulting toward
   waybar (safest) or ironbar (a bit more visual headroom, same "no Quickshell dependency"
   risk profile) over HyprPanel/Wayle (archived/unproven) or eww (build-it-yourself). Chi Hin
-  chose **ironbar** over the waybar default. No ironbar config exists in this repo yet —
-  add it under `.config/ironbar/` once written.
+  chose **ironbar** over the waybar default. Initial `.config/ironbar/config.toml` +
+  `style.css` written the same day — see table above. Untested against a live ironbar
+  install; treat as a draft to verify, not a finished config.
+- **2026-08-10 — Hyprland install path: `lionheartp/Hyprland` COPR, not
+  `technochip/Hyprland-aarch64`.** The COPR named in the original setup notes turned out to
+  be self-marked deprecated (its own description says so), pointing at
+  `lionheartp/Hyprland` as the successor. Verified `lionheartp/Hyprland` has a
+  `fedora-44-aarch64` chroot with a successful build 5 days before this check
+  (hyprland 0.56.2-1, 2026-08-05) before recommending it.
+- **2026-08-10 — ironbar install path: `victorvintorez/packages` COPR.** ironbar isn't in
+  Fedora's main repos. This COPR has a `fedora-44-aarch64` chroot with a successful
+  ironbar 0.19.0-1 build. Only one aarch64-capable COPR found for ironbar at check time —
+  no alternative was compared.
+
+## Open question to revisit — caelestia may no longer be aarch64-dead
+
+While checking COPRs for Hyprland/ironbar, found **`celestelove/caelestia`**, a COPR that
+successfully built `caelestia-shell` (v2.3.0-1) for **`fedora-44-aarch64`** specifically.
+The original setup notes ruled out caelestia entirely because of a documented
+engine-level Quickshell aarch64-linux execution failure — a packaging build succeeding
+doesn't prove that bug is actually fixed (build ≠ runs), but it's evidence worth
+re-checking before treating "caelestia is a wall on this hardware" as still true. Not
+acted on — the ironbar decision above stands unless Chi Hin wants to reopen it after
+someone actually test-runs `caelestia-shell` from that COPR.
 
 ## Status
 
-Staged, not deployed. Nothing here has been installed into a real `.config` on any
-machine. Panel choice is decided (ironbar) but not yet configured.
+Not deployed as a live desktop yet. `ironbar` config is staged both here and at
+`~/.config/ironbar/` on the actual Fedora Asahi Remix machine (this machine — checked via
+`hostnamectl`: Fedora Linux Asahi Remix 44, KDE Plasma edition, currently running the KDE
+Plasma fallback session with Hyprland not yet installed). Package installation is
+in progress; see Provenance below for exactly what's been run and what's pending sudo.
 
 ## Provenance — exactly what was done
 
@@ -60,6 +86,21 @@ machine. Panel choice is decided (ironbar) but not yet configured.
    `github.com/chihingordonshi/asahi-rice` (private).
 5. Deleted the scratch clone of `dot-files` afterward — it was only used as a source to
    copy from, never used as, or symlinked into, this machine's actual `.config`.
+6. 2026-08-10, same day: confirmed via `hostnamectl` that this session is running
+   directly on the target Fedora Asahi Remix M1 (currently KDE Plasma, nothing from this
+   rice installed yet). Checked package availability with `dnf5 info`/COPR API queries
+   (read-only, no sudo) for hyprland, kitty, cava, btop, qt6ct, kvantum, kvantum-qt5,
+   fastfetch, ironbar, and fonts. Installed **JetBrainsMono Nerd Font** directly to
+   `~/.local/share/fonts` (user-level, no sudo needed) from the official
+   `ryanoasis/nerd-fonts` GitHub release, then ran `fc-cache`. Wrote
+   `~/.config/ironbar/config.toml` and `style.css` by hand (not copied from anywhere —
+   caelestia never had an ironbar config to port) using the hex values already recorded
+   in `.config/hypr/scheme/current.lua` and `.config/btop/themes/caelestia.theme` in this
+   repo. Copied both new files into this repo under the same path. Everything requiring
+   `sudo` (COPR enable, `dnf5 install`) was handed to Chi Hin to run interactively — this
+   agent has no path to a root shell.
 
 To verify: diff any file here against the same path in `dot-files` at the commit above —
-they should be byte-identical copies, not rewrites.
+they should be byte-identical copies, not rewrites. For `.config/ironbar/`, there is no
+comparison source; it's new, and should be checked against a real running ironbar
+instance before being trusted.
