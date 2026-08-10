@@ -1,0 +1,9 @@
+[Unit]
+Description=Run asahi-rice-sync on every boot (skips if already run today)
+
+[Timer]
+OnBootSec=2min
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

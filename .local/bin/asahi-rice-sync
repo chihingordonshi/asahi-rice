@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+# Mirrors dot-files' dotbackup-run pattern for ~/Projects/asahi-rice.
+#
+# asahi-rice is a normal clone (not a bare-repo-over-$HOME like dot-files), so
+# instead of `git add` picking up live changes directly, this rsyncs each known
+# config path from its live location into the repo, then commits/pushes.
+# New files created *within* these known paths are picked up automatically;
+# a genuinely new top-level path (e.g. a new ~/.config/<app>) still needs to be
+# added to LIVE_PATHS by hand, same limitation dot-files has for new dirs.
+set -euo pipefail
+
+REPO="$HOME/Projects/asahi-rice"
+LOG="$HOME/.local/share/asahi-rice-sync.log"
+STAMP="$HOME/.local/share/asahi-rice-sync-last-run"
+TODAY=$(date +%F)
+
+LIVE_PATHS=(
+    .config/autostart
+    .config/btop
+    .config/cava
+    .config/fish
+    .config/fuzzel
+    .config/hypr
+    .config/hypridle
+    .config/kdeglobals
+    .config/kitty
+    .config/Kvantum
+    .config/neofetch
+    .config/nvim
+    .config/pavucontrol.ini
+    .config/qt6ct
+    .config/systemd/user
+    .config/waybar
+    .config/wireplumber
+    .local/bin
+    .p10k.zsh
+    .zsh_functions
+    .zshrc
+    Pictures/Wallpapers
+)
+
+exec >> "$LOG" 2>&1
+echo "=== $(date -Is) : run start ==="
+
+if [[ -f "$STAMP" ]] && [[ "$(cat "$STAMP")" == "$TODAY" ]]; then
+    echo "already ran today ($TODAY), skipping"
+    echo "=== $(date -Is) : run end ==="
+    exit 0
+fi
+
+synced_paths=()
+for p in "${LIVE_PATHS[@]}"; do
+    src="$HOME/$p"
+    dst="$REPO/$p"
+    [[ -e "$src" ]] || continue
+    if [[ -d "$src" ]]; then
+        mkdir -p "$dst"
+        rsync -a --delete "$src/" "$dst/"
+    else
+        mkdir -p "$(dirname "$dst")"
+        cp -a "$src" "$dst"
+    fi
+    synced_paths+=("$p")
+done
+
+cd "$REPO"
+if [[ ${#synced_paths[@]} -gt 0 ]]; then
+    git add -A -- "${synced_paths[@]}"
+fi
+
+if git diff --cached --quiet; then
+    echo "no tracked changes, skipping commit/push"
+else
+    git commit -m "auto sync $(date +%F)"
+    git push origin main
+    echo "pushed"
+fi
+
+echo "$TODAY" > "$STAMP"
+echo "=== $(date -Is) : run end ==="

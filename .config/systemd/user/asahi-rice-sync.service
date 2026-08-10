@@ -1,0 +1,8 @@
+[Unit]
+Description=Sync live configs into asahi-rice and push to git remote
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/home/chihin/.local/bin/asahi-rice-sync
