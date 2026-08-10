@@ -46,7 +46,6 @@ source ~/.zsh_functions
 eval "$(direnv hook zsh)"
 eval "$(navi widget zsh)"
 command -v mcfly >/dev/null && eval "$(mcfly init zsh)"
-eval "$(zoxide init zsh --cmd cd)"
 source <(fzf --zsh)
 
 # End of lines added by compinstall
@@ -62,11 +61,6 @@ fi
 
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
-if [[ $TERM == "xterm-kitty" ]]; then
-  typeset -g POWERLEVEL9K_INSTANT_PROMPT=off
-  pokemon-colorscripts -r --no-title
-fi
-
 # >>> juliaup initialize >>>
 
 # !! Contents within this block are managed by juliaup !!
@@ -79,3 +73,5 @@ export PATH
 # <<< juliaup initialize <<<
 
 alias music='mocp'
+
+eval "$(zoxide init zsh --cmd cd)"
