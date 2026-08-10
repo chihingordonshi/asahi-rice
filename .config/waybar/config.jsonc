@@ -9,9 +9,9 @@
     "position": "top",
     "height": 36,
 
-    "modules-left": ["custom/kill", "custom/bluetooth", "custom/proxy", "power-profiles-daemon"],
+    "modules-left": ["custom/kill", "custom/bluetooth", "custom/proxy", "power-profiles-daemon", "hyprland/language"],
     "modules-center": ["clock"],
-    "modules-right": ["cpu", "memory", "backlight", "pulseaudio", "network", "hyprland/language", "battery"],
+    "modules-right": ["cpu", "memory", "backlight", "pulseaudio", "network", "battery"],
 
     "custom/kill": {
         "format": "󰅙",
