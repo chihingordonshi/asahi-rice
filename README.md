@@ -407,3 +407,12 @@ Also surfaced, as a side finding, that both screenshot keybinds
 exists on disk despite `grim`/`slurp` being installed as the intended backend — so Spectacle
 is, for now, the only actually-working screenshot tool on this machine and was excluded from
 the KDE removal list on that basis.
+
+**Revert**: the `--force-device-scale-factor=0.75` mihomo-party fix above turned out to be
+unnecessary — the panel's actual base scale (1.6x, set earlier this same session) already
+renders the window at a reasonable size on its own. Removed the flag from the waybar
+`proxy` button's `on-click` and deleted the `~/.local/share/applications/mihomo-party.desktop`
+user override entirely (confirmed the underlying `/usr/share/applications/mihomo-party.desktop`
+has no flag, so removing the override fully restores default launch behavior). Left as a
+recorded dead end rather than erased, since the investigation into why no Hyprland-side scale
+mechanism exists is still accurate and reusable if this ever comes up again for a different app.
