@@ -8,7 +8,7 @@
 
 position = "top"
 height = 36
-icon_theme = "Papirus-Dark"
+icon_theme = "Adwaita"
 
 [[center]]
 type = "clock"

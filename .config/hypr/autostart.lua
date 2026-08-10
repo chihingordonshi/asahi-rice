@@ -12,4 +12,9 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("mako")
     hl.exec_cmd("nm-applet --indicator")
     hl.exec_cmd("ironbar")
+
+    -- No wallpaper file is tracked in this repo, so use a flat color matching the
+    -- Material-You scheme's background (#131317) instead of Hyprland's default
+    -- placeholder mascot wallpaper.
+    hl.exec_cmd("swaybg -c '#131317'")
 end)

@@ -125,6 +125,47 @@ re-checking before treating "caelestia is a wall on this hardware" as still true
 acted on — the ironbar decision above stands unless Chi Hin wants to reopen it after
 someone actually test-runs `caelestia-shell` from that COPR.
 
+## Critical finding — log in via "Hyprland (uwsm-managed)", not plain "Hyprland"
+
+2026-08-10, after first actually logging into the Hyprland session that was set up
+earlier the same day: Chi Hin reported "not everything looks good." Verified with a real
+screenshot (`grim`) rather than guessing — most things were fine (clock, cpu/mem, keyboard
+layout, battery percentage all rendering correctly, colors/border/monitor scale all
+confirmed live via `hyprctl getoption` matching the Lua config, and the Hyprland log
+explicitly reads `[cfg] Using lua config found at /home/chihin/.config/hypr/hyprland.lua`
+— it is genuinely running the Lua config, not falling back). Two real problems:
+
+1. `icon_theme = "Papirus-Dark"` in ironbar's config was never verified installed — it
+   wasn't (`rpm -qa | grep papirus` = nothing). Switched to `"Adwaita"`, which is
+   installed and has the specific symbolic icons ironbar's default profiles use
+   (confirmed by checking for `network-wireless-signal-good-symbolic.svg` etc. under
+   `/usr/share/icons/Adwaita` directly, not assumed).
+2. No wallpaper daemon was configured, so Hyprland was drawing its own built-in
+   placeholder background. Installed `swaybg`, autostarted as a flat color
+   (`#131317`, the scheme's background token) since no wallpaper image is tracked in
+   this repo.
+
+Neither of those alone explained everything, so the root cause was traced further:
+`xdg-desktop-portal.service` was failing to start (`systemctl --user status` showed
+"Dependency failed", because `graphical-session.target` was never reached for this
+session — confirmed via `systemctl --user status graphical-session.target` showing it
+last stopped when the earlier Plasma session ended, and attempting to start it manually
+returns `Operation refused, unit graphical-session.target may be requested by dependency
+only`). **Plain "Hyprland" launched directly by SDDM never triggers that systemd target
+chain.** The fix isn't a config change — it's logging in via the **"Hyprland
+(uwsm-managed)"** session entry instead (`hyprland-uwsm`, already installed as a
+dependency earlier the same day but not yet actually selected at the login screen). UWSM
+(`uwsm start -e -D Hyprland hyprland.desktop`) properly binds startup to
+`graphical-session-pre.target` → `graphical-session.target`, which is what actually
+activates portals, polkit, and D-Bus secret-service in the right order — this is almost
+certainly also the real root cause of the `gh` keyring failure from earlier in the day,
+not just an ironbar cosmetic issue. The manual `dbus-update-activation-environment` /
+`kwalletd6` / `hyprpolkitagent` lines in `autostart.lua` are left in as a defensive
+fallback, but the actual fix is the session picker, not those lines.
+
+**Action needed from Chi Hin**: next logout, select "Hyprland (uwsm-managed)" at SDDM, not
+plain "Hyprland".
+
 ## Status
 
 Hyprland, ironbar, and the rest of the package set (see decisions log) are installed on
