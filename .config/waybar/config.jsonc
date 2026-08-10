@@ -36,7 +36,7 @@
 
     "custom/proxy": {
         "format": "proxy",
-        "on-click": "/opt/clash-party/mihomo-party",
+        "on-click": "/opt/clash-party/mihomo-party --force-device-scale-factor=0.75",
         "tooltip-format": "Mihomo Party (proxy client)"
     },
 

@@ -1,0 +1,6 @@
+[Unit]
+Description=Switch to a random wallpaper from ~/Pictures/Wallpapers
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/random-wallpaper.sh
