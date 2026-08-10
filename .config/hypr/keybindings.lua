@@ -16,6 +16,7 @@ hl.bind(mainMod .. " + R", NoTransparency)
 hl.bind(mainMod .. " + P", hl.dsp.window.pseudo())
 hl.bind(mainMod .. " + J", hl.dsp.layout("togglesplit"))    -- dwindle only
 hl.bind(mainMod .. " + L", resize_monitor)
+hl.bind(mainMod .. " + SHIFT + L", resize_monitor_2x)
 
 -- Move focus with mainMod + arrow keys
 hl.bind(mainMod .. " + left",  hl.dsp.focus({ direction = "left" }))

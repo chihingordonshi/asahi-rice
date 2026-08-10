@@ -21,7 +21,6 @@ LIVE_PATHS=(
     .config/fish
     .config/fuzzel
     .config/hypr
-    .config/hypridle
     .config/kdeglobals
     .config/kitty
     .config/Kvantum

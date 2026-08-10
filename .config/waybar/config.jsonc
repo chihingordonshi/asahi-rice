@@ -1,41 +1,32 @@
-// waybar config — top bar only: time/date, cpu/mem, wifi, keyboard layout, battery.
-// Same spec as the ironbar bar it replaces. Verified against the real man pages
-// (waybar-clock/cpu/memory/network/hyprland-language/battery(5)), not guessed.
+// waybar config — top bar only: time/date, cpu/mem, wifi, keyboard layout, battery,
+// volume, brightness. Same spec as the ironbar bar it replaces. Verified against the real
+// man pages (waybar-clock/cpu/memory/network/hyprland-language/battery/pulseaudio/
+// backlight(5)), not guessed. Icon codepoints verified present in the installed
+// JetBrainsMono Nerd Font Mono via `fc-query -f '%{charset}'` against its actual cmap,
+// not assumed from a generic Nerd Font cheatsheet.
 {
     "layer": "top",
     "position": "top",
     "height": 36,
 
-    "modules-left": ["cpu", "memory", "custom/kill", "custom/bluetooth", "custom/lock", "custom/wallpaper", "custom/proxy", "power-profiles-daemon"],
+    "modules-left": ["custom/kill", "custom/bluetooth", "custom/proxy", "power-profiles-daemon"],
     "modules-center": ["clock"],
-    "modules-right": ["network", "hyprland/language", "battery"],
+    "modules-right": ["cpu", "memory", "backlight", "pulseaudio", "network", "hyprland/language", "battery"],
 
     "custom/kill": {
-        "format": "kill",
+        "format": "󰅙",
         "on-click": "hyprctl kill",
         "tooltip-format": "Force-kill an unresponsive window (click to target)"
     },
 
     "custom/bluetooth": {
-        "format": "bt",
+        "format": "",
         "on-click": "kcmshell6 kcm_bluetooth",
         "tooltip-format": "Bluetooth settings (bluedevil)"
     },
 
-    "custom/lock": {
-        "format": "lock",
-        "on-click": "hyprlock",
-        "tooltip-format": "Lock screen"
-    },
-
-    "custom/wallpaper": {
-        "format": "wallpaper",
-        "on-click": "waypaper",
-        "tooltip-format": "Wallpaper picker"
-    },
-
     "custom/proxy": {
-        "format": "proxy",
+        "format": "󰦛",
         "on-click": "/opt/clash-party/mihomo-party --force-device-scale-factor=0.75",
         "tooltip-format": "Mihomo Party (proxy client)"
     },
@@ -43,41 +34,55 @@
     "power-profiles-daemon": {
         "format": "{icon}",
         "format-icons": {
-            "default": "power",
-            "performance": "performance",
-            "balanced": "balanced",
-            "power-saver": "power-saver"
+            "default": "󰀑",
+            "performance": "󰓄",
+            "balanced": "󰔳",
+            "power-saver": "󰑈"
         },
         "tooltip-format": "Power profile: {profile}\\nClick to cycle"
     },
 
     "clock": {
-        "format": "{:%a %d %b   %H:%M}"
+        "format": "󰥔 {:%a %d %b   %H:%M}"
     },
 
     "cpu": {
         "interval": 3,
-        "format": "cpu:{usage}%"
+        "format": "󰘚 {usage}%"
     },
 
     "memory": {
         "interval": 5,
-        "format": "memory:{percentage}%"
+        "format": "󰍛 {percentage}%"
+    },
+
+    "backlight": {
+        "format": "󰃜 {percent}%"
+    },
+
+    "pulseaudio": {
+        "format": "{icon} {volume}%",
+        "format-muted": "󰖁 muted",
+        "format-icons": ["󰕿", "󰖀", "󰕾"],
+        "on-click": "pavucontrol",
+        "on-click-right": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+        "tooltip-format": "Volume: {volume}% (scroll to adjust, right-click to mute)"
     },
 
     "network": {
-        "format-wifi": "{essid} ({signalStrength}%)",
-        "format-ethernet": "{ifname}",
-        "format-disconnected": "disconnected",
+        "format-wifi": "󰖩 {essid} ({signalStrength}%)",
+        "format-ethernet": "󰈀 {ifname}",
+        "format-disconnected": "󰖪 disconnected",
         "tooltip-format": "{ifname}: {ipaddr}",
         "on-click": "nm-connection-editor"
     },
 
     "hyprland/language": {
-        "format": "{short}"
+        "format": "󰌌 {short}"
     },
 
     "battery": {
-        "format": "{capacity}%"
+        "format": "󰁹 {capacity}%",
+        "format-charging": "󰂄 {capacity}%"
     }
 }
