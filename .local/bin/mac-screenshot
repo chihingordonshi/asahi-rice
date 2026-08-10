@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+mode="${1:?usage: mac-screenshot <region|full|window>}"
+
+dir="$HOME/Pictures/Screenshots"
+mkdir -p "$dir"
+file="$dir/Screenshot $(date +'%Y-%m-%d at %H.%M.%S').png"
+
+case "$mode" in
+    region)
+        geom=$(slurp) || exit 0
+        grim -g "$geom" "$file"
+        ;;
+    full)
+        grim "$file"
+        ;;
+    window)
+        geom=$(hyprctl activewindow -j | jq -r '"\(.at[0]),\(.at[1]) \(.size[0])x\(.size[1])"')
+        grim -g "$geom" "$file"
+        ;;
+    *)
+        echo "unknown mode: $mode" >&2
+        exit 1
+        ;;
+esac
+
+wl-copy < "$file"
+notify-send -i "$file" "Screenshot saved" "$(basename "$file")"
