@@ -436,3 +436,21 @@ syntax) and explicitly pinned the trigger key with `~/.config/fcitx5/config`
 (`[Hotkey]\nTriggerKeys=Control+space`) rather than relying on fcitx5's undocumented-here
 default, even though it happens to match. `.config/fcitx5` added to
 `asahi-rice-sync`'s `LIVE_PATHS` since this is a genuinely new top-level config path.
+
+## 2026-08-11 — removed redundant KDE apps
+
+Removed `konsole`, `konsole-part`, `plasma-systemmonitor` via `dnf remove` (proposed
+in the earlier app-redundancy audit, executed after explicit go-ahead). kitty already
+covers the terminal, and btop covers system monitoring — konsole and
+plasma-systemmonitor were unused duplicates. `plasma-drkonqi` (KDE's crash-report
+dialog) was pulled out too as an unused dependency of plasma-systemmonitor; no loss,
+just the crash-report popup.
+
+Also fixed fcitx5 Ctrl+Space not switching input methods: an earlier explicit
+`~/.config/fcitx5/config` write (`TriggerKeys=Control+space`) used the wrong on-disk
+format for a list-type option (fcitx5 stores lists as indexed sub-entries, not a flat
+`key=value` line), so it silently parsed as an empty list and disabled the trigger —
+overriding the compiled default, which already included Control+space and worked fine
+before that write. Deleted the override; confirmed via
+`busctl --user call org.fcitx.Fcitx5 /controller org.fcitx.Fcitx.Controller1 GetConfig`
+that the live config reverted to the default three-key list.
