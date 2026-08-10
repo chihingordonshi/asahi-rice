@@ -103,14 +103,3 @@ hl.window_rule({
     opacity  = 0.0,
     no_focus = true,
 })
-
--- Mihomo Party's default window (618x740) is oversized for what it's used for --
--- shrink to 50% (309x370).
-hl.window_rule({
-    name = "mihomo-party-shrink",
-    match = {
-        class = "mihomo-party",
-    },
-    size  = "309 370",
-    float = true,
-})
