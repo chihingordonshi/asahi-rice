@@ -454,3 +454,13 @@ overriding the compiled default, which already included Control+space and worked
 before that write. Deleted the override; confirmed via
 `busctl --user call org.fcitx.Fcitx5 /controller org.fcitx.Fcitx.Controller1 GetConfig`
 that the live config reverted to the default three-key list.
+
+## 2026-08-11 (later) — file manager confirmed, Okular removed
+
+Confirmed the desktop is on Dolphin — nautilus was never installed, so no ambiguity there.
+Checked calendar apps for redundancy (none found: only korganizer is installed, kalendar
+isn't). Found real redundancy in PDF viewers: WPS 365 (installed earlier for the SAT camp
+prep) had registered itself as the default `application/pdf` handler, leaving Okular
+installed but unused. Removed Okular (+ okular-part/okular-libs and now-unused deps
+djvulibre-libs, ebook-tools-libs, libspectre) per explicit go-ahead; WPS stays default
+for PDFs.
