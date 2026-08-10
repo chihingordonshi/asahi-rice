@@ -1,0 +1,3 @@
+-- Transparency/blur. Left off — this machine's GPU story (Apple Silicon via Asahi Mesa)
+-- is nonstandard enough that extra compositing effects aren't worth chasing on a
+-- reliability-first schoolday machine.

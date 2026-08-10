@@ -1,22 +1,14 @@
-# ironbar config — initial draft, staged 2026-08-10
+# ironbar config — top bar only: time/date, power, wifi, input method (keyboard layout), cpu/mem.
+# Verified against the real module docs shipped with ironbar 0.19.0
+# (/usr/share/doc/ironbar/docs/modules/*.md) — this is not a guess like the first draft was.
 #
-# Built to match the existing rice's aesthetic (Material-You purple/lavender scheme,
-# generated from .config/hypr/scheme/current.lua in dot-files) and its philosophy
-# (waybar/ironbar were picked over caelestia/HyprPanel specifically because this M1 is
-# a reliability-first schoolday machine, not a rice project — kept the module list short
-# on purpose).
-#
-# Caveat: written against ironbar 0.19.0 (the version currently in the
-# victorvintorez/packages COPR) without a live install to test against. If a module key
-# fails validation, check `ironbar --help` / the upstream docs — module schemas have
-# shifted across ironbar releases before. Verify, don't assume this is correct out of the box.
+# Requires: NetworkManager (active), upower (active), user in the `input` group for the
+# keyboard layout indicator (added via `usermod -aG input` — needs a session restart to
+# take effect).
 
 position = "top"
 height = 36
 icon_theme = "Papirus-Dark"
-
-[[start]]
-type = "workspaces"
 
 [[center]]
 type = "clock"
@@ -31,10 +23,14 @@ cpu = 3
 memory = 5
 
 [[end]]
-type = "volume"
+type = "network_manager"
 
 [[end]]
-type = "upower"
+type = "keyboard"
+show_caps = false
+show_num = false
+show_scroll = false
 
 [[end]]
-type = "tray"
+type = "battery"
+format = "{percentage}%"

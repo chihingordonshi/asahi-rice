@@ -1,0 +1,4 @@
+-- Permissions. Left at Hyprland's defaults — this machine doesn't run
+-- security-sensitive plugins/screencopy tooling that would need explicit grants yet.
+-- See https://wiki.hypr.land/Configuring/Advanced-and-Cool/Permissions/
+-- Note: permission changes require a full Hyprland restart, not a reload.

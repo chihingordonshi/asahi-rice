@@ -1,0 +1,1 @@
+-- Misc settings. Nothing overridden yet — Hyprland's defaults apply.

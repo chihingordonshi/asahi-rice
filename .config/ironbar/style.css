@@ -1,24 +1,22 @@
 /* ironbar style — matches the caelestia Material-You scheme from
-   .config/hypr/scheme/current.lua (dot-files repo). Palette reference:
+   .config/hypr/scheme/current.lua. Selectors verified against
+   /usr/share/doc/ironbar/docs/Styling guide.md and each module's own doc page
+   (real ironbar CSS uses class selectors like .clock/.battery, not #id) —
+   the first draft of this file guessed #id selectors and was wrong.
 
+   Palette:
    background/crust   #131317   surfaceContainerLow #1c1b1f
    surfaceContainer    #201f23   outline/div_line     #47464f
    onSurface (text)    #e5e1e7   subtext0/outline     #918f9a
-   primary (lavender)  #c2c1ff   secondary            #c6c4e0
-   tertiary (pink)     #f5b2e0   sapphire/blue         #b7c5ff
-   green (battery ok)  #c8e3ff
-
-   Node/class names below follow ironbar's documented convention (#bar container,
-   .item per entry, #<module-type> per module) — sanity-check against GTK Inspector
-   (GTK_DEBUG=interactive ironbar) once it's actually running, in case class names
-   have moved between versions. */
+   primary (lavender)  #c2c1ff   tertiary (pink)       #f5b2e0
+   sapphire/blue       #b7c5ff   green-ish             #c8e3ff */
 
 * {
   font-family: "Inter", "JetBrainsMono Nerd Font", sans-serif;
   font-size: 14px;
 }
 
-window#bar {
+.background {
   background-color: transparent;
 }
 
@@ -31,73 +29,39 @@ window#bar {
   color: #e5e1e7;
 }
 
-.item {
-  color: #e5e1e7;
-  padding: 4px 10px;
-  margin: 4px 2px;
-  border-radius: 8px;
-  transition: background-color 150ms ease;
+.widget-container {
+  padding: 0 4px;
 }
 
-.item:hover {
-  background-color: #201f23;
-}
-
-/* workspaces */
-#workspaces .item {
-  color: #918f9a;
-  font-weight: 600;
-  min-width: 22px;
-}
-
-#workspaces .item.focused {
-  color: #131317;
-  background-color: #c2c1ff;
-}
-
-#workspaces .item.visible:not(.focused) {
-  color: #c6c4e0;
-  background-color: #201f23;
-}
-
-/* clock */
-#clock {
+.clock {
   color: #c2c1ff;
   font-weight: 600;
   padding: 4px 14px;
 }
 
-/* sys_info */
-#sys-info {
+.sysinfo {
   color: #c6c4e0;
 }
 
-#sys-info .item {
+.sysinfo .item {
   padding: 0 6px;
 }
 
-/* volume */
-#volume {
+.network_manager .icon {
   color: #b7c5ff;
 }
 
-#volume slider,
-#volume trough {
-  background-color: #47464f;
-}
-
-/* battery */
-#upower {
+.keyboard .layout {
   color: #f5b2e0;
+  padding: 0 6px;
 }
 
-#upower.charging {
+.battery {
   color: #c8e3ff;
 }
 
-/* tray */
-#tray .item {
-  padding: 2px 6px;
+.battery .label {
+  padding: 0 4px;
 }
 
 tooltip {
