@@ -71,6 +71,10 @@ hl.bind("SHIFT + Print",     hl.dsp.exec_cmd(macScreenshot .. " full"))    -- li
 hl.bind(mainMod .. " + Print", hl.dsp.exec_cmd(macScreenshot .. " window")) -- active window
 hl.bind("CTRL + Print",      hl.dsp.exec_cmd("screengrab"))             -- full GUI tool
 
+-- Same screenshot actions, reachable without a Print key (Apple keyboard has none)
+hl.bind(mainMod .. " + A",         hl.dsp.exec_cmd(macScreenshot .. " region"))
+hl.bind(mainMod .. " + SHIFT + A", hl.dsp.exec_cmd(macScreenshot .. " full"))
+
 -- Create spacer window with mainMod + N
 hl.bind(mainMod .. " + N", hl.dsp.exec_cmd("kitty --class spacer &"))
 
