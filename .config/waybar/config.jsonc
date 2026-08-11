@@ -118,8 +118,7 @@
         "format-wifi": "󰖩  {essid}",
         "format-ethernet": "󰈀  {ifname}",
         "format-disconnected": "󰖪  disconnected",
-        "tooltip-format": "{ifname}: {ipaddr}",
-        "on-click": "nm-connection-editor"
+        "tooltip-format": "{ifname}: {ipaddr}"
     },
 
     "battery": {
