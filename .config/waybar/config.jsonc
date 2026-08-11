@@ -36,7 +36,6 @@
             "class<[Ll]ibre[Oo]ffice.*>": "󰈙",
             "class<org.pulseaudio.pavucontrol>": "󰕾"
         },
-        "on-click": "activate",
         "sort-by": "number"
     },
 
