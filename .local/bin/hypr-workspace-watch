@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Watches Hyprland's IPC event socket and re-compacts workspaces (see
+# hypr-compact-workspaces) after every window close or open. closewindow
+# is the reliable "a gap may now exist" signal: destroyworkspacev2 does
+# NOT fire when you close the last window on your *currently active*
+# workspace (Hyprland keeps an empty active workspace alive instead of
+# destroying it), which is the single most common real case. openwindow
+# catches the mirror case -- a window landing on a high/new workspace
+# number while lower ones sit empty. Running the compaction script on
+# every open/close is harmless -- it's a no-op when nothing needs to move.
+set -uo pipefail
+
+SOCK="$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket2.sock"
+
+socat -U - "UNIX-CONNECT:$SOCK" | while IFS= read -r line; do
+    case "$line" in
+        closewindow\>\>*|openwindow\>\>*)
+            "$HOME/.local/bin/hypr-compact-workspaces" || true
+            ;;
+    esac
+done

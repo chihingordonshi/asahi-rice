@@ -67,6 +67,8 @@ ytdl() {
     )
     PATH="/usr/bin:/bin:/usr/sbin:/sbin:$PATH" \
     yt-dlp --cookies-from-browser chrome \
+        --js-runtimes node \
+        --remote-components ejs:github \
         "${extra[@]}" \
         -f "bv*+ba/b" \
         --merge-output-format mp4 \
@@ -638,4 +640,68 @@ tools() {
     done
     echo
     echo "${DIM}Run any command above directly. See 'toys' for terminal eye-candy/games.${RESET}"
+}
+
+toys() {
+    # Lists installed terminal eye-candy/toys (not tools - see `tools`) and
+    # how to run them. Only shows what's actually on PATH.
+    local BOLD=$'\033[1m' CYAN=$'\033[36m' YELLOW=$'\033[33m' DIM=$'\033[2m' RESET=$'\033[0m'
+
+    local -a bins cats cmds descs
+    bins=(genact unimatrix cmatrix cbonsai pipes.sh sl asciiquarium nyancat hollywood cowsay lolcat fortune figlet toilet boxes cava nethack bastet nsnake moon-buggy robotfindskitten nudoku 2048)
+    cats=(Generative Generative Generative Generative Generative Generative Generative Generative Generative Fun Fun Fun Fun Fun Fun Visual Games Games Games Games Games Games Games)
+    cmds=(
+        "genact" "unimatrix"
+        "cmatrix" "cbonsai" "pipes.sh" "sl"
+        "asciiquarium" "nyancat" "hollywood"
+        "cowsay <text>" "lolcat" "fortune" "figlet <text>" "toilet <text>" "boxes"
+        "cava"
+        "nethack" "bastet" "nsnake" "moon-buggy" "robotfindskitten" "nudoku" "2048"
+    )
+    descs=(
+        "Fake terminal activity: compiles, downloads, logs, builds"
+        "Matrix digital rain effect"
+        "Matrix digital rain, classic C implementation"
+        "Grows an animated ASCII bonsai tree"
+        "Animated bouncing pipes screensaver"
+        "Steam locomotive that chugs across your terminal (typo 'ls')"
+        "Animated ASCII aquarium"
+        "Nyan Cat, rainbow trail and all"
+        "Turns your terminal into a movie-hacking-scene montage"
+        "ASCII cow says whatever you give it"
+        "Rainbow-colors any piped text"
+        "Prints a random quip/quote"
+        "Big ASCII-art text banners"
+        "Big ASCII/ANSI-art text banners, more fonts and colors"
+        "Draws ASCII-art boxes around piped text"
+        "Real-time audio spectrum visualizer"
+        "The classic roguelike dungeon crawler"
+        "Tetris clone that gives you the piece you least want"
+        "Classic snake, ncurses edition"
+        "Drive a car dodging traffic, ASCII-style"
+        "You are robotfindskitten. Find kitten to win."
+        "Sudoku, ncurses edition"
+        "The 2048 sliding-tile puzzle"
+    )
+
+    echo "${BOLD}Installed terminal toys:${RESET}"
+    echo
+    local last_cat=""
+    local i
+    for (( i=1; i<=$#bins; i++ )); do
+        if command -v "${bins[i]}" >/dev/null 2>&1; then
+            if [[ "${cats[i]}" != "$last_cat" ]]; then
+                [[ -n "$last_cat" ]] && echo
+                echo "  ${YELLOW}${cats[i]}${RESET}"
+                last_cat="${cats[i]}"
+            fi
+            printf "    ${CYAN}%-22s${RESET} %s\n" "${cmds[i]}" "${descs[i]}"
+        fi
+    done
+    echo
+    echo "${DIM}Run any command above directly. See 'tools' for actually useful terminal TUIs.${RESET}"
+}
+
+restart(){
+    pkill $1 && nohup $1 1>/dev/null 2>&1 &
 }
