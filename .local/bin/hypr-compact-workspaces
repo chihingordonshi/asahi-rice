@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# Renumber occupied workspaces so they're contiguous starting at 1
+# (e.g. 1,2,4,6 -> 1,2,3,4). If the active workspace is one that moves,
+# follow it to its new number.
+#
+# hyprctl dispatch's CLI argument form doesn't work on this build (dispatch
+# is a thin wrapper that Lua-evaluates its raw arg string, so anything with
+# spaces/args breaks); hyprctl eval runs a full Lua snippet instead, which
+# is what actually works for calling hl.dsp.* dispatchers with arguments.
+set -euo pipefail
+
+active_ws=$(hyprctl activeworkspace -j | jq -r '.id')
+mapfile -t occupied < <(hyprctl workspaces -j | jq -r '.[] | select(.windows > 0 and .id > 0) | .id' | sort -n)
+
+# hl.dsp.window.move always follows/switches focus to the target workspace
+# (no working silent flag), so the active workspace drifts as we go; track
+# where it should end up and do one corrective focus dispatch at the end.
+final_active_ws="$active_ws"
+target=1
+for old_id in "${occupied[@]}"; do
+    if [ "$old_id" != "$target" ]; then
+        hyprctl eval "
+            local ws = hl.get_workspace_windows($old_id)
+            for _, w in ipairs(ws) do
+                hl.dispatch(hl.dsp.window.move({ workspace = $target, window = w }))
+            end
+        " >/dev/null
+        if [ "$old_id" = "$active_ws" ]; then
+            final_active_ws="$target"
+        fi
+    fi
+    target=$((target + 1))
+done
+
+hyprctl eval "hl.dispatch(hl.dsp.focus({workspace = $final_active_ws}))" >/dev/null

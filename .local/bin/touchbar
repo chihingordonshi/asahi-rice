@@ -1,0 +1,225 @@
+#!/usr/bin/env bash
+# Play a video/animation on the M1 Touch Bar's DRM display.
+# Stops tiny-dfr for the duration (so it isn't fighting over the panel),
+# then restarts it afterward no matter how mpv exits.
+
+set -euo pipefail
+
+ASSETS_DIR="$HOME/.local/share/touchbar-animations"
+MPV_BIN="$HOME/.local/src/mpv-touchbar/build/mpv"
+REGISTRY="$ASSETS_DIR/registry.tsv"
+CONNECTOR="DSI-1"
+ROTATE=90
+
+declare -A ANIMATIONS=(
+    [stickman]="$ASSETS_DIR/stickman.mkv"
+    [colors]="$ASSETS_DIR/colors.mp4"
+    [testpattern]="$ASSETS_DIR/testpattern.mp4"
+    [circle]="$ASSETS_DIR/circle.mkv"
+    [circle-static]="$ASSETS_DIR/circle_static.mkv"
+)
+
+# merge in any custom aliases registered via `render`'s "add to stored
+# animations" step
+if [[ -f "$REGISTRY" ]]; then
+    while IFS=$'\t' read -r alias path; do
+        [[ -n "$alias" ]] && ANIMATIONS["$alias"]="$path"
+    done < "$REGISTRY"
+fi
+
+usage() {
+    echo "Usage: touchbar play <name|path> [--audio] [--loop] [--rotate DEG]"
+    echo "       touchbar render <video-or-image-file> [--audio] [--loop] [--rotate DEG]"
+    echo "                        [--duplicate] [--time SECONDS|-1]"
+    echo "       touchbar remove <name>"
+    echo
+    echo "Available animations:"
+    for k in "${!ANIMATIONS[@]}"; do
+        printf '  %-12s %s\n' "$k" "${ANIMATIONS[$k]}"
+    done
+    echo
+    echo "'play' accepts a stored animation name or a path to any video"
+    echo "file mpv can play. 'render' transcodes an arbitrary video or"
+    echo "image (any format ffmpeg can decode) into a panel-native asset"
+    echo "once, saved as 'rendered-<name>', then offers to save it under"
+    echo "a shorter name and play it. Audio is always kept in rendered"
+    echo "files, but only comes out of the speakers when --audio is"
+    echo "passed (to either 'render' or 'play')."
+    echo
+    echo "  --duplicate    tile repeated copies of the content side by"
+    echo "                 side to fill the full 2008px width instead of"
+    echo "                 letterboxing a single centered copy (adds a"
+    echo "                 '-fill' suffix to the rendered name)"
+    echo "  --time SECS    required for images: how long to display it,"
+    echo "                 or -1 to loop it forever (implies --loop when"
+    echo "                 auto-playing)"
+    echo
+    echo "'remove' deletes a rendered-* asset (by stored name or its"
+    echo "'rendered-<name>' file name) and drops any stored alias for it."
+    exit 1
+}
+
+play() {
+    # $1 = target (name or path), remaining args = flags
+    local target="$1"; shift
+    local file loop_opt="--loop-file=no" audio_flag="--no-audio"
+
+    if [[ -n "${ANIMATIONS[$target]:-}" ]]; then
+        file="${ANIMATIONS[$target]}"
+    elif [[ -f "$ASSETS_DIR/$target.mkv" ]]; then
+        file="$ASSETS_DIR/$target.mkv"
+    elif [[ -f "$target" ]]; then
+        file="$target"
+    else
+        echo "touchbar: unknown animation or file: $target" >&2
+        echo >&2
+        usage
+    fi
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --audio) audio_flag=""; shift ;;
+            --loop) loop_opt="--loop-file=inf"; shift ;;
+            --rotate) ROTATE="$2"; shift 2 ;;
+            *) echo "touchbar: unknown option: $1" >&2; exit 1 ;;
+        esac
+    done
+
+    cleanup() { sudo systemctl start tiny-dfr; }
+    trap cleanup EXIT
+
+    sudo systemctl stop tiny-dfr
+    sleep 0.5
+    sg video -c "'$MPV_BIN' --vo=drm --drm-connector=$CONNECTOR --video-rotate=$ROTATE $loop_opt $audio_flag --really-quiet -- '$file'"
+}
+
+[[ $# -ge 1 ]] || usage
+
+case "$1" in
+    play)
+        shift
+        [[ $# -ge 1 ]] || usage
+        play "$@"
+        ;;
+    render)
+        shift
+        [[ $# -ge 1 ]] || usage
+        input="$1"; shift
+        [[ -f "$input" ]] || { echo "touchbar: no such file: $input" >&2; exit 1; }
+
+        duplicate=0
+        img_time=""
+        play_flags=()
+        while [[ $# -gt 0 ]]; do
+            case "$1" in
+                --duplicate) duplicate=1; shift ;;
+                --time) img_time="$2"; shift 2 ;;
+                --audio|--loop) play_flags+=("$1"); shift ;;
+                --rotate) play_flags+=("$1" "$2"); shift 2 ;;
+                *) echo "touchbar: unknown option: $1" >&2; exit 1 ;;
+            esac
+        done
+
+        is_image=0
+        [[ "$input" =~ \.(png|jpe?g|bmp|gif|webp|tiff?|tga)$ ]] && is_image=1
+
+        if [[ $is_image -eq 1 && -z "$img_time" ]]; then
+            echo "touchbar: --time SECONDS (or -1 for infinite) is required when rendering an image" >&2
+            exit 1
+        fi
+
+        input_opts=()
+        duration_opts=()
+        if [[ $is_image -eq 1 ]]; then
+            input_opts+=(-loop 1)
+            if [[ "$img_time" == "-1" ]]; then
+                duration_opts+=(-t 5)
+                play_flags+=(--loop)
+                echo "touchbar: --time -1 renders a short loopable clip and plays it with --loop" >&2
+            else
+                duration_opts+=(-t "$img_time")
+            fi
+        fi
+
+        name="$(basename "${input%.*}")"
+        [[ $duplicate -eq 1 ]] && name="${name}-fill"
+        rendered="$ASSETS_DIR/rendered-$name.mkv"
+
+        echo "touchbar: rendering '$input' -> '$rendered' ..." >&2
+
+        if [[ $duplicate -eq 1 ]]; then
+            dims="$(ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=p=0 "$input")"
+            orig_w="${dims%,*}"
+            orig_h="${dims#*,}"
+            scaled_w=$(awk "BEGIN{w=int(60*$orig_w/$orig_h+0.5); if(w<1)w=1; print w}")
+            n=$(( (2008 + scaled_w - 1) / scaled_w ))
+            [[ $n -lt 1 ]] && n=1
+
+            labels=""
+            for ((i = 0; i < n; i++)); do labels+="[s$i]"; done
+            filter_complex="[0:v]scale=-2:60,split=${n}${labels};${labels}hstack=inputs=${n}[tiled];[tiled]crop=2008:60:0:0,fps=30[vout]"
+
+            ffmpeg -y "${input_opts[@]}" -i "$input" "${duration_opts[@]}" \
+                -filter_complex "$filter_complex" -map "[vout]" -map 0:a? \
+                -c:v ffv1 -pix_fmt yuv420p -c:a copy \
+                "$rendered" </dev/null
+        else
+            ffmpeg -y "${input_opts[@]}" -i "$input" "${duration_opts[@]}" \
+                -vf "scale=2008:60:force_original_aspect_ratio=decrease,pad=2008:60:(ow-iw)/2:(oh-ih)/2:color=black,fps=30" \
+                -c:v ffv1 -pix_fmt yuv420p -c:a copy \
+                "$rendered" </dev/null
+        fi
+
+        echo "touchbar: saved as 'rendered-$name'" >&2
+
+        add_reply=""
+        read -r -p "Add this to your stored animations? [y/N] " add_reply </dev/tty || true
+        if [[ "$add_reply" =~ ^[Yy] ]]; then
+            alias_name=""
+            read -r -p "Name for it [$name]: " alias_name </dev/tty || true
+            alias_name="${alias_name:-$name}"
+            printf '%s\t%s\n' "$alias_name" "$rendered" >> "$REGISTRY"
+            ANIMATIONS["$alias_name"]="$rendered"
+            echo "touchbar: saved as '$alias_name' (touchbar play $alias_name)" >&2
+        fi
+
+        play_reply=""
+        read -r -p "Play it now? [y/N] " play_reply </dev/tty || true
+        if [[ "$play_reply" =~ ^[Yy] ]]; then
+            play "rendered-$name" "${play_flags[@]}"
+        fi
+        ;;
+    remove)
+        shift
+        [[ $# -ge 1 ]] || usage
+        target="$1"
+
+        if [[ -n "${ANIMATIONS[$target]:-}" ]]; then
+            file="${ANIMATIONS[$target]}"
+        elif [[ -f "$ASSETS_DIR/$target.mkv" ]]; then
+            file="$ASSETS_DIR/$target.mkv"
+        elif [[ -f "$ASSETS_DIR/rendered-$target.mkv" ]]; then
+            file="$ASSETS_DIR/rendered-$target.mkv"
+        else
+            echo "touchbar: unknown animation or file: $target" >&2
+            exit 1
+        fi
+
+        base="$(basename "$file")"
+        if [[ "$base" != rendered-* ]]; then
+            echo "touchbar: refusing to remove '$file' — only rendered-* files can be removed" >&2
+            exit 1
+        fi
+
+        rm -f -- "$file"
+        echo "touchbar: removed '$file'" >&2
+
+        if [[ -f "$REGISTRY" ]]; then
+            awk -F'\t' -v f="$file" 'BEGIN{OFS="\t"} $2 != f' "$REGISTRY" > "$REGISTRY.tmp"
+            mv "$REGISTRY.tmp" "$REGISTRY"
+        fi
+        ;;
+    *)
+        usage
+        ;;
+esac

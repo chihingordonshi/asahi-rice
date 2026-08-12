@@ -24,7 +24,17 @@ hl.on("hyprland.start", function ()
     hl.exec_cmd("systemctl --user start swaybg-wallpaper.service")
 --  hl.exec_cmd("google-chrome-stable")
     hl.exec_cmd(terminal)
-    hl.exec_cmd("fcitx5")
+    -- --disable notificationitem: waybar's custom/fcitx5 module already shows IME
+    -- status, so fcitx5's own StatusNotifierItem tray icon is redundant. Config-file
+    -- DisabledAddons= doesn't suppress it (notificationitem is an on-demand addon
+    -- classicui pulls in as an optional dep; DisabledAddons in ~/.config/fcitx5/config
+    -- is only checked for eager-loaded addons, confirmed via `fcitx5 -d -D` debug
+    -- logs), but the --disable CLI flag does (its own separate override, logged as
+    -- "Override Disabled Addons"). --replace guards against org.fcitx.Fcitx5's dbus
+    -- service activation (Exec=/usr/bin/fcitx5, no flags) winning the startup race
+    -- and grabbing the bus name with the tray icon still enabled.
+    hl.exec_cmd("fcitx5 --disable notificationitem --replace -d")
+    hl.exec_cmd(os.getenv("HOME") .. "/.local/bin/hypr-workspace-watch")
 --  hl.exec_cmd("tide-island")
 --  hl.exec_cmd("wayvnc")
 --  hl.exec_cmd("safeeyes")            -- not packaged for Fedora, no COPR/dnf path found
