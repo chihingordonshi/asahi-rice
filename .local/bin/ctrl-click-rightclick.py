@@ -38,6 +38,17 @@ CTRL_KEYS = {ecodes.KEY_LEFTCTRL, ecodes.KEY_RIGHTCTRL}
 
 SYNTHETIC_SLOT = 15  # top of this device's 0-15 slot range; real touches won't reach it
 SYNTHETIC_TRACKING_ID = 9999
+SYNTHETIC_PRESSURE = 5000
+# This device's libinput quirk (50-system-apple.quirks, "Apple Laptop Touchpad (SPI)
+# applespi driver") sets AttrTouchSizeRange=150:130 and no AttrPressureRange at all --
+# touch promotion out of TOUCH_HOVERING is gated by ABS_MT_TOUCH_MAJOR/MINOR crossing 150,
+# not by ABS_MT_PRESSURE (confirmed via raw capture: real click-time pressure never exceeds
+# ~150 out of a 0-6000 range, yet touches promote fine). AttrPalmSizeThreshold=1600, so stay
+# well under that too. Values below mirror real click-time touch sizes observed on hardware.
+SYNTHETIC_TOUCH_MAJOR = 400
+SYNTHETIC_TOUCH_MINOR = 600
+SYNTHETIC_WIDTH_MAJOR = 1800
+SYNTHETIC_WIDTH_MINOR = 1600
 
 
 def find_device(name):
@@ -84,10 +95,23 @@ async def watch_keyboard(kb):
 
 
 def spoof_touch_start(ui):
+    # This device's touch/finger-count state is gated by the legacy
+    # BTN_TOOL_FINGER/BTN_TOOL_DOUBLETAP protocol, not by ABS_MT_PRESSURE --
+    # confirmed via raw evdev capture of a real 2-finger press, where a second
+    # touch landing flips BTN_TOOL_FINGER 1->0 and BTN_TOOL_DOUBLETAP 0->1 in
+    # the same frame. Without mirroring that, libinput's fake-finger sanity
+    # check caps nfingers_down back down regardless of the MT slot data.
     ui.write(ecodes.EV_ABS, ecodes.ABS_MT_SLOT, SYNTHETIC_SLOT)
     ui.write(ecodes.EV_ABS, ecodes.ABS_MT_TRACKING_ID, SYNTHETIC_TRACKING_ID)
     ui.write(ecodes.EV_ABS, ecodes.ABS_MT_POSITION_X, State.last_x)
     ui.write(ecodes.EV_ABS, ecodes.ABS_MT_POSITION_Y, State.last_y)
+    ui.write(ecodes.EV_ABS, ecodes.ABS_MT_PRESSURE, SYNTHETIC_PRESSURE)
+    ui.write(ecodes.EV_ABS, ecodes.ABS_MT_TOUCH_MAJOR, SYNTHETIC_TOUCH_MAJOR)
+    ui.write(ecodes.EV_ABS, ecodes.ABS_MT_TOUCH_MINOR, SYNTHETIC_TOUCH_MINOR)
+    ui.write(ecodes.EV_ABS, ecodes.ABS_MT_WIDTH_MAJOR, SYNTHETIC_WIDTH_MAJOR)
+    ui.write(ecodes.EV_ABS, ecodes.ABS_MT_WIDTH_MINOR, SYNTHETIC_WIDTH_MINOR)
+    ui.write(ecodes.EV_KEY, ecodes.BTN_TOOL_FINGER, 0)
+    ui.write(ecodes.EV_KEY, ecodes.BTN_TOOL_DOUBLETAP, 1)
     ui.write(ecodes.EV_ABS, ecodes.ABS_MT_SLOT, State.current_real_slot)
     ui.syn()
 
@@ -95,6 +119,8 @@ def spoof_touch_start(ui):
 def spoof_touch_end(ui):
     ui.write(ecodes.EV_ABS, ecodes.ABS_MT_SLOT, SYNTHETIC_SLOT)
     ui.write(ecodes.EV_ABS, ecodes.ABS_MT_TRACKING_ID, -1)
+    ui.write(ecodes.EV_KEY, ecodes.BTN_TOOL_FINGER, 1)
+    ui.write(ecodes.EV_KEY, ecodes.BTN_TOOL_DOUBLETAP, 0)
     ui.write(ecodes.EV_ABS, ecodes.ABS_MT_SLOT, State.current_real_slot)
     ui.syn()
 
@@ -113,6 +139,11 @@ async def watch_trackpad(trackpad, ui):
                 State.spoofed_click = State.ctrl_held
                 if State.spoofed_click:
                     spoof_touch_start(ui)
+                    # Back-to-back syn() frames with no gap can land in the same
+                    # kernel read batch libinput processes, making 2-finger
+                    # recognition flaky. A short gap reliably forces separate
+                    # frames; imperceptible to a human click.
+                    await asyncio.sleep(0.02)
             print(f"[tp] BTN_LEFT value={event.value} ctrl_held={State.ctrl_held} spoofed_click={State.spoofed_click}", flush=True)
             ui.write_event(event)
             if event.value == 0 and State.spoofed_click:

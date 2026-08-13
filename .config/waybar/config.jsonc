@@ -15,9 +15,9 @@
     "position": "top",
     "height": 36,
 
-    "modules-left": ["custom/kill", "custom/proxy", "custom/fcitx5", "custom/power-profile", "hyprland/workspaces"],
+    "modules-left": ["cpu", "memory", "custom/fcitx5", "custom/power-profile", "hyprland/workspaces"],
     "modules-center": ["clock"],
-    "modules-right": ["tray", "cpu", "memory", "custom/bluetooth", "backlight", "pulseaudio", "network", "battery"],
+    "modules-right": ["tray", "custom/bluetooth", "backlight", "pulseaudio", "network", "battery"],
 
     "hyprland/workspaces": {
         "format": "{id} {windows}",
@@ -44,12 +44,6 @@
         "spacing": 10
     },
 
-    "custom/kill": {
-        "format": "󰅙",
-        "on-click": "hyprctl kill",
-        "tooltip-format": "Force-kill an unresponsive window (click to target)"
-    },
-
     "custom/bluetooth": {
         "exec": "~/.local/bin/waybar-bluetooth.sh",
         "interval": 5,
@@ -57,15 +51,6 @@
         "format": "{}",
         "on-click": "kcmshell6 kcm_bluetooth",
         "tooltip": true
-    },
-
-    "custom/proxy": {
-        "exec": "echo '󰦛'",
-        "exec-if": "pgrep -x mihomo-party",
-        "interval": 5,
-        "hide-empty-text": true,
-        "on-click": "/opt/clash-party/mihomo-party",
-        "tooltip-format": "Mihomo Party (proxy client)"
     },
 
     "custom/power-profile": {
@@ -92,7 +77,7 @@
 
     "cpu": {
         "interval": 3,
-        "format": "󰘚  {usage}%"
+        "format": "󰘚  {usage:02}%"
     },
 
     "memory": {

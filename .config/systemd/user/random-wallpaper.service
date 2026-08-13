@@ -1,5 +1,6 @@
 [Unit]
 Description=Rotate the wallpaper to a new random pick
+ConditionEnvironment=XDG_CURRENT_DESKTOP=Hyprland
 
 [Service]
 Type=oneshot
