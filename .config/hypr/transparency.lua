@@ -10,8 +10,9 @@ function NoTransparency()
                 border_size = 0,
             },
             decoration = {
-                active_opacity   = 1.0,
-                inactive_opacity = 1.0,
+		rounding = 0,
+		rounding_power = 3,
+                inactive_opacity = 1.00,
                 glow = {
                     enabled = false,
                 }
@@ -20,17 +21,17 @@ function NoTransparency()
                 enabled = false,
             },
         })
-        hl.exec_cmd("quickshell ipc --any-display -p /usr/share/tide-island call island hide")
     else
         hl.config({
             general = {
-                gaps_in = 8,
-                gaps_out = 10,
+                gaps_in = 2,
+                gaps_out = 6,
                 border_size = 2,
             },
             decoration = {
-                active_opacity   = 0.96,
-                inactive_opacity = 0.80,
+		rounding = 5,
+		rounding_power = 3,
+                inactive_opacity = 0.94,
                 glow = {
                     enabled = true,
                 }
@@ -39,7 +40,6 @@ function NoTransparency()
                 enabled = true,
             },
         })
-        hl.exec_cmd("quickshell ipc --any-display -p /usr/share/tide-island call island reveal")
     end
     TransparencyEnabled = not TransparencyEnabled
 

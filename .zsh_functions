@@ -705,3 +705,9 @@ toys() {
 restart(){
     pkill $1 && nohup $1 1>/dev/null 2>&1 &
 }
+
+zzz() {
+    # Suspend (s2idle). hypridle's before_sleep_cmd already locks via hyprlock,
+    # so no manual lock call needed here.
+    systemctl suspend
+}
