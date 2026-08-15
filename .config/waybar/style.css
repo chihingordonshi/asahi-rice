@@ -51,6 +51,10 @@ window#waybar {
     background-color: #201f23;
 }
 
+#workspaces button.special {
+    color: #f5b2e0;
+}
+
 #battery {
     color: #c8e3ff;
     padding: 0 8px;
@@ -71,8 +75,15 @@ window#waybar {
     border-radius: 6px;
 }
 
+#custom-suspend {
+    color: #c6c4e0;
+    padding: 0 14px;
+    margin: 0 0 0 6px;
+    border-radius: 6px;
+}
+
 #custom-kill:hover, #custom-bluetooth:hover,
 #custom-proxy:hover, #custom-power-profile:hover,
-#custom-fcitx5:hover {
+#custom-fcitx5:hover, #custom-suspend:hover {
     background-color: #201f23;
 }
