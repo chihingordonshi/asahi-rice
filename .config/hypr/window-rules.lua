@@ -93,16 +93,20 @@ hl.window_rule({
     float = true,
 })
 
--- sticky's internal helper window (title "Notes", used only as a hidden
--- 1x1 parent for dialogs) would otherwise render as a blank floating
--- window; shrink it to nothing and keep it out of the way
-hl.window_rule({
-    name = "sticky-hide-helper-window",
-    match = {
-        class = "sticky.py",
-        title = "^Notes$",
-    },
-    size     = "1 1",
-    opacity  = 0.0,
-    no_focus = true,
-})
+-- sticky's internal helper window is a hidden 1x1 dummy window created once
+-- at app startup to anchor dialogs. It can't be told apart from a real note
+-- by class/title alone: the app never sets a native window title on notes
+-- either, so both the dummy and every real note report title "Notes" to
+-- Hyprland. A static title-matched rule (the old approach here) hid every
+-- note along with the dummy. Instead, hide only the first sticky.py window
+-- opened per process -- that's always the dummy, since it's created before
+-- any note in the app's activation path.
+local stickyDummySeenPids = {}
+hl.on("window.open", function(win)
+    if win.class ~= "sticky.py" then return end
+    if stickyDummySeenPids[win.pid] then return end
+    stickyDummySeenPids[win.pid] = true
+
+    hl.dispatch(hl.dsp.window.set_prop({ prop = "opacity",  value = 0, window = "address:" .. win.address }))
+    hl.dispatch(hl.dsp.window.set_prop({ prop = "no_focus", value = 1, window = "address:" .. win.address }))
+end)

@@ -15,12 +15,25 @@
     "position": "top",
     "height": 36,
 
-    "modules-left": ["cpu", "memory", "custom/fcitx5", "custom/power-profile", "hyprland/workspaces"],
+    "modules-left": ["custom/suspend", "cpu", "memory", "custom/fcitx5", "custom/power-profile", "hyprland/workspaces"],
     "modules-center": ["clock"],
     "modules-right": ["tray", "custom/bluetooth", "backlight", "pulseaudio", "network", "battery"],
 
     "hyprland/workspaces": {
-        "format": "{id} {windows}",
+        "format": "{icon} {windows}",
+        "format-icons": {
+            "1": "1",
+            "2": "2",
+            "3": "3",
+            "4": "4",
+            "5": "5",
+            "6": "6",
+            "7": "7",
+            "8": "8",
+            "9": "9",
+            "10": "10",
+            "magic": "S"
+        },
         "window-rewrite-default": "󰀻",
         "window-rewrite": {
             "kitty": "󰆍",
@@ -36,7 +49,14 @@
             "class<[Ll]ibre[Oo]ffice.*>": "󰈙",
             "class<org.pulseaudio.pavucontrol>": "󰕾"
         },
-        "sort-by": "number"
+        "sort-by": "number",
+        "show-special": true
+    },
+
+    "custom/suspend": {
+        "format": "󰤄",
+        "on-click": "systemctl suspend",
+        "tooltip-format": "Suspend"
     },
 
     "tray": {

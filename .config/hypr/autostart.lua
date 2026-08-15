@@ -22,8 +22,8 @@ hl.on("hyprland.start", function ()
     hl.exec_cmd("mako")
     hl.exec_cmd("waybar")
     hl.exec_cmd("systemctl --user start swaybg-wallpaper.service")
---  hl.exec_cmd("google-chrome-stable")
-    hl.exec_cmd(terminal)
+    hl.exec_cmd("google-chrome-stable")
+--  hl.exec_cmd(terminal)
     -- --disable notificationitem: waybar's custom/fcitx5 module already shows IME
     -- status, so fcitx5's own StatusNotifierItem tray icon is redundant. Config-file
     -- DisabledAddons= doesn't suppress it (notificationitem is an on-demand addon
