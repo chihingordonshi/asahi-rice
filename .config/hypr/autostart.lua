@@ -21,8 +21,17 @@ hl.on("hyprland.start", function ()
     hl.exec_cmd("systemctl --user start hyprpolkitagent")
     hl.exec_cmd("mako")
     hl.exec_cmd("waybar")
-    hl.exec_cmd("systemctl --user start swaybg-wallpaper.service")
-    hl.exec_cmd("google-chrome-stable")
+    -- swaybg disabled by request; leaving line commented rather than deleted
+    -- since the comment block above documents why it was here.
+    -- hl.exec_cmd("systemctl --user start swaybg-wallpaper.service")
+    -- Ports KDE Plasma's "org.cachyos.quickmenu" plasmoid (a HUD launcher stack
+    -- pinned to the desktop) since this machine runs Hyprland day-to-day, not
+    -- Plasma. Quickshell/QML (caelestia/noctalia) is a documented aarch64-linux
+    -- engine-level dead end here (see .config/agents/fedora-asahi-setup.md), so
+    -- this is a custom Python + GTK4 + Cairo + gtk4-layer-shell reimplementation
+    -- instead -- ~/.local/bin/hypr-quickmenu, config at ~/.config/hypr-quickmenu/.
+    hl.exec_cmd(os.getenv("HOME") .. "/.local/bin/hypr-quickmenu")
+    hl.exec_cmd("brave-browser --password-store=basic")
 --  hl.exec_cmd(terminal)
     -- --disable notificationitem: waybar's custom/fcitx5 module already shows IME
     -- status, so fcitx5's own StatusNotifierItem tray icon is redundant. Config-file
