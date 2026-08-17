@@ -17,7 +17,7 @@
 
     "modules-left": ["custom/suspend", "custom/cpu", "custom/memory", "custom/fcitx5", "custom/power-profile", "hyprland/workspaces"],
     "modules-center": ["clock"],
-    "modules-right": ["tray", "custom/bluetooth", "backlight", "pulseaudio", "network", "battery"],
+    "modules-right": ["tray", "custom/wallpaper-backend", "custom/bluetooth", "backlight", "pulseaudio", "network", "battery"],
 
     "hyprland/workspaces": {
         "format": "{icon} {windows}",
@@ -50,7 +50,10 @@
             "class<org.pulseaudio.pavucontrol>": "󰕾"
         },
         "sort-by": "number",
-        "show-special": true
+        "show-special": true,
+        "ignore-workspaces": [
+            "special:sticky-hidden"
+        ]
     },
 
     "custom/suspend": {
@@ -79,6 +82,15 @@
         "return-type": "json",
         "format": "{}",
         "on-click": "~/.local/bin/waybar-power-profile-cycle.sh",
+        "tooltip": true
+    },
+
+    "custom/wallpaper-backend": {
+        "exec": "~/.local/bin/waybar-wallpaper-backend.sh",
+        "signal": 8,
+        "return-type": "json",
+        "format": "󰸉  {}",
+        "on-click": "~/.local/bin/waybar-wallpaper-backend-cycle.sh",
         "tooltip": true
     },
 
@@ -130,7 +142,8 @@
         "format-wifi": "󰖩  {essid}",
         "format-ethernet": "󰈀  {ifname}",
         "format-disconnected": "󰖪  disconnected",
-        "tooltip-format": "{ifname}: {ipaddr}"
+        "tooltip-format": "{ifname}: {ipaddr}",
+        "on-click": "kitty --class wifi-select -e nmtui connect"
     },
 
     "battery": {

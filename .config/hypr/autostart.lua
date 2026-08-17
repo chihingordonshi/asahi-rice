@@ -24,6 +24,11 @@ hl.on("hyprland.start", function ()
     -- swaybg disabled by request; leaving line commented rather than deleted
     -- since the comment block above documents why it was here.
     -- hl.exec_cmd("systemctl --user start swaybg-wallpaper.service")
+    -- Silently restores the last wallpaper via whichever backend is set in
+    -- ~/.config/waypaper/config.ini (swaybg or mpvpaper -- see the waybar
+    -- mpv/sway menu, waypaper-set-backend.sh). --restore never opens the
+    -- waypaper GUI, it just re-applies the last pick.
+    hl.exec_cmd("waypaper --restore")
     -- Ports KDE Plasma's "org.cachyos.quickmenu" plasmoid (a HUD launcher stack
     -- pinned to the desktop) since this machine runs Hyprland day-to-day, not
     -- Plasma. Quickshell/QML (caelestia/noctalia) is a documented aarch64-linux
@@ -36,7 +41,7 @@ hl.on("hyprland.start", function ()
     -- outside the Plasma shell. LD_PRELOAD works around a known gtk4-layer-shell
     -- + Python dlopen ordering issue (layer-shell must load before libwayland-client).
     hl.exec_cmd("env LD_PRELOAD=/usr/lib64/libgtk4-layer-shell.so.0 python3 " .. os.getenv("HOME") .. "/.config/hypr/scripts/cairo-clock.py")
-    hl.exec_cmd("brave-browser --password-store=basic")
+--    hl.exec_cmd("brave-browser --password-store=basic")
 --  hl.exec_cmd(terminal)
     -- --disable notificationitem: waybar's custom/fcitx5 module already shows IME
     -- status, so fcitx5's own StatusNotifierItem tray icon is redundant. Config-file

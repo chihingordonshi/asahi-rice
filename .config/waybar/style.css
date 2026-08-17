@@ -75,6 +75,13 @@ window#waybar {
     border-radius: 6px;
 }
 
+#custom-wallpaper-backend {
+    color: #c6c4e0;
+    padding: 0 8px;
+    margin: 0 2px 0 14px;
+    border-radius: 6px;
+}
+
 #custom-suspend {
     color: #c6c4e0;
     padding: 0 14px;
@@ -84,6 +91,7 @@ window#waybar {
 
 #custom-kill:hover, #custom-bluetooth:hover,
 #custom-proxy:hover, #custom-power-profile:hover,
-#custom-fcitx5:hover, #custom-suspend:hover {
+#custom-fcitx5:hover, #custom-suspend:hover,
+#custom-wallpaper-backend:hover {
     background-color: #201f23;
 }

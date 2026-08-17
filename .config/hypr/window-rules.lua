@@ -69,6 +69,17 @@ hl.window_rule({
     opaque = true,
 })
 
+-- nmtui, launched from the waybar wifi module's on-click: floats centered as
+-- a quick popup instead of tiling in with the rest of the workspace.
+hl.window_rule({
+    name = "wifi-select-float",
+    match = {
+        class = "wifi-select"
+    },
+    float = true,
+    opaque = true,
+})
+
 -- WeChat runs as the com.tencent.WeChat flatpak now (not the wechat-bin
 -- XWayland binary the old comment here assumed -- that class never
 -- matched, which is why this rule silently did nothing). Its
@@ -102,11 +113,57 @@ hl.window_rule({
 -- opened per process -- that's always the dummy, since it's created before
 -- any note in the app's activation path.
 local stickyDummySeenPids = {}
+local stickyPrewarming = false
+
 hl.on("window.open", function(win)
     if win.class ~= "sticky.py" then return end
-    if stickyDummySeenPids[win.pid] then return end
-    stickyDummySeenPids[win.pid] = true
 
-    hl.dispatch(hl.dsp.window.set_prop({ prop = "opacity",  value = 0, window = "address:" .. win.address }))
-    hl.dispatch(hl.dsp.window.set_prop({ prop = "no_focus", value = 1, window = "address:" .. win.address }))
+    if not stickyDummySeenPids[win.pid] then
+        stickyDummySeenPids[win.pid] = true
+
+        -- opacity/no_blur/no_shadow only affect how it's drawn -- it's still
+        -- a real mapped window on workspace 1, so it kept showing up (with a
+        -- border) in waybar's workspace summary and the swipe-up overview.
+        -- Parking it on its own special workspace removes it from workspace
+        -- enumeration entirely, which is what those views actually key off
+        -- (see waybar config.jsonc's ignore-workspaces and hypr-overview's
+        -- clients filter, both matched on this same workspace name).
+        hl.dispatch(hl.dsp.window.set_prop({ prop = "no_focus", value = 1, window = "address:" .. win.address }))
+        hl.dispatch(hl.dsp.window.set_prop({ prop = "opacity",  value = 0, window = "address:" .. win.address }))
+        hl.dispatch(hl.dsp.window.set_prop({ prop = "no_blur",   value = 1, window = "address:" .. win.address }))
+        hl.dispatch(hl.dsp.window.set_prop({ prop = "no_shadow", value = 1, window = "address:" .. win.address }))
+        hl.dispatch(hl.dsp.window.move({ workspace = "special:sticky-hidden", window = "address:" .. win.address }))
+        return
+    end
+
+    -- Any further sticky.py window for a pid we've already seen the dummy
+    -- for is a real note under normal use -- leave it alone. During the
+    -- startup pre-warm below it would instead mean something unexpected
+    -- came up alongside the dummy (e.g. a first-run import dialog); close
+    -- it rather than let it sit around.
+    if stickyPrewarming then
+        -- kill, not close: close just sends a delete-event, which an app
+        -- can intercept/ignore (e.g. sticky's manager hides itself on
+        -- delete-event instead of actually closing) -- kill guarantees it's
+        -- actually gone.
+        hl.dispatch(hl.dsp.window.kill({ window = "address:" .. win.address }))
+    end
+end)
+
+-- Pre-warm sticky at session start so the first Super+V of the session
+-- (see keybindings.lua) doesn't pay for a cold dbus-activation launch.
+-- Toggle to the hidden special workspace first, launch the app there (so
+-- the dummy opens directly on it instead of relying on the move dispatch
+-- above to relocate it after the fact), give it a couple seconds to settle,
+-- then toggle back and return focus to workspace 1.
+hl.on("hyprland.start", function()
+    stickyPrewarming = true
+    hl.dispatch(hl.dsp.workspace.toggle_special("sticky-hidden"))
+    hl.exec_cmd("sticky")
+
+    hl.timer(function()
+        stickyPrewarming = false
+        hl.dispatch(hl.dsp.workspace.toggle_special("sticky-hidden"))
+        hl.dispatch(hl.dsp.focus({ workspace = 1 }))
+    end, { timeout = 2000 })
 end)

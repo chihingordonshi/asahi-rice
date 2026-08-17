@@ -4,6 +4,8 @@ ConditionEnvironment=XDG_CURRENT_DESKTOP=Hyprland
 
 [Service]
 Type=oneshot
-# waypaper --random reads folder/backend/fill from ~/.config/waypaper/config.ini
-# (backend=mpvpaper, folder=~/Videos/Wallpapers) and picks a new random video.
+# waypaper --random reads folder/backend/fill from ~/.config/waypaper/config.ini,
+# so it automatically follows whichever backend is currently selected (swaybg
+# from ~/Pictures/Wallpapers, or mpvpaper from ~/Videos/Wallpapers -- switched
+# via the waybar mpv/sway menu, see waypaper-set-backend.sh).
 ExecStart=/usr/bin/waypaper --random
