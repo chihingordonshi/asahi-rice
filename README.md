@@ -23,7 +23,10 @@ live `$HOME`. Review before actually deploying anything on the M1.
 | `.config/pavucontrol.ini` | Audio mixer settings |
 | `.zshrc`, `.p10k.zsh` | Shell + prompt |
 | `.config/agents/fedora-asahi-setup.md` | The research/decisions briefing this backup is staged against |
-| `.config/ironbar/` | Hand-written (not ported from `dot-files` — caelestia never had an ironbar config), matched to the Material-You palette in `.config/hypr/scheme/current.lua` |
+| `.config/hypr-quickmenu/` | Config for the hand-rolled HUD launcher (`.local/bin/hypr-quickmenu`) autostarted in `hypr/autostart.lua` |
+| `.config/mako/` | Notification daemon, autostarted in `hypr/autostart.lua` |
+| `.config/rofi/` | Launcher, bound to SUPER+D |
+| `.config/waypaper/` | Wallpaper backend/folder selection, read by `random-wallpaper.service` and the waybar wallpaper-backend menu |
 
 ## Deliberately left out
 
