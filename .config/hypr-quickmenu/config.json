@@ -1,0 +1,47 @@
+{
+  "global": {
+    "menuWidth": 380,
+    "barHeight": 70,
+    "barGap": 6,
+    "skewAngle": 18,
+    "extendDistance": 55,
+    "textHoverShift": 16,
+    "iconSize": 36,
+    "iconMargin": 18,
+    "leftPadding": 24,
+    "rowStaircaseOffset": 24,
+    "cornerNotchEnabled": true,
+
+    "fontFamily": "Sans Serif",
+    "numberFontSize": 28,
+    "titleFontSize": 16,
+    "subtitleFontSize": 10,
+    "titleBold": true,
+
+    "accentColor": "#9BE100",
+    "bgColor": "#0A0A0A",
+    "bgHoverColor": "#101a05",
+    "borderColor": "#403a3a3a",
+    "numberColor": "#FFFFFF",
+    "titleColor": "#E6E6E6",
+    "subtitleColor": "#9A9A9A",
+    "monochromeIcons": true,
+    "scanlinesEnabled": true,
+
+    "animationsEnabled": true,
+    "animationSpeed": 220,
+    "animationEasing": 0,
+    "glitchEnabled": true,
+    "glitchIntensity": 4,
+    "glitchSpeed": 90,
+
+    "closeOnActivate": true
+  },
+  "items": [
+    {"id": "wechat", "number": "01", "title": "WeChat", "subtitle": "Messaging", "icon": "com.tencent.WeChat", "command": "flatpak run com.tencent.WeChat", "enabled": true, "override": false},
+    {"id": "libreoffice", "number": "02", "title": "LibreOffice", "subtitle": "Office Suite", "icon": "libreoffice-startcenter", "command": "libreoffice", "enabled": true, "override": false},
+    {"id": "wpspdf", "number": "03", "title": "WPS PDF", "subtitle": "PDF Editor", "icon": "cn.wps.wps_365.pdfmain", "command": "flatpak run --command=wpspdf cn.wps.wps_365", "enabled": true, "override": false},
+    {"id": "mihomo", "number": "04", "title": "Mihomo", "subtitle": "Proxy Manager", "icon": "mihomo-party", "command": "/opt/clash-party/mihomo-party", "enabled": true, "override": false},
+    {"id": "chrome", "number": "05", "title": "Chrome", "subtitle": "Web Browser", "icon": "google-chrome", "command": "google-chrome-stable --password-store=basic", "enabled": true, "override": false}
+  ]
+}

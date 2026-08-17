@@ -22,15 +22,19 @@ LIVE_PATHS=(
     .config/fish
     .config/fuzzel
     .config/hypr
+    .config/hypr-quickmenu
     .config/kdeglobals
     .config/kitty
     .config/Kvantum
+    .config/mako
     .config/neofetch
     .config/nvim
     .config/pavucontrol.ini
     .config/qt6ct
+    .config/rofi
     .config/systemd/user
     .config/waybar
+    .config/waypaper
     .config/wireplumber
     .local/bin
     .p10k.zsh
