@@ -16,7 +16,7 @@ window#waybar {
     padding: 0 14px;
 }
 
-#cpu, #memory, #backlight, #pulseaudio {
+#custom-cpu, #custom-memory, #backlight, #pulseaudio {
     color: #c6c4e0;
     padding: 0 8px;
 }

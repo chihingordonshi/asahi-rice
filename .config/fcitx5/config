@@ -23,7 +23,7 @@ TogglePreedit=
 ModifierOnlyKeyTimeout=250
 
 [Hotkey/TriggerKeys]
-0=Control+space
+0=Super+T
 
 [Hotkey/PrevPage]
 0=Up

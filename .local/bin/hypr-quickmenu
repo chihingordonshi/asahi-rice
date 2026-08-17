@@ -1,0 +1,609 @@
+#!/usr/bin/env python3
+"""HUD-style quick launcher for Hyprland, ported from the KDE Plasma
+"org.cachyos.quickmenu" plasmoid (contents/ui/MenuBar.qml + main.qml).
+
+Renders a stack of slanted, glitch-bordered launcher bars pinned to the left
+edge of the screen as a wlr-layer-shell surface (gtk4-layer-shell), sitting
+above the wallpaper and below normal windows. Items/styling are read from
+~/.config/hypr-quickmenu/config.json.
+"""
+import ctypes
+
+# gtk4-layer-shell must be loaded with RTLD_GLOBAL before GTK/GDK pull in
+# libwayland-client, otherwise its symbol interposition doesn't take effect
+# and Gtk4LayerShell.is_supported() spuriously returns False. See the
+# library's README ("link libwayland after gtk4-layer-shell") -- plain
+# `import` order doesn't give the same guarantee under Python's dlopen, so
+# this has to be forced explicitly via ctypes first.
+ctypes.CDLL("/usr/lib64/libgtk4-layer-shell.so.0", mode=ctypes.RTLD_GLOBAL)
+
+import gi
+
+gi.require_version("Gtk", "4.0")
+gi.require_version("Gtk4LayerShell", "1.0")
+
+import json
+import math
+import os
+import random
+import subprocess
+import sys
+import time
+
+from gi.repository import Gtk, Gtk4LayerShell, GLib, Gdk
+
+APP_ID = "org.cachyos.hyprquickmenu"
+NAMESPACE = "hypr-quickmenu"
+CONFIG_PATH = os.path.expanduser("~/.config/hypr-quickmenu/config.json")
+
+TOP_MARGIN = 12
+SIDE_MARGIN = 12
+LAYER_MARGIN_LEFT = 24
+LAYER_MARGIN_BOTTOM = 24
+
+DEFAULT_GLOBAL = {
+    "menuWidth": 580,
+    "barHeight": 108,
+    "barGap": 8,
+    "skewAngle": 18,
+    "extendDistance": 85,
+    "textHoverShift": 25,
+    "iconSize": 56,
+    "iconMargin": 28,
+    "leftPadding": 36,
+    "rowStaircaseOffset": 36,
+    "cornerNotchEnabled": True,
+    "fontFamily": "Sans Serif",
+    "numberFontSize": 42,
+    "titleFontSize": 24,
+    "subtitleFontSize": 14,
+    "titleBold": True,
+    "accentColor": "#9BE100",
+    "bgColor": "#0A0A0A",
+    "bgHoverColor": "#101a05",
+    "borderColor": "#3a3a3a",
+    "numberColor": "#FFFFFF",
+    "titleColor": "#E6E6E6",
+    "subtitleColor": "#9A9A9A",
+    "monochromeIcons": True,
+    "scanlinesEnabled": True,
+    "animationsEnabled": True,
+    "animationSpeed": 220,
+    "animationEasing": 0,
+    "glitchEnabled": True,
+    "glitchIntensity": 4,
+    "glitchSpeed": 90,
+    "closeOnActivate": True,  # no-op here: there's no popup to close
+}
+
+DEFAULT_ITEMS = [
+    {"id": "files", "number": "01", "title": "Files", "subtitle": "Browse Files",
+     "icon": "folder", "command": "dolphin", "enabled": True, "override": False},
+    {"id": "terminal", "number": "02", "title": "Terminal", "subtitle": "Command Line",
+     "icon": "utilities-terminal", "command": "kitty", "enabled": True, "override": False},
+    {"id": "settings", "number": "03", "title": "Settings", "subtitle": "System Settings",
+     "icon": "preferences-system", "command": "systemsettings", "enabled": True, "override": False},
+]
+
+# Keys MenuBar.qml resolves per-item via res(key, globalVal) -- everything
+# else (geometry, glitchIntensity/Speed, titleBold, monochromeIcons,
+# scanlinesEnabled, cornerNotchEnabled, animationEasing) is global-only.
+OVERRIDABLE_KEYS = {
+    "accentColor", "bgColor", "bgHoverColor", "borderColor", "numberColor",
+    "titleColor", "subtitleColor", "fontFamily", "titleFontSize",
+    "numberFontSize", "subtitleFontSize", "animationsEnabled",
+    "animationSpeed", "glitchEnabled",
+}
+
+
+def load_config():
+    try:
+        with open(CONFIG_PATH) as f:
+            data = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        data = {}
+    global_cfg = dict(DEFAULT_GLOBAL)
+    global_cfg.update(data.get("global", {}))
+    items = data.get("items") or DEFAULT_ITEMS
+    return global_cfg, items
+
+
+def resolve(item, key, global_cfg):
+    if item.get("override") and key in item and item[key] not in (None, ""):
+        return item[key]
+    return global_cfg[key]
+
+
+def hex_to_rgba(s, alpha=None):
+    s = s.lstrip("#")
+    if len(s) == 8:
+        a, r, g, b = s[0:2], s[2:4], s[4:6], s[6:8]
+        a = int(a, 16) / 255.0
+    else:
+        r, g, b = s[0:2], s[2:4], s[4:6]
+        a = 1.0
+    r, g, b = int(r, 16) / 255.0, int(g, 16) / 255.0, int(b, 16) / 255.0
+    if alpha is not None:
+        a = alpha
+    return (r, g, b, a)
+
+
+# ---------------------------------------------------------------
+# Easing curves (Qt QEasingCurve equivalents used by animationEasing)
+# ---------------------------------------------------------------
+def ease_out_cubic(p):
+    return 1 - (1 - p) ** 3
+
+
+def ease_out_back(p):
+    c1 = 1.70158
+    c3 = c1 + 1
+    return 1 + c3 * (p - 1) ** 3 + c1 * (p - 1) ** 2
+
+
+def ease_linear(p):
+    return p
+
+
+def ease_out_bounce(p):
+    n1, d1 = 7.5625, 2.75
+    if p < 1 / d1:
+        return n1 * p * p
+    elif p < 2 / d1:
+        p -= 1.5 / d1
+        return n1 * p * p + 0.75
+    elif p < 2.5 / d1:
+        p -= 2.25 / d1
+        return n1 * p * p + 0.9375
+    else:
+        p -= 2.625 / d1
+        return n1 * p * p + 0.984375
+
+
+EASINGS = [ease_out_cubic, ease_out_back, ease_linear, ease_out_bounce]
+
+
+def spawn(command):
+    if not command:
+        return
+    subprocess.Popen(
+        command, shell=True, start_new_session=True,
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, close_fds=True,
+    )
+
+
+def resolve_icon_name(display, name, monochrome):
+    theme = Gtk.IconTheme.get_for_display(display)
+    if monochrome and theme.has_icon(name + "-symbolic"):
+        return name + "-symbolic", True
+    if theme.has_icon(name):
+        return name, False
+    if theme.has_icon("application-x-executable"):
+        return "application-x-executable", False
+    return "image-missing", False
+
+
+class Bar:
+    """One HUD launcher bar: Cairo-painted parallelogram + icon + text."""
+
+    def __init__(self, item, index, global_cfg, display):
+        self.item = item
+        self.index = index
+        self.g = global_cfg
+        self.display = display
+
+        self.enabled = item.get("enabled", True) is not False
+        self.hovered = False
+        self.hover_t = 0.0
+        self.anim_from = 0.0
+        self.anim_to = 0.0
+        self.anim_start = 0.0
+        self.duration_ms = resolve(item, "animationSpeed", global_cfg)
+        self.anim_enabled = resolve(item, "animationsEnabled", global_cfg)
+        self.glitch_enabled = resolve(item, "glitchEnabled", global_cfg) and self.enabled
+        self.glitch_source = None
+        self.jitter_seed = 0.0
+        self.tick_id = None
+
+        # resolved per-item style
+        self.accent = hex_to_rgba(resolve(item, "accentColor", global_cfg))
+        self.bg_normal = hex_to_rgba(resolve(item, "bgColor", global_cfg))
+        self.bg_hover = hex_to_rgba(resolve(item, "bgHoverColor", global_cfg))
+        self.border_col = hex_to_rgba(resolve(item, "borderColor", global_cfg))
+        self.number_col = hex_to_rgba(resolve(item, "numberColor", global_cfg))
+        self.title_col = hex_to_rgba(resolve(item, "titleColor", global_cfg))
+        self.subtitle_col = hex_to_rgba(resolve(item, "subtitleColor", global_cfg))
+
+        # geometry (global-only, matches MenuBar.qml's direct config reads)
+        self.normal_w = global_cfg["menuWidth"]
+        self.extend_by = global_cfg["extendDistance"]
+        self.bar_h = global_cfg["barHeight"]
+        self.skew_px = self.bar_h * math.tan(math.radians(global_cfg["skewAngle"]))
+        self.icon_size = global_cfg["iconSize"]
+        self.icon_margin = global_cfg["iconMargin"]
+        self.left_padding = global_cfg["leftPadding"]
+        self.text_hover_shift = global_cfg["textHoverShift"]
+        self.full_w = self.normal_w + self.extend_by
+
+        self.icon_x = self.normal_w - self.icon_margin - self.icon_size
+        self.icon_y = (self.bar_h - self.icon_size) / 2
+
+        self.css_provider = Gtk.CssProvider()
+        Gtk.StyleContext.add_provider_for_display(
+            display, self.css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+        )
+        self.css_class = f"hqm-bar-{index}"
+
+        self.area = None
+        self.icon_image = None
+        self.number_prefix_label = None
+        self.number_main_label = None
+        self.title_label = None
+        self.subtitle_label = None
+        self.text_box = None
+
+    # ---------------- widget construction ----------------
+    def build(self, fixed, row_x, row_y):
+        self.row_x = row_x
+        self.row_y = row_y
+
+        self.area = Gtk.DrawingArea()
+        self.area.set_content_width(int(self.full_w))
+        self.area.set_content_height(int(self.bar_h))
+        self.area.set_draw_func(self._draw, None)
+        fixed.put(self.area, row_x - self.extend_by, row_y)
+
+        if self.enabled:
+            motion = Gtk.EventControllerMotion()
+            motion.connect("enter", self._on_enter)
+            motion.connect("leave", self._on_leave)
+            self.area.add_controller(motion)
+
+            click = Gtk.GestureClick()
+            click.connect("released", self._on_click)
+            self.area.add_controller(click)
+            self.area.set_cursor(Gdk.Cursor.new_from_name("pointer", None))
+
+        # icon (fixed position, never moves)
+        name, is_symbolic = resolve_icon_name(
+            self.display, self.item.get("icon", ""), self.g["monochromeIcons"]
+        )
+        self.icon_image = Gtk.Image.new_from_icon_name(name)
+        self.icon_image.set_pixel_size(int(self.icon_size))
+        self.icon_image.set_opacity(1.0 if self.enabled else 0.4)
+        if is_symbolic:
+            self.icon_image.add_css_class(self.css_class + "-icon")
+        fixed.put(self.icon_image, row_x + self.icon_x, row_y + self.icon_y)
+
+        # text block: number (split-digit) + title/subtitle
+        self.text_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=16)
+        self.text_box.set_size_request(-1, int(self.bar_h))
+        self.text_box.set_valign(Gtk.Align.CENTER)
+
+        num_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
+        num_box.set_valign(Gtk.Align.END)
+        number = str(self.item.get("number", ""))
+        prefix, main = (number[:-1], number[-1]) if len(number) > 1 else ("", number)
+        self.number_prefix_label = Gtk.Label(label=GLib.markup_escape_text(prefix))
+        self.number_prefix_label.add_css_class(self.css_class + "-numprefix")
+        self.number_main_label = Gtk.Label(label=GLib.markup_escape_text(main))
+        self.number_main_label.add_css_class(self.css_class + "-nummain")
+        num_box.append(self.number_prefix_label)
+        num_box.append(self.number_main_label)
+
+        title_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        title_box.set_valign(Gtk.Align.CENTER)
+        self.title_label = Gtk.Label(label=str(self.item.get("title", "")).upper())
+        self.title_label.set_xalign(0.0)
+        self.title_label.add_css_class(self.css_class + "-title")
+        self.subtitle_label = Gtk.Label(label=str(self.item.get("subtitle", "")).upper())
+        self.subtitle_label.set_xalign(0.0)
+        self.subtitle_label.add_css_class(self.css_class + "-subtitle")
+        title_box.append(self.title_label)
+        title_box.append(self.subtitle_label)
+
+        self.text_box.append(num_box)
+        self.text_box.append(title_box)
+
+        text_x = self._text_x()
+        fixed.put(self.text_box, row_x + text_x, row_y)
+
+        self._apply_css()
+
+    def _text_x(self):
+        canvas_x = -self.hover_t * self.extend_by
+        return (canvas_x + self.skew_px + self.left_padding
+                - self.hover_t * self.text_hover_shift)
+
+    def _rgba_css(self, rgba):
+        r, g, b, a = rgba
+        return f"rgba({int(r*255)},{int(g*255)},{int(b*255)},{a})"
+
+    def _apply_css(self):
+        family = resolve(self.item, "fontFamily", self.g)
+        title_size = resolve(self.item, "titleFontSize", self.g)
+        number_size = resolve(self.item, "numberFontSize", self.g)
+        subtitle_size = resolve(self.item, "subtitleFontSize", self.g)
+        title_bold = "bold" if self.g["titleBold"] else "normal"
+
+        number_col = self._rgba_css(self.accent if self.hovered else self.number_col)
+        title_col = self._rgba_css(self.accent if self.hovered else self.title_col)
+        subtitle_col = self._rgba_css(self.subtitle_col)
+        icon_col = self._rgba_css(self.accent if self.hovered else self.border_col)
+
+        css = f"""
+        .{self.css_class}-numprefix {{
+            font-family: "{family}"; font-size: {number_size*0.6:.0f}px;
+            color: {number_col};
+        }}
+        .{self.css_class}-nummain {{
+            font-family: "{family}"; font-size: {number_size}px;
+            font-weight: bold; font-style: italic; color: {number_col};
+        }}
+        .{self.css_class}-title {{
+            font-family: "{family}"; font-size: {title_size}px;
+            font-weight: {title_bold}; color: {title_col};
+        }}
+        .{self.css_class}-subtitle {{
+            font-family: "{family}"; font-size: {subtitle_size}px;
+            color: {subtitle_col};
+        }}
+        .{self.css_class}-icon {{ color: {icon_col}; }}
+        """
+        self.css_provider.load_from_string(css)
+
+    # ---------------- interaction ----------------
+    def _on_enter(self, controller, x, y):
+        self.hovered = True
+        self._apply_css()
+        self._start_animation(1.0)
+        self._start_glitch()
+
+    def _on_leave(self, controller):
+        self.hovered = False
+        self._apply_css()
+        self._start_animation(0.0)
+        self._stop_glitch()
+
+    def _on_click(self, gesture, n_press, x, y):
+        if self.enabled:
+            spawn(self.item.get("command"))
+
+    # ---------------- animation ----------------
+    def _start_animation(self, target):
+        if not self.anim_enabled:
+            self.hover_t = target
+            self.area.queue_draw()
+            self._reposition_text()
+            return
+        self.anim_from = self.hover_t
+        self.anim_to = target
+        self.anim_start = time.monotonic()
+        if self.tick_id is None:
+            self.tick_id = self.area.add_tick_callback(self._tick)
+
+    def _tick(self, widget, frame_clock):
+        elapsed_ms = (time.monotonic() - self.anim_start) * 1000.0
+        p = min(1.0, elapsed_ms / max(1, self.duration_ms))
+        eased = EASINGS[self.g["animationEasing"]](p)
+        self.hover_t = self.anim_from + (self.anim_to - self.anim_from) * eased
+        self.area.queue_draw()
+        self._reposition_text()
+        if p >= 1.0:
+            self.hover_t = self.anim_to
+            self.area.queue_draw()
+            self._reposition_text()
+            self.tick_id = None
+            return GLib.SOURCE_REMOVE
+        return GLib.SOURCE_CONTINUE
+
+    def _reposition_text(self, fixed=None):
+        if self.text_box is None:
+            return
+        parent = self.text_box.get_parent()
+        if parent is not None:
+            parent.move(self.text_box, self.row_x + self._text_x(), self.row_y)
+
+    def _start_glitch(self):
+        if not self.glitch_enabled:
+            return
+        interval = max(16, self.g["glitchSpeed"])
+        self.glitch_source = GLib.timeout_add(interval, self._glitch_tick)
+
+    def _glitch_tick(self):
+        if not self.hovered:
+            self.glitch_source = None
+            return GLib.SOURCE_REMOVE
+        self.jitter_seed = random.random()
+        self.area.queue_draw()
+        return GLib.SOURCE_CONTINUE
+
+    def _stop_glitch(self):
+        if self.glitch_source is not None:
+            GLib.source_remove(self.glitch_source)
+            self.glitch_source = None
+
+    # ---------------- drawing ----------------
+    def _draw(self, area, cr, width, height, _data):
+        h = self.bar_h
+        s = self.skew_px
+        left_edge = self.extend_by * (1 - self.hover_t)
+        w_shape = self.normal_w + self.extend_by * self.hover_t
+
+        def path(off_x=0.0, off_y=0.0):
+            cr.new_path()
+            cr.move_to(left_edge + off_x, 0 + off_y)
+            cr.line_to(left_edge + w_shape - s + off_x, 0 + off_y)
+            cr.line_to(left_edge + w_shape + off_x, h + off_y)
+            cr.line_to(left_edge + s + off_x, h + off_y)
+            cr.close_path()
+
+        state_col = self.accent if self.hovered else self.border_col
+
+        # fill
+        path()
+        cr.set_source_rgba(*(self.bg_hover if self.hovered else self.bg_normal))
+        cr.fill()
+
+        # greeble lines + scanlines, clipped to the shape
+        cr.save()
+        path()
+        cr.clip()
+        cr.set_source_rgba(1, 1, 1, 0.05)
+        cr.set_line_width(1)
+        cr.move_to(left_edge + s + 10, 6)
+        cr.line_to(left_edge + s + 70, 6)
+        cr.stroke()
+        cr.move_to(left_edge + s + 10, 12)
+        cr.line_to(left_edge + s + 40, 12)
+        cr.stroke()
+
+        if self.g["scanlinesEnabled"]:
+            cr.set_source_rgba(1, 1, 1, 0.035)
+            yy = 0
+            while yy < h:
+                cr.move_to(left_edge, yy)
+                cr.line_to(left_edge + w_shape, yy)
+                cr.stroke()
+                yy += 3
+        cr.restore()
+
+        # base border
+        path()
+        cr.set_line_width(2 if self.hovered else 1)
+        cr.set_source_rgba(*state_col)
+        cr.stroke()
+
+        # corner notch + "+" mark
+        if self.g["cornerNotchEnabled"]:
+            ns = 20
+            along_right_t = min(1.0, ns / h)
+            along_right_x = left_edge + w_shape - s * along_right_t
+            along_right_y = h - h * along_right_t
+            along_bottom_x = max(left_edge + w_shape - ns, left_edge + s)
+            along_bottom_y = h
+
+            cr.save()
+            cr.new_path()
+            cr.move_to(left_edge + w_shape, h)
+            cr.line_to(along_right_x, along_right_y)
+            cr.line_to(along_bottom_x, along_bottom_y)
+            cr.close_path()
+            r, g, b, _ = state_col
+            cr.set_source_rgba(r, g, b, 0.28 if self.hovered else 0.16)
+            cr.fill()
+            cr.restore()
+
+            px = (left_edge + w_shape + along_right_x + along_bottom_x) / 3
+            py = (h + along_right_y + along_bottom_y) / 3
+            cr.set_source_rgba(*state_col)
+            cr.set_line_width(1.4)
+            cr.move_to(px - 4, py)
+            cr.line_to(px + 4, py)
+            cr.move_to(px, py - 4)
+            cr.line_to(px, py + 4)
+            cr.stroke()
+
+        # glitch border
+        if self.hovered and self.glitch_enabled:
+            intensity = self.g["glitchIntensity"]
+            seed = self.jitter_seed
+            for i in range(3):
+                jx = ((seed * 997 * (i + 1)) % 1 - 0.5) * 2 * intensity
+                jy = ((seed * 613 * (i + 2)) % 1 - 0.5) * 2 * (intensity / 2)
+                cr.save()
+                path(jx, jy)
+                r, g, b, _ = self.accent if i % 2 == 0 else (1, 1, 1, 1)
+                cr.set_source_rgba(r, g, b, 0.35 - i * 0.1)
+                cr.set_line_width(1)
+                cr.stroke()
+                cr.restore()
+            for _ in range(4):
+                rx = left_edge + random.random() * w_shape
+                ry = 0 if random.random() < 0.5 else h
+                cr.save()
+                cr.set_source_rgba(self.accent[0], self.accent[1], self.accent[2], 0.5)
+                cr.move_to(rx, ry)
+                cr.line_to(rx + (random.random() - 0.5) * intensity * 2,
+                           ry + (random.random() - 0.5) * 6)
+                cr.stroke()
+                cr.restore()
+
+
+class QuickMenuApp(Gtk.Application):
+    def __init__(self):
+        super().__init__(application_id=APP_ID)
+        self.bars = []
+
+    def do_activate(self):
+        if not Gtk4LayerShell.is_supported():
+            sys.stderr.write("hypr-quickmenu: wlr-layer-shell not supported by this compositor\n")
+            sys.exit(1)
+
+        global_cfg, items = load_config()
+
+        window = Gtk.ApplicationWindow(application=self)
+        window.set_decorated(False)
+
+        transparent_css = Gtk.CssProvider()
+        transparent_css.load_from_string(
+            "window, window.background, decoration, fixed {"
+            " background-color: transparent;"
+            " background-image: none;"
+            " box-shadow: none;"
+            " border: none;"
+            " outline: none;"
+            " }"
+        )
+        Gtk.StyleContext.add_provider_for_display(
+            Gdk.Display.get_default(), transparent_css,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
+        )
+
+        Gtk4LayerShell.init_for_window(window)
+        Gtk4LayerShell.set_namespace(window, NAMESPACE)
+        Gtk4LayerShell.set_layer(window, Gtk4LayerShell.Layer.BOTTOM)
+        Gtk4LayerShell.set_anchor(window, Gtk4LayerShell.Edge.LEFT, True)
+        Gtk4LayerShell.set_anchor(window, Gtk4LayerShell.Edge.BOTTOM, True)
+        Gtk4LayerShell.set_margin(window, Gtk4LayerShell.Edge.LEFT, LAYER_MARGIN_LEFT)
+        Gtk4LayerShell.set_margin(window, Gtk4LayerShell.Edge.BOTTOM, LAYER_MARGIN_BOTTOM)
+        Gtk4LayerShell.set_exclusive_zone(window, 0)
+        Gtk4LayerShell.set_keyboard_mode(window, Gtk4LayerShell.KeyboardMode.NONE)
+
+        staircase = global_cfg["rowStaircaseOffset"]
+        bar_h = global_cfg["barHeight"]
+        bar_gap = global_cfg["barGap"]
+        extend = global_cfg["extendDistance"]
+        menu_w = global_cfg["menuWidth"]
+        count = len(items)
+
+        stack_w = menu_w + staircase * max(0, count - 1)
+        stack_h = (count * bar_h + max(0, count - 1) * bar_gap) if count else bar_h
+
+        win_w = int(stack_w + extend + 2 * SIDE_MARGIN)
+        win_h = int(stack_h + 2 * TOP_MARGIN)
+
+        fixed = Gtk.Fixed()
+        fixed.set_size_request(win_w, win_h)
+        window.set_child(fixed)
+
+        display = Gdk.Display.get_default()
+
+        row_origin_x = extend + SIDE_MARGIN
+        for i, item in enumerate(items):
+            bar = Bar(item, i, global_cfg, display)
+            row_x = row_origin_x + i * staircase
+            row_y = TOP_MARGIN + i * (bar_h + bar_gap)
+            bar.build(fixed, row_x, row_y)
+            self.bars.append(bar)
+
+        window.present()
+
+
+def main():
+    app = QuickMenuApp()
+    app.run(None)
+
+
+if __name__ == "__main__":
+    main()

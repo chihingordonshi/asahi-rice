@@ -1,0 +1,10 @@
+[Unit]
+Description=Wallpaper (swaybg), randomly picked; supervised so it's never left dead
+PartOf=graphical-session.target
+After=graphical-session.target
+ConditionEnvironment=XDG_CURRENT_DESKTOP=Hyprland
+
+[Service]
+ExecStart=%h/.local/bin/random-wallpaper.sh
+Restart=always
+RestartSec=2

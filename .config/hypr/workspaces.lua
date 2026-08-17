@@ -48,6 +48,7 @@ end)
 -- Closing the last window on the last (highest-numbered) occupied workspace
 -- would otherwise strand focus on that now-empty workspace. Jump back to
 -- whatever is now the highest-numbered workspace that still has a window.
+--[[
 hl.on("window.close", function(win)
     local ws = win and win.workspace
     if not ws or ws.special then
@@ -81,3 +82,4 @@ hl.on("window.close", function(win)
         end
     end, { timeout = 50, type = "oneshot" })
 end)
+--]]

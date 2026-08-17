@@ -1,0 +1,9 @@
+[Unit]
+Description=Rotate the wallpaper to a new random pick
+ConditionEnvironment=XDG_CURRENT_DESKTOP=Hyprland
+
+[Service]
+Type=oneshot
+# waypaper --random reads folder/backend/fill from ~/.config/waypaper/config.ini
+# (backend=mpvpaper, folder=~/Videos/Wallpapers) and picks a new random video.
+ExecStart=/usr/bin/waypaper --random
