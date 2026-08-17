@@ -298,7 +298,10 @@ class OverviewApp(Gtk.Application):
             sys.stderr.write("hypr-overview: wlr-layer-shell not supported by this compositor\n")
             sys.exit(1)
 
-        clients = [c for c in hyprctl_json("clients") if c.get("mapped")]
+        clients = [
+            c for c in hyprctl_json("clients")
+            if c.get("mapped") and (c.get("workspace") or {}).get("name") != "special:sticky-hidden"
+        ]
 
         by_ws = {}
         order = []
