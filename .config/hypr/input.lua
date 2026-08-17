@@ -34,3 +34,22 @@ hl.gesture({
     direction = "horizontal",
     action    = "workspace"
 })
+
+hl.gesture({
+    fingers   = 3,
+    direction = "up",
+    action    = function()
+        hl.dispatch(hl.dsp.exec_cmd(os.getenv("HOME") .. "/.local/bin/hypr-overview"))
+    end
+})
+
+-- While the overview is open, swipe down closes it (see --dismiss handling
+-- in hypr-overview's do_command_line). Harmless no-op if the overview isn't
+-- currently open.
+hl.gesture({
+    fingers   = 3,
+    direction = "down",
+    action    = function()
+        hl.dispatch(hl.dsp.exec_cmd(os.getenv("HOME") .. "/.local/bin/hypr-overview --dismiss"))
+    end
+})

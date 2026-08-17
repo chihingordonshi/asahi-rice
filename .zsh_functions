@@ -2,6 +2,15 @@ wallpaper() {
     systemctl --user restart swaybg-wallpaper.service
 }
 
+hqm-reload() {
+    # Restart the hypr-quickmenu HUD launcher widget to pick up
+    # ~/.config/hypr-quickmenu/config.json changes.
+    pkill -f "python3 $HOME/.local/bin/hypr-quickmenu"
+    sleep 0.3
+    nohup "$HOME/.local/bin/hypr-quickmenu" >/tmp/hypr-quickmenu.log 2>&1 &
+    disown
+}
+
 timelapse() {
     local input="" speed="" duration="" output=""
 

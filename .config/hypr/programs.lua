@@ -9,4 +9,4 @@
 -- not nautilus). browser is Chrome, matching the real config.
 terminal    = "kitty"
 fileManager = "dolphin"
-browser     = "google-chrome-stable --password-store=basic"
+browser     = "brave-browser --password-store=basic"

@@ -31,6 +31,11 @@ hl.on("hyprland.start", function ()
     -- this is a custom Python + GTK4 + Cairo + gtk4-layer-shell reimplementation
     -- instead -- ~/.local/bin/hypr-quickmenu, config at ~/.config/hypr-quickmenu/.
     hl.exec_cmd(os.getenv("HOME") .. "/.local/bin/hypr-quickmenu")
+    -- Custom Cairo-drawn digital clock (top-right, JetBrains Mono Nerd Font, cyan
+    -- accent glow), pinned via gtk4-layer-shell since KDE plasmoids don't run
+    -- outside the Plasma shell. LD_PRELOAD works around a known gtk4-layer-shell
+    -- + Python dlopen ordering issue (layer-shell must load before libwayland-client).
+    hl.exec_cmd("env LD_PRELOAD=/usr/lib64/libgtk4-layer-shell.so.0 python3 " .. os.getenv("HOME") .. "/.config/hypr/scripts/cairo-clock.py")
     hl.exec_cmd("brave-browser --password-store=basic")
 --  hl.exec_cmd(terminal)
     -- --disable notificationitem: waybar's custom/fcitx5 module already shows IME
@@ -44,6 +49,10 @@ hl.on("hyprland.start", function ()
     -- and grabbing the bus name with the tray icon still enabled.
     hl.exec_cmd("fcitx5 --disable notificationitem --replace -d")
     hl.exec_cmd(os.getenv("HOME") .. "/.local/bin/hypr-workspace-watch")
+    -- Watches ~/Videos/Wallpapers and auto-downscales anything above 1080p:
+    -- Asahi's GPU has no hardware h264/hevc decode via VAAPI, so 4K clips
+    -- overrun single-threaded software decode and play back in slow motion.
+    hl.exec_cmd(os.getenv("HOME") .. "/.local/bin/wallpaper-auto-downscale")
 --  hl.exec_cmd("tide-island")
 --  hl.exec_cmd("wayvnc")
 --  hl.exec_cmd("safeeyes")            -- not packaged for Fedora, no COPR/dnf path found

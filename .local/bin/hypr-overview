@@ -1,0 +1,330 @@
+#!/usr/bin/env python3
+"""Mission-Control-style window/workspace overview for Hyprland.
+
+Triggered by a 3-finger swipe-up gesture (see ~/.config/hypr/input.lua).
+Phase 1: icon-only grid, grouped by workspace, click-to-focus. Live
+thumbnails (via hypr-overview-capture) are added in Phase 2 without
+changing this structure -- only what feeds each tile's Gtk.Picture.
+"""
+import ctypes
+
+# gtk4-layer-shell must be loaded with RTLD_GLOBAL before GTK/GDK pull in
+# libwayland-client, or Gtk4LayerShell.is_supported() spuriously returns
+# False. Same fix as ~/.local/bin/hypr-quickmenu; done here rather than via
+# a launch-time LD_PRELOAD since a gesture-triggered launch may not
+# reliably carry a hand-set env var.
+ctypes.CDLL("/usr/lib64/libgtk4-layer-shell.so.0", mode=ctypes.RTLD_GLOBAL)
+
+import gi
+
+gi.require_version("Gtk", "4.0")
+gi.require_version("Gdk", "4.0")
+gi.require_version("Gtk4LayerShell", "1.0")
+
+import json
+import subprocess
+import sys
+
+from gi.repository import Gdk, Gio, GLib, Gtk, Gtk4LayerShell, Pango
+
+APP_ID = "org.local.hyproverview"
+NAMESPACE = "hypr-overview"
+
+BG_SCRIM_ALPHA = 0.88
+ACCENT_COLOR = "#9BE100"
+TILE_BG = "#141414"
+TILE_BORDER = "#3a3a3a"
+TITLE_COLOR = "#E6E6E6"
+WS_HEADER_COLOR = "#9BE100"
+
+TILE_WIDTH = 260
+TILE_HEIGHT = 170
+ICON_SIZE = 64
+
+
+def hyprctl_json(*args):
+    try:
+        result = subprocess.run(
+            ["hyprctl", *args, "-j"],
+            capture_output=True, text=True, timeout=2, check=True,
+        )
+        return json.loads(result.stdout)
+    except (subprocess.SubprocessError, json.JSONDecodeError, OSError):
+        return []
+
+
+def focus_window(address):
+    # hyprctl dispatch's CLI-arg form is broken on this build (it just
+    # Lua-evaluates the raw arg string and breaks on spaces) -- hyprctl eval
+    # with a full Lua snippet is the working form, same as
+    # ~/.local/bin/hypr-compact-workspaces uses.
+    lua = f'hl.dispatch(hl.dsp.focus({{window = "address:{address}"}}))'
+    subprocess.run(["hyprctl", "eval", lua], capture_output=True)
+
+
+_icon_cache = {}
+
+
+def resolve_window_icon(theme, app_id):
+    """Return a string icon name or a Gio.Icon for a window's class/app_id.
+
+    Plain theme.has_icon(app_id) misses common cases -- e.g. this machine's
+    terminal windows carry class "terminal" (set via `kitty --class
+    terminal`), which isn't a themed icon name itself. Fall back to
+    searching installed .desktop files by StartupWMClass, same technique
+    app switchers use, before settling for a generic icon.
+    """
+    if not app_id:
+        return "application-x-executable"
+    if app_id in _icon_cache:
+        return _icon_cache[app_id]
+
+    candidates = [app_id, app_id.lower()]
+    if "term" in app_id.lower():
+        candidates.append("utilities-terminal")
+    for name in candidates:
+        if theme.has_icon(name):
+            _icon_cache[app_id] = name
+            return name
+
+    for app_info in Gio.AppInfo.get_all():
+        if not isinstance(app_info, Gio.DesktopAppInfo):
+            continue
+        wm_class = app_info.get_startup_wm_class()
+        if wm_class and wm_class.lower() == app_id.lower():
+            gicon = app_info.get_icon()
+            if gicon:
+                _icon_cache[app_id] = gicon
+                return gicon
+
+    _icon_cache[app_id] = "application-x-executable"
+    return "application-x-executable"
+
+
+class OverviewWindow(Gtk.ApplicationWindow):
+    def __init__(self, app, windows_by_ws):
+        super().__init__(application=app)
+        self.set_decorated(False)
+
+        Gtk4LayerShell.init_for_window(self)
+        Gtk4LayerShell.set_namespace(self, NAMESPACE)
+        Gtk4LayerShell.set_layer(self, Gtk4LayerShell.Layer.OVERLAY)
+        for edge in (
+            Gtk4LayerShell.Edge.LEFT, Gtk4LayerShell.Edge.RIGHT,
+            Gtk4LayerShell.Edge.TOP, Gtk4LayerShell.Edge.BOTTOM,
+        ):
+            Gtk4LayerShell.set_anchor(self, edge, True)
+        Gtk4LayerShell.set_exclusive_zone(self, -1)
+        # EXCLUSIVE, not hypr-quickmenu's NONE: this is a gesture-opened
+        # modal with no prior pointer click, so Escape needs to reach it.
+        Gtk4LayerShell.set_keyboard_mode(self, Gtk4LayerShell.KeyboardMode.EXCLUSIVE)
+
+        display = Gdk.Display.get_default()
+
+        root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        root.add_css_class("ho-root")
+
+        click = Gtk.GestureClick()
+        click.connect("released", self._on_root_click)
+        root.add_controller(click)
+
+        key = Gtk.EventControllerKey()
+        key.connect("key-pressed", self._on_key)
+        self.add_controller(key)
+
+        scroller = Gtk.ScrolledWindow()
+        scroller.set_hexpand(True)
+        scroller.set_vexpand(True)
+        scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+
+        content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=24)
+        content.set_margin_top(48)
+        content.set_margin_bottom(48)
+        content.set_margin_start(48)
+        content.set_margin_end(48)
+
+        if not windows_by_ws:
+            empty = Gtk.Label(label="No open windows")
+            empty.add_css_class("ho-empty")
+            content.append(empty)
+        else:
+            for _ws_id, ws_name, windows in windows_by_ws:
+                section = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
+                header = Gtk.Label(label=f"Workspace {ws_name}")
+                header.set_xalign(0.0)
+                header.add_css_class("ho-ws-header")
+                section.append(header)
+
+                flow = Gtk.FlowBox()
+                flow.set_selection_mode(Gtk.SelectionMode.NONE)
+                flow.set_homogeneous(True)
+                flow.set_row_spacing(16)
+                flow.set_column_spacing(16)
+                flow.set_max_children_per_line(8)
+
+                for win in windows:
+                    flow.append(self._build_tile(win, display))
+
+                section.append(flow)
+                content.append(section)
+
+        scroller.set_child(content)
+        root.append(scroller)
+        self.set_child(root)
+
+        css = Gtk.CssProvider()
+        css.load_from_string(f"""
+        window, window.background, decoration {{
+            background-color: transparent;
+            background-image: none;
+            box-shadow: none;
+            border: none;
+            outline: none;
+        }}
+        .ho-root {{
+            background-color: rgba(10, 10, 10, {BG_SCRIM_ALPHA});
+        }}
+        .ho-ws-header {{
+            color: {WS_HEADER_COLOR};
+            font-size: 16px;
+            font-weight: bold;
+        }}
+        .ho-empty {{
+            color: {TITLE_COLOR};
+            font-size: 20px;
+        }}
+        .ho-tile {{
+            background-color: {TILE_BG};
+            border: 1px solid {TILE_BORDER};
+            border-radius: 8px;
+            padding: 8px;
+        }}
+        .ho-tile:hover {{
+            border-color: {ACCENT_COLOR};
+        }}
+        .ho-tile-title {{
+            color: {TITLE_COLOR};
+            font-size: 12px;
+        }}
+        """)
+        Gtk.StyleContext.add_provider_for_display(
+            display, css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
+        )
+
+    def _build_tile(self, win, display):
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        box.add_css_class("ho-tile")
+        box.set_size_request(TILE_WIDTH, TILE_HEIGHT)
+        box.set_cursor(Gdk.Cursor.new_from_name("pointer", None))
+
+        theme = Gtk.IconTheme.get_for_display(display)
+        icon = resolve_window_icon(theme, win.get("initialClass") or win.get("class") or "")
+        if isinstance(icon, str):
+            image = Gtk.Image.new_from_icon_name(icon)
+        else:
+            image = Gtk.Image.new_from_gicon(icon)
+        image.set_pixel_size(ICON_SIZE)
+        image.set_vexpand(True)
+        image.set_valign(Gtk.Align.CENTER)
+
+        title = win.get("title") or win.get("initialTitle") or ""
+        label = Gtk.Label(label=title)
+        label.add_css_class("ho-tile-title")
+        label.set_ellipsize(Pango.EllipsizeMode.END)
+        label.set_max_width_chars(24)
+
+        box.append(image)
+        box.append(label)
+
+        address = win["address"]
+        click = Gtk.GestureClick()
+        click.connect("released", lambda *_a: self._on_tile_click(address))
+        box.add_controller(click)
+
+        return box
+
+    def _on_tile_click(self, address):
+        focus_window(address)
+        self.close()
+
+    def _on_root_click(self, gesture, n_press, x, y):
+        # Only dismiss if the click didn't land on a tile -- tiles have
+        # their own click handler, but propagation isn't reliable enough
+        # to assume it stops bubbling here, so check geometry explicitly.
+        widget = gesture.get_widget()
+        picked = widget.pick(x, y, Gtk.PickFlags.DEFAULT)
+        w = picked
+        while w is not None and w is not widget:
+            if w.has_css_class("ho-tile"):
+                return
+            w = w.get_parent()
+        self.close()
+
+    def _on_key(self, controller, keyval, keycode, state):
+        if keyval == Gdk.KEY_Escape:
+            self.close()
+            return True
+        return False
+
+
+class OverviewApp(Gtk.Application):
+    def __init__(self):
+        super().__init__(
+            application_id=APP_ID,
+            flags=Gio.ApplicationFlags.HANDLES_COMMAND_LINE,
+        )
+        self.window = None
+
+    def do_command_line(self, command_line):
+        # HANDLES_COMMAND_LINE forwards argv to the already-running primary
+        # instance instead of just re-triggering activate -- needed so the
+        # swipe-down gesture can request a dismiss-only action distinct from
+        # swipe-up's open/toggle.
+        if "--dismiss" in command_line.get_arguments()[1:]:
+            if self.window is not None:
+                self.window.close()
+                self.window = None
+            return 0
+        self.activate()
+        return 0
+
+    def do_activate(self):
+        if self.window is not None:
+            self.window.close()
+            self.window = None
+            return
+
+        if not Gtk4LayerShell.is_supported():
+            sys.stderr.write("hypr-overview: wlr-layer-shell not supported by this compositor\n")
+            sys.exit(1)
+
+        clients = [c for c in hyprctl_json("clients") if c.get("mapped")]
+
+        by_ws = {}
+        order = []
+        for c in clients:
+            ws = c.get("workspace") or {}
+            ws_id = ws.get("id")
+            if ws_id not in by_ws:
+                by_ws[ws_id] = (ws_id, ws.get("name", str(ws_id)), [])
+                order.append(ws_id)
+            by_ws[ws_id][2].append(c)
+        order.sort(key=lambda i: (i < 0, i))
+        windows_by_ws = [by_ws[i] for i in order]
+
+        self.window = OverviewWindow(self, windows_by_ws)
+        self.window.connect("close-request", self._on_close_request)
+        self.window.present()
+
+    def _on_close_request(self, window):
+        self.window = None
+        return False
+
+
+def main():
+    app = OverviewApp()
+    app.run(None)
+
+
+if __name__ == "__main__":
+    main()
