@@ -271,6 +271,12 @@ class Bar:
         self.icon_image = Gtk.Image.new_from_icon_name(name)
         self.icon_image.set_pixel_size(int(self.icon_size))
         self.icon_image.set_opacity(1.0 if self.enabled else 0.4)
+        # Purely decorative overlay -- it's a Gtk.Fixed sibling of self.area,
+        # stacked on top wherever it visually overlaps the bar. Without this,
+        # GTK4 routes pointer events to it (topmost widget under the cursor)
+        # instead of bubbling to area, and since it has no controllers of its
+        # own, hover/click silently do nothing over the icon.
+        self.icon_image.set_can_target(False)
         if is_symbolic:
             self.icon_image.add_css_class(self.css_class + "-icon")
         fixed.put(self.icon_image, row_x + self.icon_x, row_y + self.icon_y)
@@ -304,6 +310,11 @@ class Bar:
 
         self.text_box.append(num_box)
         self.text_box.append(title_box)
+        # Same reasoning as icon_image.set_can_target(False) above -- this is
+        # the widget that was actually eating hover/click over the number and
+        # title/subtitle text (the bar's left/middle portion), since it's the
+        # larger of the two overlays.
+        self.text_box.set_can_target(False)
 
         text_x = self._text_x()
         fixed.put(self.text_box, row_x + text_x, row_y)

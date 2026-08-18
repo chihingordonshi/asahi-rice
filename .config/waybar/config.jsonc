@@ -40,6 +40,19 @@
             "class<terminal>": "󰆍",
             "class<org.mozilla.firefox>": "󰈹",
             "class<[Gg]oogle-[Cc]hrome.*>": "󰊯",
+            // Neither Brave nor Zoom has a dedicated brand glyph in this Nerd
+            // Font build (checked glyphnames.json, no si-/md- "brave" or
+            // "zoom" entry) -- md-webcam/md-web substitute, kept distinct
+            // from each other and from the plain chrome/firefox glyphs above.
+            // Class isn't a fixed "brave-browser": a plain browsing window
+            // reports that, but a --app=URL launch (the Zoom PWA launcher)
+            // gets a URL-derived class instead, e.g.
+            // "brave-app.zoom.us__wc_home-Profile_1" (confirmed live via
+            // hyprctl clients) -- match any brave-prefixed class instead.
+            // Title-matched Zoom rule must precede the bare brave rule so
+            // it isn't shadowed by the generic class match.
+            "class<^[Bb]rave.*> title<^Zoom$>": "󰖠",
+            "class<^[Bb]rave.*>": "󰖟",
             "class<org.kde.dolphin>": "󰉋",
             "[Ww]e[Cc]hat": "󰘑",
             "class<^mpv$>": "󰎁",
