@@ -1,12 +1,126 @@
 # asahi-rice
 
-Config backup staged for a spare M1 MacBook running **Fedora Asahi Remix**, for
+Config backup for Chi Hin's spare M1 MacBook running **Fedora Asahi Remix**, for
 schoolday-only use (browser, notes, light writing). Not a full system dotfiles repo —
 see `.config/agents/fedora-asahi-setup.md` for the reasoning behind the whole setup.
 
-These files are curated from [dot-files](https://github.com/chihingordonshi/dot-files)
-(the Arch/XPS16 rice) and copied here **as reference**, not symlinked or applied to any
-live `$HOME`. Review before actually deploying anything on the M1.
+These files were originally curated from [dot-files](https://github.com/chihingordonshi/dot-files)
+(the Arch/XPS16 rice), then adapted and extended for this machine specifically. They are
+**live** — deployed to `$HOME` on the real M1 and kept in sync from it (see
+`asahi-rice-sync` under "Status" below) — not just a staged reference anymore.
+
+**New here?** Start with [Replicating this on your own M1](#replicating-this-on-your-own-m1)
+— it's the one section written as a checklist rather than a log. Everything else below
+is history, in roughly this order:
+
+- [Replicating this on your own M1](#replicating-this-on-your-own-m1) — the checklist, start here
+- [What's here and why](#whats-here-and-why) — per-path table, what each config dir is for
+- [Deliberately left out](#deliberately-left-out) — things considered and skipped, and why
+- [Decisions log](#decisions-log) — early build-out notes, chronological
+- [Open question to revisit](#open-question-to-revisit--caelestia-may-no-longer-be-aarch64-dead) — one unresolved item
+- [Critical finding — SDDM session picker](#critical-finding--log-in-via-hyprland-uwsm-managed-not-plain-hyprland) — read before your first login
+- [Status](#status) — current sync mechanism, points at the latest dated entry per topic
+- [Provenance](#provenance--exactly-what-was-done) — how this repo was built (agent-assisted, human-executed)
+- Dated entries from `2026-08-10` onward — the actual build-out narrative, newest info wins where entries conflict
+
+If you only read one thing before touching the M1: the "Critical finding" section on the
+SDDM session picker. Getting that wrong silently breaks portals, polkit, and the keyring.
+
+## Replicating this on your own M1
+
+This repo is written as a running decision log (see "Decisions log" and the dated
+sections below), not a turnkey installer — there's no `install.sh` here. To get an
+equivalent setup on your own M1 running Fedora Asahi Remix, work through it in this
+order, using the decisions log for the "why" and exact package/COPR names when a step
+below is vague:
+
+1. **Enable COPRs, then install packages.** (List verified against this machine's
+   actual `rpm -q` / `dnf repoquery --installed` output, not reconstructed from memory.)
+   - `lionheartp/Hyprland` COPR → `hyprland`, `hyprland-uwsm`, `hypridle`, `hyprlock`,
+     `hyprpolkitagent`, `hyprsunset`, `kitty`, `qt6ct`, `waypaper`,
+     `xdg-desktop-portal-hyprland` (plus their own deps — `hyprutils`, `hyprlang`,
+     `hyprcursor`, `hyprgraphics`, `aquamarine`, etc. — `dnf` pulls those in
+     automatically). The `technochip/Hyprland-aarch64` COPR named in
+     `fedora-asahi-setup.md` is deprecated by its own maintainer — use
+     `lionheartp/Hyprland` instead, see the 2026-08-10 decisions-log entry below.
+   - Fedora's main repos → `waybar`, `cava`, `btop`, `fastfetch`, `kvantum`,
+     `kvantum-qt5`, `mako`, `rofi`, `swaybg`, `network-manager-applet`, `wl-clipboard`,
+     `brightnessctl`, `grim`, `slurp`, `playerctl`, `fcitx5`, `fcitx5-chinese-addons`,
+     `exfatprogs`, `gtk4-layer-shell`, `python3-gobject`, `python3-cairo` (the last
+     three are for `hypr-quickmenu` and the Cairo clock in `autostart.lua` — both are
+     Python/GTK4, and silently no-op at startup if these are missing).
+   - `.config/neofetch/` exists in this repo but `neofetch` itself isn't installed here
+     — `fastfetch` (`.config/fastfetch/`) is what's actually live; the neofetch config
+     is a leftover from before the switch. Skip installing `neofetch` unless you want it.
+   - `mpvpaper` — used by `waypaper` as the video-wallpaper backend (see
+     `.config/waypaper/config.ini`, `waybar-wallpaper-backend*.sh`) — isn't packaged for
+     Fedora and is installed to `/usr/local/bin/mpvpaper` here by building it manually
+     (see [`mpvpaper`](https://github.com/GhostNaN/mpvpaper) upstream). Only needed if
+     you want video wallpapers from `~/Videos/Wallpapers`; static-image wallpapers via
+     `swaybg` work without it.
+   - `dolphin` (file manager) and `firefox` (browser) — swap for your own picks if you
+     want different ones; `programs.lua` (see below) needs to match whatever you choose.
+   - Optional: the caelestia-widget replacements need `bluedevil` (for `kcmshell6
+     kcm_bluetooth`) and whatever proxy client you use (Chi Hin's is
+     `/opt/clash-party/mihomo-party`, installed separately, not via `dnf`).
+   - Skip anything under "Deliberately left out" below unless you specifically want it.
+2. **Install the font.** JetBrains Mono Nerd Font, from the official
+   [`ryanoasis/nerd-fonts`](https://github.com/ryanoasis/nerd-fonts) GitHub release, unzipped
+   into `~/.local/share/fonts`, then `fc-cache`. Everything here (waybar, kitty, the
+   Cairo clock) assumes this exact font is present.
+3. **Copy the config files into `$HOME`.** Every path under `.config/`, `.local/bin/`,
+   `.local/share/applications/`, `Pictures/Wallpapers/`, plus the top-level dotfiles
+   (`.zshrc`, `.p10k.zsh`, `.zsh_functions`) in this repo maps 1:1 onto the same path
+   under your own `$HOME`. Plain `cp -r`, no symlinking needed (that's how this repo
+   itself is kept in sync — see `.local/bin/asahi-rice-sync`).
+   - `.local/bin/` specifically is a grab-bag, not all of it Hyprland config — the
+     scripts actually referenced by the Hypr/waybar config are `hypr-quickmenu`,
+     `hypr-overview`, `hypr-workspace-watch`, `mac-screenshot`,
+     `wallpaper-auto-downscale`, `waypaper-set-backend.sh`, and the `waybar-*.sh`
+     helpers (`waybar-cpu.sh`, `waybar-memory.sh`, `waybar-bluetooth.sh`,
+     `waybar-fcitx5.sh`, `waybar-power-profile*.sh`, `waybar-wallpaper-backend*.sh`).
+     Everything else in there is unrelated CLI tooling that got swept in by
+     `asahi-rice-sync`'s blanket `.local/bin` entry — copy it too if you want it, skip
+     it if you're only after the rice.
+   - **Do not copy `.config/systemd/user/asahi-rice-sync.{service,timer}`, or enable
+     them.** That unit pushes to `github.com/chihingordonshi/asahi-rice` — it's Chi
+     Hin's repo sync, not a general-purpose tool, and you don't have push access to it
+     anyway. Everything else under `.config/systemd/user/` (`hypridle.service`,
+     `random-wallpaper.{service,timer}`, `swaybg-wallpaper.service`) is
+     machine-generic and safe to bring over — enable with `systemctl --user enable
+     --now hypridle.service random-wallpaper.timer`.
+   - **Do not copy `.gitconfig`** (it isn't tracked here for exactly this reason — see
+     the 2026-08-10 "later still" decisions-log entry). Keep your own; it needs your
+     own identity and credential-helper setup, not Chi Hin's.
+4. **Verify the hardware-pinned values before trusting them, even on identical
+   hardware.** `.config/hypr/monitors.lua` hardcodes `output = "eDP-1", mode =
+   "2560x1600@60"` and `.config/hypr/input.lua` hardcodes `kb_layout = "us"` — both
+   read from this specific machine via `hyprctl monitors -j` and `localectl status`,
+   not guessed. Re-run those two commands on your own machine and adjust if anything
+   differs (e.g. a non-US keyboard, or a different M1 panel variant).
+5. **fcitx5 needs a first run before Pinyin actually works.** Installing the packages
+   and having `~/.config/fcitx5/profile` in place isn't enough — fcitx5 has to
+   actually launch once to generate its real profile state. See the 2026-08-10
+   "waybar polish" decisions-log entry if Ctrl+Space doesn't switch input methods
+   afterward.
+6. **Log in via "Hyprland (uwsm-managed)" at the SDDM screen, not plain "Hyprland."**
+   This is not optional — see "Critical finding" below for why plain Hyprland silently
+   breaks portals, polkit, and the D-Bus secret-service keyring. `hyprland-uwsm` (from
+   step 1) provides this session entry.
+7. **Everything requiring `sudo` is on you.** COPR enablement and `dnf install` need to
+   be run interactively — there's no scripted path here, by design (an agent helping
+   with this has no route to a real root shell anyway, see "Provenance" below).
+
+Optional extras that took real chasing on Chi Hin's machine and might not be worth
+repeating on yours: the sticky-notes app (`org.x.sticky`, an unpackaged Fedora RPM
+installed via `rpm -i --nodeps` plus two chased runtime deps — see the "App gaps
+closed" decisions-log entry), and the shared exFAT partition between macOS and Fedora
+(see "Shared data partition" below — destructive, only do this if you actually want
+cross-OS file sharing and are comfortable resizing a live partition).
+
+**This repo is private** (see "Provenance" below), so `git clone` fails until Chi Hin
+adds you as a collaborator on `github.com/chihingordonshi/asahi-rice` — ask before
+trying to clone it.
 
 ## What's here and why
 
@@ -171,16 +285,15 @@ plain "Hyprland".
 
 ## Status
 
-Hyprland, ironbar, and the rest of the package set (see decisions log) are installed on
-the real machine and a Hyprland session has actually been logged into (confirmed via
-`$XDG_CURRENT_DESKTOP=Hyprland` and `hyprctl` working) — this is no longer a
-staged-but-undeployed backup. `~/.config/hypr/*.lua` and `~/.config/ironbar/` on the real
-machine are believed to match what's committed here, but the Lua config specifically has
-**not been verified end-to-end**: `hyprctl reload` doesn't re-execute Lua (see decisions
-log), so whether all 14 submodules actually load cleanly on a real session start is
-unconfirmed pending a full logout/login. This repo is now also cloned persistently at
-`~/Projects/asahi-rice` on the machine (not just a scratch clone that gets deleted after
-each push).
+Superseded by later entries below — kept as the original day-one snapshot, not current
+state. In particular: the panel switched from ironbar to **waybar** the same day (see
+the "real hypr config landed, panel switched to waybar" entry), so `~/.config/ironbar/`
+no longer exists on the real machine or in this repo. As of the most recent dated entry
+above, the full config (Lua hypr config, waybar, fonts, fcitx5, app set) is deployed,
+logged into via a real `uwsm`-managed Hyprland session, and actively used day-to-day —
+this repo is a live sync target (`asahi-rice-sync`), not a staged-but-undeployed backup.
+For what's actually true right now, read the decisions log and dated sections
+chronologically and trust the latest one on any given topic.
 
 ## Provenance — exactly what was done
 
