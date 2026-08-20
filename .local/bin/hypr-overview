@@ -279,8 +279,12 @@ class OverviewApp(Gtk.Application):
         # HANDLES_COMMAND_LINE forwards argv to the already-running primary
         # instance instead of just re-triggering activate -- needed so the
         # swipe-down gesture can request a dismiss-only action distinct from
-        # swipe-up's open/toggle.
-        if "--dismiss" in command_line.get_arguments()[1:]:
+        # swipe-up's open-only action.
+        # get_arguments() does NOT prepend a program name for a remote
+        # (D-Bus-forwarded) invocation the way sys.argv does locally, so
+        # slicing off index 0 here used to drop "--dismiss" itself and this
+        # branch never fired -- checked the full list instead.
+        if "--dismiss" in command_line.get_arguments():
             if self.window is not None:
                 self.window.close()
                 self.window = None
@@ -290,8 +294,8 @@ class OverviewApp(Gtk.Application):
 
     def do_activate(self):
         if self.window is not None:
-            self.window.close()
-            self.window = None
+            # Already open -- swipe-up only opens, it never closes. Closing
+            # is exclusively --dismiss's job (swipe-down), so this is a no-op.
             return
 
         if not Gtk4LayerShell.is_supported():
@@ -326,7 +330,10 @@ class OverviewApp(Gtk.Application):
 
 def main():
     app = OverviewApp()
-    app.run(None)
+    # run(None) was silently discarding argv -- "--dismiss" never reached
+    # do_command_line, so the swipe-down gesture had no way to distinguish
+    # itself from a plain open. Pass sys.argv explicitly.
+    app.run(sys.argv)
 
 
 if __name__ == "__main__":
