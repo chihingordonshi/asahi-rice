@@ -31,10 +31,29 @@ function MoveWindowToFirstEmptyWorkspace()
     hl.dispatch(hl.dsp.window.move({ workspace = first_empty_workspace() }))
 end
 
--- Keep workspaces gap-free: landing on an empty workspace (SUPER+[num],
--- scroll, etc.) redirects to the first empty one instead. E.g. with 1,2,3
--- occupied, jumping to 5 lands on 4, not 5.
+-- SUPER+[num] (see keybindings.lua) calls this instead of a static
+-- hl.dsp.focus dispatcher so it can flag the resulting workspace.active
+-- event as a direct jump -- see below.
+local skipGapFillOnce = false
+
+function GoToWorkspace(id)
+    skipGapFillOnce = true
+    hl.dispatch(hl.dsp.focus({ workspace = id }))
+end
+
+-- Keep workspaces gap-free: landing on an empty workspace via scroll or
+-- GoToFirstEmptyWorkspace redirects to the first empty one instead. E.g.
+-- with 1,2,3 occupied, jumping to 5 lands on 4, not 5. But a direct
+-- SUPER+[num] press (GoToWorkspace above) is exempted -- otherwise, e.g.
+-- whenever workspace 1 itself is the empty one, this would immediately snap
+-- any attempt to reach a different empty workspace straight back to 1,
+-- making it impossible to deliberately open one.
 hl.on("workspace.active", function(ws)
+    if skipGapFillOnce then
+        skipGapFillOnce = false
+        return
+    end
+
     if not ws or ws.special or ws.windows > 0 then
         return
     end

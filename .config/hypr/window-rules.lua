@@ -165,5 +165,5 @@ hl.on("hyprland.start", function()
         stickyPrewarming = false
         hl.dispatch(hl.dsp.workspace.toggle_special("sticky-hidden"))
         hl.dispatch(hl.dsp.focus({ workspace = 1 }))
-    end, { timeout = 2000 })
+    end, { timeout = 2000, type = "oneshot" })
 end)

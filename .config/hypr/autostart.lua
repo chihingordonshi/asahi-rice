@@ -16,6 +16,10 @@
 
 hl.on("hyprland.start", function ()
     hl.exec_cmd("dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY XDG_CURRENT_DESKTOP HYPRLAND_INSTANCE_SIGNATURE")
+    -- Loads ~/.Xresources (Xft.dpi 154 = 96 * 1.6) so DPI-aware Xwayland apps
+    -- scale their UI/fonts to match the 1.6x monitor scale even though
+    -- xwayland.force_zero_scaling in misc.lua keeps Xwayland itself at 1x.
+    hl.exec_cmd("xrdb -merge " .. os.getenv("HOME") .. "/.Xresources")
     hl.exec_cmd("/usr/bin/kwalletd6")
     hl.exec_cmd("nm-applet")
     hl.exec_cmd("systemctl --user start hyprpolkitagent")
