@@ -69,6 +69,19 @@ hl.window_rule({
     opaque = true,
 })
 
+-- Borderless look for windows tagged "cover-screen" by SUPER+SHIFT+F in
+-- keybindings.lua, which does the actual float/fullscreen toggling and
+-- hides waybar for the duration -- border_size/rounding/no_shadow are
+-- "dynamic" rule effects (unlike float/size/fullscreen), so this one
+-- genuinely reacts live to the tag being toggled on an already-open window.
+hl.window_rule({
+    name = "cover-screen-borderless",
+    match = { tag = "cover-screen" },
+    border_size = 0,
+    rounding = 0,
+    no_shadow = true,
+})
+
 -- nmtui, launched from the waybar wifi module's on-click: floats centered as
 -- a quick popup instead of tiling in with the rest of the workspace.
 hl.window_rule({
