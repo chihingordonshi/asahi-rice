@@ -1,2 +1,20 @@
 default-timeout=5000
 ignore-timeout=1
+
+font=JetBrainsMono Nerd Font 10
+background-color=#0D0C14E6
+text-color=#E0DEF4FF
+border-color=#C4A7E7FF
+border-size=2
+border-radius=8
+padding=12
+margin=10
+progress-color=source #F6C177FF
+
+[urgency=low]
+border-color=#908CAAFF
+default-timeout=3000
+
+[urgency=critical]
+border-color=#EB6F92FF
+default-timeout=0
