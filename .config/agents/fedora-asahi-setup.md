@@ -11,6 +11,22 @@ availability, COPR maintainer activity, and upstream project status (especially 
 Quickshell-related) all move fast. Treat every claim here as "true as of research time,
 confirm before relying on it," not as current fact.
 
+**Resolved since this was written — for a step-by-step replication guide, use the "Replicating
+this on your own M1" section in the repo's top-level `README.md` instead of re-deriving these
+from scratch.** The two open questions below were both settled the same day, on the real
+machine, and the setup has been live and in daily use since:
+
+- **Hyprland install path**: `lionheartp/Hyprland` COPR, not `technochip/Hyprland-aarch64`
+  (named below) — that one turned out to be deprecated by its own maintainer.
+- **Shell/panel**: **waybar**, not ironbar, HyprPanel/Wayle, or eww. (ironbar was the first
+  pick, briefly deployed, then swapped for waybar the same day — see the README's decisions
+  log for why.) Quickshell-based options (caelestia, noctalia) remain a dead end on this
+  hardware, as predicted below.
+
+The rest of this document — the reasoning, the ruled-out alternatives, the known hardware
+gaps, the macOS-side notes — is still accurate background and worth reading before touching
+anything on a fresh machine.
+
 ## The goal
 
 A lightweight, reliable **schooltime-only** machine. Not a rice project, not a dev workstation,
@@ -180,10 +196,12 @@ Concretely:
 
 ## What to do when you (the agent) actually read this
 
-1. Confirm with Chi Hin that this is still the plan — dates above may be stale by the time
-   you're reading this.
-2. Re-check the specific unresolved items: `technochip/Hyprland-aarch64` COPR activity,
-   Quickshell's aarch64 execution-failure issue status, Wayle's maturity.
+1. Start with the README's "Replicating this on your own M1" section, not this file —
+   the Hyprland-COPR and shell/panel questions this doc raises are already resolved
+   (see the callout near the top).
+2. Confirm with whoever's running this that it's still the plan — dates above may be
+   stale by the time you're reading this, and Quickshell's aarch64 status specifically
+   is worth a fresh check if caelestia/noctalia ever comes up again.
 3. Walk through disk partitioning and installation interactively — this is destructive and
    not something to run unattended.
 4. Ask before anything not covered above rather than assuming continuity with the XPS16 setup.
