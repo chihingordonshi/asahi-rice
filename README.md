@@ -303,6 +303,6 @@ still relevant to replicating or maintaining this setup.
   kitty/btop/WPS 365 cover the same ground). Fixed a fcitx5 trigger-key regression.
 - **2026-08-11 (later)** — Executed the Fedora/macOS shared exFAT partition: shrank the
   Fedora btrfs root by 256GiB, created and formatted a new exFAT partition, mounted at
-  `~/data` with `uid=1000,gid=1000,umask=022` (exFAT has no native Unix permissions) and
+  `~/share` with `uid=1000,gid=1000,umask=022` (exFAT has no native Unix permissions) and
   `nofail` in `/etc/fstab`. Added a `wallpaper()` zsh function as a manual trigger for
   the rotation timer.
