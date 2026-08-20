@@ -18,7 +18,7 @@ alias ls='eza --icons --group-directories-first'
 alias ll='eza -lah --icons --group-directories-first --git'
 alias la='eza -a --icons --group-directories-first'
 alias lt='eza --tree --icons --group-directories-first'
-alias cat='bat --paging=never'
+alias bat='bat --paging=never'
 alias grep='rg'
 alias find='fd'
 alias du='dust'
@@ -28,7 +28,7 @@ alias ping='gping'
 alias ..='cd ..'
 alias top='btop'
 alias lg='lazygit'
-alias vim='nvim'
+# alias vim='nvim'  # disabled: using true vim now
 
 alias dotbackup='/usr/bin/git --git-dir=$HOME/.dotfiles --work-tree=$HOME'
 alias gitlogin='git config --global user.email chihin.gordon.shi@gmail.com \

@@ -581,9 +581,13 @@ class QuickMenuApp(Gtk.Application):
         Gtk4LayerShell.set_exclusive_zone(window, 0)
         Gtk4LayerShell.set_keyboard_mode(window, Gtk4LayerShell.KeyboardMode.NONE)
 
-        staircase = global_cfg["rowStaircaseOffset"]
         bar_h = global_cfg["barHeight"]
         bar_gap = global_cfg["barGap"]
+        # Same dx/dy ratio as skew_px (Bar.__init__): step the row stack over
+        # by tan(skewAngle) per unit of row pitch, so the staircase diagonal
+        # runs parallel to the bars' own skewed edge instead of at an
+        # unrelated angle.
+        staircase = (bar_h + bar_gap) * math.tan(math.radians(global_cfg["skewAngle"]))
         extend = global_cfg["extendDistance"]
         menu_w = global_cfg["menuWidth"]
         count = len(items)

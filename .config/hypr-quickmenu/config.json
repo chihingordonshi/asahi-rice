@@ -3,13 +3,12 @@
     "menuWidth": 380,
     "barHeight": 70,
     "barGap": 6,
-    "skewAngle": 10,
-    "extendDistance": 55,
+    "skewAngle": 4,
+    "extendDistance": 20,
     "textHoverShift": 16,
     "iconSize": 36,
     "iconMargin": 18,
     "leftPadding": 24,
-    "rowStaircaseOffset": 13,
     "cornerNotchEnabled": true,
 
     "fontFamily": "Sans Serif",
@@ -32,18 +31,19 @@
     "animationSpeed": 220,
     "animationEasing": 0,
     "glitchEnabled": true,
-    "glitchIntensity": 4,
+    "glitchIntensity": 8,
     "glitchSpeed": 90,
 
     "closeOnActivate": true
   },
   "items": [
     {"id": "wechat", "number": "01", "title": "WeChat", "subtitle": "Messaging", "icon": "com.tencent.WeChat", "command": "flatpak run com.tencent.WeChat", "enabled": true, "override": false},
-    {"id": "libreoffice", "number": "02", "title": "LibreOffice", "subtitle": "Office Suite", "icon": "libreoffice-startcenter", "command": "libreoffice", "enabled": true, "override": false},
+    {"id": "localsend", "number": "02", "title": "LocalSend", "subtitle": "File Sharing", "icon": "org.localsend.localsend_app", "command": "flatpak run org.localsend.localsend_app", "enabled": true, "override": false},
     {"id": "wpspdf", "number": "03", "title": "WPS PDF", "subtitle": "PDF Editor", "icon": "cn.wps.wps_365.pdfmain", "command": "flatpak run --command=wpspdf cn.wps.wps_365", "enabled": true, "override": false},
     {"id": "mihomo", "number": "04", "title": "Mihomo", "subtitle": "Proxy Manager", "icon": "mihomo-party", "command": "/opt/clash-party/mihomo-party", "enabled": true, "override": false},
     {"id": "chrome", "number": "05", "title": "Chrome", "subtitle": "Web Browser", "icon": "google-chrome", "command": "google-chrome-stable --password-store=basic", "enabled": true, "override": false},
     {"id": "zoom", "number": "06", "title": "Zoom", "subtitle": "Video Conference", "icon": "brave-zoom-pwa-Profile_1", "command": "brave-browser \"--profile-directory=Profile 1\" --app=https://app.zoom.us/wc/home?source=pwa", "enabled": true, "override": false},
-    {"id": "neovim", "number": "07", "title": "Neovim", "subtitle": "Text Editor", "icon": "nvim", "command": "kitty --class terminal -e nvim", "enabled": true, "override": false}
+    {"id": "vim", "number": "07", "title": "Vim", "subtitle": "Text Editor", "icon": "vim", "command": "kitty --class terminal -e vim", "enabled": true, "override": false},
+    {"id": "icloud-photos", "number": "08", "title": "iCloud Photos", "subtitle": "Photo Library", "icon": "brave-icloud-photos-pwa-Profile_1", "command": "brave-browser \"--profile-directory=Profile 1\" --app=https://www.icloud.com/photos", "enabled": true, "override": false}
   ]
 }

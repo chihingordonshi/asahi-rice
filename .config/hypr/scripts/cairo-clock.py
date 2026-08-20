@@ -15,12 +15,13 @@ ACCENT = (0.40, 0.85, 1.00)   # cyan-ish accent for the seconds/date
 TEXT = (0.92, 0.95, 0.98)     # near-white main text
 GLOW = 0.34                   # 0..1 glow strength behind the time
 MARGIN_LEFT = 24              # aligned with hypr-quickmenu's LAYER_MARGIN_LEFT
-MARGIN_BOTTOM = 590           # quickmenu's bottom margin (24) + its live height (hyprctl layers:
-                               # 550px with the current 7 items/skewAngle 10) + a 16px gap. Stale
-                               # whenever quickmenu's item count/geometry changes -- recheck via
-                               # `hyprctl layers -j` (namespace "hypr-quickmenu") if the clock ever
-                               # ends up overlapping it again.
-WINDOW_WIDTH = 555            # matches hypr-quickmenu's computed win_w so right edges align
+MARGIN_BOTTOM = 666           # quickmenu's bottom margin (24) + its computed win_h (626px with the
+                               # current 8 items/barHeight 70/barGap 6, skewAngle 4/extendDistance 20)
+                               # + a 16px gap. Stale whenever quickmenu's item count/geometry changes --
+                               # recompute win_w/win_h from config.json (see hypr-quickmenu's win_w/win_h
+                               # calc) or check `hyprctl layers -j` (namespace "hypr-quickmenu") if the
+                               # clock ever ends up overlapping it again.
+WINDOW_WIDTH = 461             # matches hypr-quickmenu's computed win_w so right edges align
 WINDOW_HEIGHT = 120
 
 

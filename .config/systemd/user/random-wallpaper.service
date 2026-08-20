@@ -4,6 +4,14 @@ ConditionEnvironment=XDG_CURRENT_DESKTOP=Hyprland
 
 [Service]
 Type=oneshot
+# KillMode=process (not the control-group default): waypaper spawns swaybg/mpvpaper
+# as a plain, undetached child, so it lands in this unit's cgroup. Under
+# KillMode=control-group, systemd kills that whole cgroup -- including the
+# just-spawned wallpaper process -- the instant this oneshot unit goes inactive,
+# breaking the wallpaper on every single rotation. process-mode only kills the
+# tracked main PID (waypaper, already exited normally), leaving the wallpaper
+# process alone.
+KillMode=process
 # waypaper --random reads folder/backend/fill from ~/.config/waypaper/config.ini,
 # so it automatically follows whichever backend is currently selected (swaybg
 # from ~/Pictures/Wallpapers, or mpvpaper from ~/Videos/Wallpapers -- switched

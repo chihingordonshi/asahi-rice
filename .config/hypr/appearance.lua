@@ -12,7 +12,7 @@ hl.config({
         border_size = 2,
 
         col = {
-            active_border   = { colors = {"rgba(fed4ffee)", "rgba(8147e6ee)"}, angle = 45 },
+            active_border   = { colors = {"rgba(fed4ff86)", "rgba(8147e686)"}, angle = 45 },
             inactive_border = "rgba(00000000)",
         },
 
@@ -35,8 +35,8 @@ hl.config({
 
         shadow = {
             enabled      = true,
-            range        = 10,
-            render_power = 3,
+            range        = 4,
+            render_power = 1,
             color        = 0xee101010,
         },
 
@@ -49,7 +49,7 @@ hl.config({
 
         glow = {
             enabled = true,
-            range = 6,
+            range = 4,
             color = 0xff6282f5,
         }
     },
