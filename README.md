@@ -118,10 +118,6 @@ closed" decisions-log entry), and the shared exFAT partition between macOS and F
 (see "Shared data partition" below — destructive, only do this if you actually want
 cross-OS file sharing and are comfortable resizing a live partition).
 
-**This repo is private** (see "Provenance" below), so `git clone` fails until Chi Hin
-adds you as a collaborator on `github.com/chihingordonshi/asahi-rice` — ask before
-trying to clone it.
-
 ## What's here and why
 
 | Path | Included because |
