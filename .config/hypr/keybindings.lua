@@ -10,6 +10,22 @@ local closeWindowBind = hl.bind(mainMod .. " + C", hl.dsp.window.close())
 -- hl.bind(mainMod .. " + M", hl.dsp.exec_cmd("command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch 'hl.dsp.exit()'"))
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
 hl.bind(mainMod .. " + F", hl.dsp.window.float({ action = "toggle" }))
+
+-- Float + force full monitor coverage, drawn over waybar's top layer -- real
+-- Hyprland fullscreen alone doesn't do that (waybar's "top" layer always
+-- paints above windows, fullscreen or not, per the layer-shell protocol), so
+-- waybar has to actually get out of the way via its own SIGUSR1
+-- toggle-visibility signal. The "cover-screen" tag drives the borderless
+-- look via the matching rule in window-rules.lua; float/fullscreen/waybar
+-- state itself is toggled here since window rules only apply a window's
+-- float/size/fullscreen once at open, not on a later tag change.
+hl.bind(mainMod .. " + SHIFT + F", function()
+    hl.dispatch(hl.dsp.window.float({ action = "toggle" }))
+    hl.dispatch(hl.dsp.window.tag({ tag = "cover-screen" }))
+    hl.dispatch(hl.dsp.window.fullscreen({ mode = "fullscreen", action = "toggle" }))
+    hl.exec_cmd("pkill -SIGUSR1 waybar")
+end)
+
 hl.bind(mainMod .. " + R", NoTransparency)
 hl.bind(mainMod .. " + P", hl.dsp.window.pseudo())
 hl.bind(mainMod .. " + J", hl.dsp.layout("togglesplit"))    -- dwindle only
