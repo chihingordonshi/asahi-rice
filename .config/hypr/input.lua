@@ -3,11 +3,6 @@
 ---- INPUT ----
 ---------------
 
--- kb_layout confirmed against `localectl status` for this machine (matches the real
--- config's "us" anyway). kb_options/sensitivity/touchpad behavior adopted from the real
--- input.lua since those are preference, not hardware -- the per-device hl.device() block
--- there targeted a specific XPS16 touchpad hardware ID that doesn't exist here, so it's
--- dropped rather than copied.
 hl.config({
     input = {
         kb_layout  = "us",
@@ -22,7 +17,7 @@ hl.config({
 
         touchpad = {
             natural_scroll        = true,
-            disable_while_typing  = false,
+            disable_while_typing  = true,
             tap_to_click          = false,
             clickfinger_behavior  = true,
         },
@@ -43,9 +38,6 @@ hl.gesture({
     end
 })
 
--- While the overview is open, swipe down closes it (see --dismiss handling
--- in hypr-overview's do_command_line). Harmless no-op if the overview isn't
--- currently open.
 hl.gesture({
     fingers   = 3,
     direction = "down",
