@@ -42,5 +42,4 @@ function NoTransparency()
         })
     end
     TransparencyEnabled = not TransparencyEnabled
-
 end

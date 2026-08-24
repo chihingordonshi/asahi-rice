@@ -142,7 +142,7 @@ LookAndFeelPackage=org.kde.breezedark.desktop
 ShowDeleteCommand=false
 contrast=4
 frameContrast=0.2
-widgetStyle=kvantum-dark
+widgetStyle=qt6ct-style
 
 [KFileDialog Settings]
 Allow Expansion=false
