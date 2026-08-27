@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+runtime_dir="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+instance="${HYPRLAND_INSTANCE_SIGNATURE:-}"
+
+if [[ -z "$instance" || ! -S "$runtime_dir/hypr/$instance/.socket.sock" ]]; then
+    for socket in "$runtime_dir"/hypr/*/.socket.sock; do
+        [[ -S "$socket" ]] || continue
+        instance="$(basename "$(dirname "$socket")")"
+        break
+    done
+fi
+
+layout=$(hyprctl -i "$instance" getoption general:layout -j 2>/dev/null | jq -r '.str // "dwindle"' 2>/dev/null || printf 'dwindle')
+
+case "$layout" in
+    dwindle)
+        printf '{"text":"󰕰  Dwindle","tooltip":"Dwindle — click for Master","class":"dwindle"}\n'
+        ;;
+    master)
+        printf '{"text":"󰕰  Master","tooltip":"Master — click for Scrolling","class":"master"}\n'
+        ;;
+    scrolling)
+        printf '{"text":"󰕰  Scrolling","tooltip":"Scrolling — click for Monocle","class":"scrolling"}\n'
+        ;;
+    monocle)
+        printf '{"text":"󰕰  Monocle","tooltip":"Monocle — click for Dwindle","class":"monocle"}\n'
+        ;;
+    *)
+        printf '{"text":"󰕰  %s","tooltip":"Unknown layout — click for Dwindle","class":"unknown"}\n' "$layout"
+        ;;
+esac

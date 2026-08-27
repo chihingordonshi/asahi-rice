@@ -92,4 +92,18 @@ hl.window_rule({
     opaque = true,
 })
 
+local function update_border()
+    local ws = hl.get_active_workspace()
+    local windows = hl.get_workspace_windows(ws.id)
 
+    hl.config({
+        general = {
+            gaps_out = (#windows == 1) and 0 or 6
+        }
+    })
+end
+
+hl.on("workspace.active", update_border)
+hl.on("window.open", update_border)
+hl.on("window.destroy", update_border)
+hl.on("window.move_to_workspace", update_border)

@@ -25,8 +25,11 @@ end
 local skipGapFillOnce = false
 
 function GoToWorkspace(id)
+    -- Keep the numbered workspace sequence compact: selecting a non-empty
+    -- slot jumps to the first empty slot instead of creating a gap.
+    local target = first_empty_workspace()
     skipGapFillOnce = true
-    hl.dispatch(hl.dsp.focus({ workspace = id }))
+    hl.dispatch(hl.dsp.focus({ workspace = target }))
 end
 
 hl.on("workspace.active", function(ws)
