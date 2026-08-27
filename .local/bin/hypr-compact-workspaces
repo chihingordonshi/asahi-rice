@@ -9,6 +9,11 @@
 # is what actually works for calling hl.dsp.* dispatchers with arguments.
 set -euo pipefail
 
+# Compaction itself emits movewindow events; prevent the watcher from
+# starting a second compaction while this one is still moving clients.
+exec 9>/tmp/hypr-compact-workspaces.lock
+flock -n 9 || exit 0
+
 active_ws=$(hyprctl activeworkspace -j | jq -r '.id')
 mapfile -t occupied < <(hyprctl workspaces -j | jq -r '.[] | select(.windows > 0 and .id > 0) | .id' | sort -n)
 

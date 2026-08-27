@@ -34,6 +34,8 @@ alias dotbackup='/usr/bin/git --git-dir=$HOME/.dotfiles --work-tree=$HOME'
 alias gitlogin='git config --global user.email chihin.gordon.shi@gmail.com \
     && git config --global user.name chihingordonshi'
 
+alias hotspot="nmcli device wifi hotspot ifname wld0 ssid AsahiFedora password 'gshi2029' band bg && nmcli dev wifi show-password"
+
 [[ -f /usr/share/zsh/plugins/zsh-autocomplete/zsh-autocomplete.plugin.zsh ]] && source /usr/share/zsh/plugins/zsh-autocomplete/zsh-autocomplete.plugin.zsh
 [[ -f ~/.local/share/zsh-autocomplete/zsh-autocomplete.plugin.zsh ]] && source ~/.local/share/zsh-autocomplete/zsh-autocomplete.plugin.zsh
 source ~/.zsh_functions
@@ -75,3 +77,6 @@ export PATH
 alias music='mocp'
 
 eval "$(zoxide init zsh --cmd cd)"
+
+# opencode
+export PATH=/home/chihin/.opencode/bin:$PATH
