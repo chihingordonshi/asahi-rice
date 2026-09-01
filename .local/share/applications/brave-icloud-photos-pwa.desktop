@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Terminal=false
+Type=Application
+Name=iCloud Photos
+Comment=iCloud Photos web client (PWA), Brave Profile 1 (Gordon)
+Exec=brave-browser "--profile-directory=Profile 1" --app=https://www.icloud.com/photos
+Icon=brave-icloud-photos-pwa-Profile_1
+Categories=Network;
+StartupWMClass=brave-www.icloud.com__photos-Profile_1

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Touchbar Defender
+Comment=Dual-world tower defense with real Touch Bar output
+Exec=/home/chihin/touchbar-defender/scripts/launch_touchbar.sh
+Path=/home/chihin/touchbar-defender
+Icon=applications-games
+Terminal=false
+Categories=Game;

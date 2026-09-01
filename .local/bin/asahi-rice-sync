@@ -15,10 +15,12 @@ STAMP="$HOME/.local/share/asahi-rice-sync-last-run"
 TODAY=$(date +%F)
 
 LIVE_PATHS=(
+    .config/agents
     .config/autostart
     .config/btop
     .config/cava
     .config/fcitx5
+    .config/fastfetch
     .config/fish
     .config/fuzzel
     .config/hypr
@@ -37,11 +39,34 @@ LIVE_PATHS=(
     .config/waypaper
     .config/wireplumber
     .local/bin
+    .local/share/applications
     .p10k.zsh
     .zsh_functions
     .zshrc
     Pictures/Wallpapers
 )
+
+sync_local_bin() {
+    local src="$HOME/.local/bin"
+    local dst="$REPO/.local/bin"
+    local file list
+
+    mkdir -p "$dst"
+    list=$(mktemp)
+    trap 'rm -f "$list"' RETURN
+
+    # Keep executable scripts only. Installed binaries, symlinks, and Python
+    # bytecode are architecture- or environment-specific, not dotfiles.
+    while IFS= read -r -d '' file; do
+        if [[ "$(head -c 2 -- "$file")" == '#!' ]]; then
+            printf '%s\0' "${file#"$src"/}" >> "$list"
+        fi
+    done < <(find "$src" -type f -print0)
+
+    rsync -a --delete --from0 --files-from="$list" "$src/" "$dst/"
+    trap - RETURN
+    rm -f "$list"
+}
 
 exec >> "$LOG" 2>&1
 echo "=== $(date -Is) : run start ==="
@@ -57,9 +82,16 @@ for p in "${LIVE_PATHS[@]}"; do
     src="$HOME/$p"
     dst="$REPO/$p"
     [[ -e "$src" ]] || continue
+    if [[ "$p" == ".local/bin" ]]; then
+        sync_local_bin
+        synced_paths+=("$p")
+        continue
+    fi
     if [[ -d "$src" ]]; then
         mkdir -p "$dst"
-        rsync -a --delete "$src/" "$dst/"
+        rsync -a --delete --delete-excluded \
+            --exclude='__pycache__/' --exclude='*.py[co]' \
+            "$src/" "$dst/"
     else
         mkdir -p "$(dirname "$dst")"
         cp -a "$src" "$dst"
