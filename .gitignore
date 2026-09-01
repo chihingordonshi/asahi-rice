@@ -1,0 +1,3 @@
+# Python bytecode is generated locally and should never be backed up.
+**/__pycache__/
+*.py[cod]

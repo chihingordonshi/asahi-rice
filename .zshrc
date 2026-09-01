@@ -82,7 +82,7 @@ export PATH
 
 # <<< juliaup initialize <<<
 
-alias music='mocp'
+alias music='cmus'
 
 eval "$(zoxide init zsh --cmd cd)"
 

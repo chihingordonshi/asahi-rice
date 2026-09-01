@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Terminal=false
+Type=Application
+Name=Zoom
+Comment=Zoom web client (PWA), Brave Profile 1 (Gordon)
+Exec=brave-browser "--profile-directory=Profile 1" --app=https://app.zoom.us/wc/home?source=pwa
+Icon=brave-zoom-pwa-Profile_1
+Categories=Network;VideoConference;
+StartupWMClass=brave-app.zoom.us__wc_home-Profile_1

@@ -92,6 +92,17 @@ hl.window_rule({
     opaque = true,
 })
 
+hl.window_rule({
+    name = "zoom-webcam-popup",
+    match = {
+        class = "^brave-browser$",
+        title = "^Gordon Shi's Zoom Meeting$",
+    },
+    float = true,
+    size = { 336, 238 },
+    move = { 1255, 44 },
+})
+
 local function update_border()
     local ws = hl.get_active_workspace()
     local windows = hl.get_workspace_windows(ws.id)
