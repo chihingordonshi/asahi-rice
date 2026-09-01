@@ -91,6 +91,7 @@ for p in "${LIVE_PATHS[@]}"; do
         mkdir -p "$dst"
         rsync -a --delete --delete-excluded \
             --exclude='__pycache__/' --exclude='*.py[co]' \
+            --exclude='mimeinfo.cache' \
             "$src/" "$dst/"
     else
         mkdir -p "$(dirname "$dst")"
