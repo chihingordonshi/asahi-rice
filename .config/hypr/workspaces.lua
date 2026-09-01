@@ -25,10 +25,21 @@ end
 local skipGapFillOnce = false
 
 function GoToWorkspace(id)
-    -- Keep the numbered workspace sequence compact: selecting a non-empty
-    -- slot jumps to the first empty slot instead of creating a gap.
-    local target = first_empty_workspace()
-    skipGapFillOnce = true
+    -- Honor populated workspaces before the first empty one. Redirect only
+    -- when the requested workspace is empty, or lies after the first empty
+    -- slot, so workspace 1 remains selectable while it contains windows.
+    local first_empty = first_empty_workspace()
+    local windows = hl.get_workspace_windows(id)
+    local requested_is_empty = not windows or #windows == 0
+    local target = id
+
+    if requested_is_empty or id > first_empty then
+        target = first_empty
+    end
+
+    if target ~= id then
+        skipGapFillOnce = true
+    end
     hl.dispatch(hl.dsp.focus({ workspace = target }))
 end
 
