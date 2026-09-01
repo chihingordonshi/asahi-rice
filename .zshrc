@@ -52,6 +52,12 @@ source <(fzf --zsh)
 
 # End of lines added by compinstall
 export PATH="$HOME/.local/bin:$HOME/go/bin:$PATH"
+
+# Show a small random Pokémon sprite when an interactive terminal starts.
+if (( $+commands[pokemon-colorscripts] )); then
+  pokemon-colorscripts --random --no-title
+fi
+
 if [[ -f /usr/share/zsh-theme-powerlevel10k/powerlevel10k.zsh-theme ]]; then
   source /usr/share/zsh-theme-powerlevel10k/powerlevel10k.zsh-theme
 elif [[ -f ~/.local/share/powerlevel10k/powerlevel10k.zsh-theme ]]; then
@@ -62,6 +68,8 @@ fi
 
 
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+ typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
 
 # >>> juliaup initialize >>>
 
