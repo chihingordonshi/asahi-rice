@@ -14,6 +14,7 @@ bindkey -e
 # The following lines were added by compinstall
 # zstyle :compinstall filename '/home/chihin/.zshrc'
 
+alias kskbl='lsblk'
 alias ls='eza --icons --group-directories-first'
 alias ll='eza -lah --icons --group-directories-first --git'
 alias la='eza -a --icons --group-directories-first'
