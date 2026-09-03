@@ -25,7 +25,6 @@ alias find='fd'
 alias du='dust'
 alias df='duf'
 alias ps='procs'
-alias ping='gping'
 alias ..='cd ..'
 alias top='btop'
 alias lg='lazygit'
@@ -53,6 +52,10 @@ source <(fzf --zsh)
 
 # End of lines added by compinstall
 export PATH="$HOME/.local/bin:$HOME/go/bin:$PATH"
+
+# Keep TLDR pages local: GitHub Releases is currently unreliable through the
+# Mihomo network path, while the populated cache remains available offline.
+export TLDR_CACHE_MAX_AGE=8760
 
 # Show a small random Pokémon sprite when an interactive terminal starts.
 if (( $+commands[pokemon-colorscripts] )); then

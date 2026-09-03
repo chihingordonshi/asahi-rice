@@ -17,13 +17,17 @@ if [[ -z "$instance" ]]; then
     exit 1
 fi
 
-layout=$(hyprctl -i "$instance" getoption general:layout -j 2>/dev/null | jq -r '.str // "dwindle"' 2>/dev/null || printf 'dwindle')
+layout=$(hyprctl -i "$instance" activeworkspace -j 2>/dev/null | jq -r '.tiledLayout // "dwindle"' 2>/dev/null || printf 'dwindle')
+fullscreen_mode_file="$runtime_dir/hypr-fullscreen-mode"
 
-case "$layout" in
-    dwindle) next=master ;;
-    master) next=scrolling ;;
-    scrolling) next=monocle ;;
-    *) next=dwindle ;;
-esac
+if [[ -e "$fullscreen_mode_file" ]]; then
+    hyprctl -i "$instance" eval 'ToggleFullscreenMode(); SetActiveWorkspaceLayout("dwindle")' >/dev/null
+elif [[ "$layout" == "dwindle" ]]; then
+    hyprctl -i "$instance" eval 'SetActiveWorkspaceLayout("master")' >/dev/null
+elif [[ "$layout" == "master" ]]; then
+    hyprctl -i "$instance" eval 'ToggleFullscreenMode()' >/dev/null
+else
+    hyprctl -i "$instance" eval 'SetActiveWorkspaceLayout("dwindle")' >/dev/null
+fi
 
-hyprctl -i "$instance" eval "hl.config({general = {layout = \"$next\"}})" >/dev/null
+pkill -RTMIN+9 -x waybar 2>/dev/null || true

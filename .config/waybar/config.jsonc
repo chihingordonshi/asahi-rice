@@ -1,15 +1,3 @@
-// waybar config — top bar only: workspaces, time/date, cpu/mem, wifi, input method, battery,
-// volume, brightness. Same spec as the ironbar bar it replaces. Verified against the real
-// man pages (waybar-clock/cpu/memory/network/hyprland-workspaces/battery/pulseaudio/backlight
-// (5)), not guessed. Icon codepoints verified present in the installed JetBrainsMono Nerd Font
-// Mono via `fc-query -f '%{charset}'` against its actual cmap and cross-checked against
-// nerd-fonts' own glyphnames.json. Only Supplementary Private Use Area-A codepoints (U+F0000+)
-// are used here -- the older single-codepoint Nerd Font range (U+E000-U+F8FF) was found to get
-// silently dropped when this file is written by tooling, so it's avoided entirely.
-//
-// power-profiles-daemon's built-in waybar module wasn't rendering its {icon} format-icons
-// lookup reliably in testing, so custom/power-profile (waybar-power-profile.sh) reads/cycles
-// the profile directly over dbus instead.
 {
     "layer": "top",
     "position": "top",
@@ -40,17 +28,6 @@
             "class<terminal>": "󰆍",
             "class<org.mozilla.firefox>": "󰈹",
             "class<[Gg]oogle-[Cc]hrome.*>": "󰊯",
-            // Neither Brave nor Zoom has a dedicated brand glyph in this Nerd
-            // Font build (checked glyphnames.json, no si-/md- "brave" or
-            // "zoom" entry) -- md-webcam/md-web substitute, kept distinct
-            // from each other and from the plain chrome/firefox glyphs above.
-            // Class isn't a fixed "brave-browser": a plain browsing window
-            // reports that, but a --app=URL launch (the Zoom PWA launcher)
-            // gets a URL-derived class instead, e.g.
-            // "brave-app.zoom.us__wc_home-Profile_1" (confirmed live via
-            // hyprctl clients) -- match any brave-prefixed class instead.
-            // Title-matched Zoom rule must precede the bare brave rule so
-            // it isn't shadowed by the generic class match.
             "class<^[Bb]rave.*> title<^Zoom$>": "󰖠",
             "class<^[Bb]rave.*>": "󰖟",
             "class<org.kde.dolphin>": "󰉋",

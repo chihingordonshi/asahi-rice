@@ -1,0 +1,4 @@
+#!/bin/sh
+# Start nmtui with the local Rose Pine Moon palette.
+export NEWT_COLORS_FILE="$HOME/.config/nmtui/rose-pine-moon.colors"
+exec /usr/bin/nmtui "$@"

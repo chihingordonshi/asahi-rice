@@ -10,12 +10,15 @@ function NoTransparency()
                 border_size = 0,
             },
             decoration = {
-		rounding = 0,
-		rounding_power = 3,
+        		rounding = 0,
+        		rounding_power = 3,
                 inactive_opacity = 1.00,
                 glow = {
                     enabled = false,
-                }
+                },
+                shadow = {
+                    enabled = false,
+                },
             },
             animations = {
                 enabled = false,
@@ -29,12 +32,15 @@ function NoTransparency()
                 border_size = 2,
             },
             decoration = {
-		rounding = 5,
-		rounding_power = 3,
+	        	rounding = 5,
+        		rounding_power = 3,
                 inactive_opacity = 0.94,
                 glow = {
+                    enabled = false,
+                },
+                shadow = {
                     enabled = true,
-                }
+                },
             },
             animations = {
                 enabled = true,
@@ -42,4 +48,8 @@ function NoTransparency()
         })
     end
     TransparencyEnabled = not TransparencyEnabled
+end
+
+function IsTransparencyEnabled()
+    return TransparencyEnabled
 end
