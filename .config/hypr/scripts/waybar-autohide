@@ -1,0 +1,126 @@
+#!/usr/bin/env bash
+
+# Dwindle and Master show Waybar by default.  In fullscreen mode, populated
+# workspaces hide it until the pointer reaches the monitor's top edge; once
+# visible it remains so until the pointer is 200 logical px below that edge.
+# Empty active workspaces always show it.
+set -u
+
+runtime_dir="${XDG_RUNTIME_DIR:-/tmp}"
+force_show_file="$runtime_dir/waybar-autohide.force-show"
+normal_hidden_file="$runtime_dir/waybar-autohide.normal-hidden"
+fullscreen_mode_file="$runtime_dir/hypr-fullscreen-mode"
+lock_file="$runtime_dir/waybar-autohide.lock"
+
+# This command is intentionally handled before taking the daemon lock.
+if [[ "${1:-}" == "--toggle-visibility" ]]; then
+    if [[ -e "$fullscreen_mode_file" ]]; then
+        if [[ -e "$force_show_file" ]]; then
+            rm -f -- "$force_show_file"
+        else
+            : > "$force_show_file"
+        fi
+    else
+        rm -f -- "$force_show_file"
+        if [[ -e "$normal_hidden_file" ]]; then
+            rm -f -- "$normal_hidden_file"
+        else
+            : > "$normal_hidden_file"
+        fi
+    fi
+    exit 0
+fi
+
+# Config reloads may invoke this script again; retain exactly one controller.
+exec 9>"$lock_file"
+flock -n 9 || exit 0
+
+shown=1
+known_pids=""
+
+show_waybar() {
+    if (( shown )); then
+        return
+    fi
+
+    pkill -SIGUSR1 -x waybar 2>/dev/null || return
+    shown=1
+}
+
+hide_waybar() {
+    if (( ! shown )); then
+        return
+    fi
+
+    pkill -SIGUSR1 -x waybar 2>/dev/null || return
+    shown=0
+}
+
+while true; do
+    waybar_pids="$(pgrep -d , -x waybar 2>/dev/null || true)"
+    if [[ -z "$waybar_pids" ]]; then
+        known_pids=""
+        shown=0
+        sleep 0.1
+        continue
+    fi
+
+    # A restarted Waybar starts visible, so resynchronize the local state.
+    if [[ "$waybar_pids" != "$known_pids" ]]; then
+        known_pids="$waybar_pids"
+        shown=1
+    fi
+
+    # Dwindle and Master keep Waybar visible unless explicitly closed with the
+    # keybind.  Pointer-driven auto-hide runs only in fullscreen mode.
+    if [[ ! -e "$fullscreen_mode_file" ]]; then
+        rm -f -- "$force_show_file"
+        if [[ -e "$normal_hidden_file" ]]; then
+            hide_waybar
+        else
+            show_waybar
+        fi
+        sleep 0.1
+        continue
+    fi
+
+    if [[ -e "$force_show_file" ]]; then
+        show_waybar
+        sleep 0.1
+        continue
+    fi
+
+    workspace="$(hyprctl activeworkspace -j 2>/dev/null || true)"
+    cursor="$(hyprctl cursorpos -j 2>/dev/null || true)"
+    monitors="$(hyprctl monitors -j 2>/dev/null || true)"
+
+    if [[ -z "$workspace" || -z "$cursor" || -z "$monitors" ]]; then
+        sleep 0.1
+        continue
+    fi
+
+    active_is_empty="$(jq -r '.windows == 0' <<<"$workspace" 2>/dev/null || true)"
+    cursor_y="$(jq -nr --argjson cursor "$cursor" --argjson monitors "$monitors" '
+        [
+            $monitors[]
+            | select(
+                $cursor.x >= .x and $cursor.x < (.x + .width)
+                and $cursor.y >= .y and $cursor.y < (.y + .height)
+            )
+            | ($cursor.y - .y)
+        ]
+        | first // empty
+    ' 2>/dev/null || true)"
+
+    if [[ "$active_is_empty" == "true" ]]; then
+        show_waybar
+    elif [[ "$cursor_y" =~ ^-?[0-9]+$ ]]; then
+        if (( cursor_y <= 0 || (shown && cursor_y < 200) )); then
+            show_waybar
+        else
+            hide_waybar
+        fi
+    fi
+
+    sleep 0.1
+done

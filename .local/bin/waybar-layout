@@ -12,22 +12,14 @@ if [[ -z "$instance" || ! -S "$runtime_dir/hypr/$instance/.socket.sock" ]]; then
     done
 fi
 
-layout=$(hyprctl -i "$instance" getoption general:layout -j 2>/dev/null | jq -r '.str // "dwindle"' 2>/dev/null || printf 'dwindle')
+layout=$(hyprctl -i "$instance" activeworkspace -j 2>/dev/null | jq -r '.tiledLayout // "dwindle"' 2>/dev/null || printf 'dwindle')
+fullscreen_mode_file="$runtime_dir/hypr-fullscreen-mode"
 
-case "$layout" in
-    dwindle)
-        printf '{"text":"󰕰  Dwindle","tooltip":"Dwindle — click for Master","class":"dwindle"}\n'
-        ;;
-    master)
-        printf '{"text":"󰕰  Master","tooltip":"Master — click for Scrolling","class":"master"}\n'
-        ;;
-    scrolling)
-        printf '{"text":"󰕰  Scrolling","tooltip":"Scrolling — click for Monocle","class":"scrolling"}\n'
-        ;;
-    monocle)
-        printf '{"text":"󰕰  Monocle","tooltip":"Monocle — click for Dwindle","class":"monocle"}\n'
-        ;;
-    *)
-        printf '{"text":"󰕰  %s","tooltip":"Unknown layout — click for Dwindle","class":"unknown"}\n' "$layout"
-        ;;
-esac
+if [[ -e "$fullscreen_mode_file" ]]; then
+    printf '{"text":"󰊓  Fullscreen","tooltip":"Fullscreen — click for Dwindle","class":"fullscreen"}\n'
+elif [[ "$layout" == "master" ]]; then
+    printf '{"text":"󰕰  Master","tooltip":"Master — click for Fullscreen","class":"master"}\n'
+else
+    # Dwindle is also the safe display for layouts outside this three-mode cycle.
+    printf '{"text":"󰕰  Dwindle","tooltip":"Dwindle — click for Master","class":"dwindle"}\n'
+fi

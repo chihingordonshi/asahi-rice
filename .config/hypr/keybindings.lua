@@ -9,13 +9,8 @@ hl.bind(mainMod .. " + Q", hl.dsp.exec_cmd("kitty --class terminal"))
 local closeWindowBind = hl.bind(mainMod .. " + C", hl.dsp.window.close())
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
 hl.bind(mainMod .. " + F", hl.dsp.window.float({ action = "toggle" }))
-
-hl.bind(mainMod .. " + SHIFT + F", function()
-    hl.dispatch(hl.dsp.window.float({ action = "toggle" }))
-    hl.dispatch(hl.dsp.window.tag({ tag = "cover-screen" }))
-    hl.dispatch(hl.dsp.window.fullscreen({ mode = "fullscreen", action = "toggle" }))
-    hl.exec_cmd("pkill -SIGUSR1 waybar")
-end)
+hl.bind(mainMod .. " + SHIFT + F", FullscreenActiveWindow)
+hl.bind(mainMod .. " + SPACE", ToggleFullscreenMode)
 
 hl.bind(mainMod .. " + R", NoTransparency)
 hl.bind(mainMod .. " + P", hl.dsp.window.pseudo())
@@ -85,6 +80,7 @@ hl.bind(mainMod .. " + N", hl.dsp.exec_cmd("kitty --class spacer &"))
 
 -- Open browser with mainMod + W
 hl.bind(mainMod .. " + W", hl.dsp.exec_cmd(browser))
+hl.bind(mainMod .. " + SHIFT + W", ToggleWaybarVisibility)
 
 -- App launcher
 hl.bind(mainMod .. " + D", hl.dsp.exec_cmd("rofi -show drun"))

@@ -48,7 +48,7 @@ hl.config({
         },
 
         glow = {
-            enabled = true,
+            enabled = false,
             range = 4,
             color = 0xff6282f5,
         }
