@@ -27,7 +27,7 @@ hl.config({
 hl.gesture({
     fingers   = 3,
     direction = "horizontal",
-    action    = "workspace"
+    action    = "workspace",
 })
 
 hl.gesture({
@@ -35,7 +35,7 @@ hl.gesture({
     direction = "up",
     action    = function()
         hl.dispatch(hl.dsp.exec_cmd(os.getenv("HOME") .. "/.local/bin/hypr-overview"))
-    end
+    end,
 })
 
 hl.gesture({
@@ -43,7 +43,7 @@ hl.gesture({
     direction = "down",
     action    = function()
         hl.dispatch(hl.dsp.exec_cmd(os.getenv("HOME") .. "/.local/bin/hypr-overview --dismiss"))
-    end
+    end,
 })
 
 hl.gesture({
@@ -53,6 +53,5 @@ hl.gesture({
         hl.dispatch(hl.dsp.exec_cmd(
             "pgrep -x rofi >/dev/null && pkill -x rofi || rofi -show drun"
         ))
-    end
+    end,
 })
-

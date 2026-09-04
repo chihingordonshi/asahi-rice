@@ -29,7 +29,7 @@
             "class<org.mozilla.firefox>": "󰈹",
             "class<[Gg]oogle-[Cc]hrome.*>": "󰊯",
             "class<^[Bb]rave.*> title<^Zoom$>": "󰖠",
-            "class<^[Bb]rave.*>": "󰖟",
+            "brave-browser": "󰊯",
             "class<org.kde.dolphin>": "󰉋",
             "[Ww]e[Cc]hat": "󰘑",
             "class<^mpv$>": "󰎁",

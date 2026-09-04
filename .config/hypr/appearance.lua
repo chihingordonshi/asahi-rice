@@ -6,7 +6,7 @@
 -- Refer to https://wiki.hypr.land/Configuring/Basics/Variables/
 hl.config({
     general = {
-        gaps_in  = 3,
+        gaps_in  = 4,
         gaps_out = 6,
 
         border_size = 2,
@@ -49,9 +49,9 @@ hl.config({
 
         glow = {
             enabled = false,
-            range = 4,
-            color = 0xff6282f5,
-        }
+            range   = 4,
+            color   = 0xff6282f5,
+        },
     },
 
     animations = {

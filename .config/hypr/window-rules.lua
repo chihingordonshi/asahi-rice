@@ -6,7 +6,7 @@
 -- See https://wiki.hypr.land/Configuring/Basics/Window-Rules/
 -- and https://wiki.hypr.land/Configuring/Basics/Workspace-Rules/
 
-local suppressMaximizeRule = hl.window_rule({
+hl.window_rule({
     name  = "suppress-maximize-events",
     match = { class = ".*" },
 
@@ -27,7 +27,7 @@ hl.window_rule({
     no_focus = true,
 })
 
--- Hyprland-run windowrule
+-- Hyprland Run launcher
 hl.window_rule({
     name  = "move-hyprland-run",
     match = { class = "hyprland-run" },
@@ -36,33 +36,34 @@ hl.window_rule({
     float = true,
 })
 
--- Spacer window that is invisible but ocupies space
+-- Invisible tiled window that occupies space
 hl.window_rule({
-    name = "spacer-window",
-    match = {
-        class = "spacer"
-    },
+    name        = "spacer-window",
+    match       = { class = "spacer" },
     border_size = 0,
-    tile = true,
-    opacity = 0.0,
-    min_size = { "monitor_w * 0.1", "monitor_h * 0.1" }
+    tile        = true,
+    opacity     = 0.0,
+    min_size    = { "monitor_w * 0.1", "monitor_h * 0.1" },
 })
 
 hl.window_rule({
-    name = "terminal",
-    match = {
-        class = "terminal"
-    },
+    name   = "terminal",
+    match  = { class = "terminal" },
     opaque = true,
 })
 
--- Enabled only while fullscreen mode is active.  New windows stay on the
--- current workspace and use covering fullscreen, not maximized mode.
+-- Enabled only while fullscreen mode is active.  Hyprland covers the monitor,
+-- but client state 0 keeps applications such as Brave unaware that
+-- they are fullscreen.
 local fullscreenRule = hl.window_rule({
     name  = "fullscreen",
-    match = { class = ".*" },
+    match = {
+        class = ".*",
+        float = false,
+        workspace = "s[false]",
+    },
 
-    fullscreen_state = "2 2",
+    fullscreen_state = "2 0",
     border_size      = 0,
     rounding         = 0,
     decorate         = false,
@@ -92,10 +93,6 @@ local function setFullscreenModeState(enabled)
     end
 end
 
-function IsFullscreenModeActive()
-    return fullscreenRule:is_enabled()
-end
-
 hl.window_rule({
     name = "cover-screen-borderless",
     match = { tag = "cover-screen" },
@@ -111,40 +108,40 @@ hl.window_rule({
     opaque      = true,
 })
 
--- This rule affects only the sole window on a Dwindle workspace.  The tag is
--- maintained below so the decision remains per-window and per-workspace.
+-- Dwindle is the default layout.  A Master workspace receives a later,
+-- workspace-specific normal-border override from SetActiveWorkspaceLayout.
 hl.window_rule({
     name = "single-dwindle-transparent-border",
-    match = { tag = "single-dwindle-window" },
+    match = {
+        float = false,
+        workspace = "w[tv1]s[false]",
+    },
 
     border_color = "rgba(00000000)",
+    border_size  = 0,
+    rounding    = 0,
+    no_shadow   = true,
 })
 
 hl.window_rule({
-    name = "wifi-select-float",
-    match = {
-        class = "wifi-select"
-    },
-    float = true,
+    name   = "wifi-select-float",
+    match  = { class = "wifi-select" },
+    float  = true,
     opaque = true,
 })
 
 hl.window_rule({
-    name = "wechat-tile",
-    match = {
-        class = "[Ww]e[Cc]hat"
-    },
-    tile = true,
+    name  = "wechat-tile",
+    match = { class = "[Ww]e[Cc]hat" },
+    tile  = true,
 })
 
 hl.window_rule({
-    name = "sticky",
-    match = {
-        class = "sticky"
-    },
-    float = true,
-    size = {300, 300},
-    move = {"(cursor_x - 150)", "(cursor_y - 150)"},
+    name   = "sticky",
+    match  = { class = "sticky" },
+    float  = true,
+    size   = { 300, 300 },
+    move   = { "(cursor_x - 150)", "(cursor_y - 150)" },
     opaque = true,
 })
 
@@ -158,27 +155,6 @@ hl.window_rule({
     size = { 336, 238 },
     move = { 1255, 44 },
 })
-
-function UpdateWindowAppearance()
-    for _, workspace in ipairs(hl.get_workspaces()) do
-        local windows = hl.get_workspace_windows(workspace)
-        local transparentBorder = workspace.tiled_layout == "dwindle" and #windows == 1
-
-        for _, window in ipairs(windows) do
-            hl.dispatch(hl.dsp.window.tag({
-                tag = transparentBorder
-                    and "+single-dwindle-window"
-                    or "-single-dwindle-window",
-                window = window,
-            }))
-        end
-    end
-end
-
-hl.on("workspace.active", UpdateWindowAppearance)
-hl.on("window.open", UpdateWindowAppearance)
-hl.on("window.destroy", UpdateWindowAppearance)
-hl.on("window.move_to_workspace", UpdateWindowAppearance)
 
 local function organizeWindowsOnePerWorkspace()
     local activeWindow = hl.get_active_window()
@@ -199,7 +175,9 @@ local function organizeWindowsOnePerWorkspace()
             local windows = hl.get_workspace_windows(workspace)
 
             for _, window in ipairs(windows or {}) do
-                table.insert(orderedWindows, window)
+                if not window.floating then
+                    table.insert(orderedWindows, window)
+                end
             end
         end
     end
@@ -221,6 +199,82 @@ local function organizeWindowsOnePerWorkspace()
         hl.dispatch(hl.dsp.focus({ workspace = activeTarget }))
     end
 end
+
+function MoveWindowToWorkspace(workspace)
+    local window = hl.get_active_window()
+    if not window then
+        return
+    end
+
+    if fullscreenRule:is_enabled() then
+        for _, existingWindow in ipairs(hl.get_workspace_windows(workspace) or {}) do
+            if existingWindow.address ~= window.address then
+                return
+            end
+        end
+    end
+
+    hl.dispatch(hl.dsp.window.move({
+        workspace = workspace,
+        window = window,
+        follow = true,
+    }))
+end
+
+local function insertFullscreenWindow(window)
+    if window and window.floating then
+        return
+    end
+
+    if not fullscreenRule:is_enabled()
+        or not window
+        or not window.workspace
+        or window.workspace.special
+        or window.workspace.id <= 0 then
+        return
+    end
+
+    local source = window.workspace.id
+    local sourceWindows = hl.get_workspace_windows(source) or {}
+
+    -- If this window opened on an empty workspace, it is already isolated.
+    if #sourceWindows <= 1 then
+        return
+    end
+
+    local insertion = source + 1
+    local workspaces = hl.get_workspaces()
+
+    -- Move from right to left so every later workspace is vacant before its
+    -- predecessor moves into it.  This preserves the existing window order.
+    table.sort(workspaces, function(a, b)
+        return a.id > b.id
+    end)
+
+    for _, workspace in ipairs(workspaces) do
+        if not workspace.special and workspace.id >= insertion then
+            local windows = hl.get_workspace_windows(workspace) or {}
+
+            for _, existingWindow in ipairs(windows) do
+                if existingWindow.address ~= window.address then
+                    hl.dispatch(hl.dsp.window.move({
+                        workspace = workspace.id + 1,
+                        window = existingWindow,
+                        follow = false,
+                    }))
+                end
+            end
+        end
+    end
+
+    hl.dispatch(hl.dsp.window.move({
+        workspace = insertion,
+        window = window,
+        follow = true,
+    }))
+end
+
+hl.on("window.open", insertFullscreenWindow)
 
 function ToggleFullscreenMode()
     if fullscreenRule:is_enabled() then
