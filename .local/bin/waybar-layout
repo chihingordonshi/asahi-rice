@@ -17,9 +17,6 @@ fullscreen_mode_file="$runtime_dir/hypr-fullscreen-mode"
 
 if [[ -e "$fullscreen_mode_file" ]]; then
     printf '{"text":"󰊓  Fullscreen","tooltip":"Fullscreen — click for Dwindle","class":"fullscreen"}\n'
-elif [[ "$layout" == "master" ]]; then
-    printf '{"text":"󰕰  Master","tooltip":"Master — click for Fullscreen","class":"master"}\n'
 else
-    # Dwindle is also the safe display for layouts outside this three-mode cycle.
-    printf '{"text":"󰕰  Dwindle","tooltip":"Dwindle — click for Master","class":"dwindle"}\n'
+    printf '{"text":"󰕰  Dwindle","tooltip":"Dwindle — click for Fullscreen","class":"dwindle"}\n'
 fi

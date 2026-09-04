@@ -23,8 +23,6 @@ fullscreen_mode_file="$runtime_dir/hypr-fullscreen-mode"
 if [[ -e "$fullscreen_mode_file" ]]; then
     hyprctl -i "$instance" eval 'ToggleFullscreenMode(); SetActiveWorkspaceLayout("dwindle")' >/dev/null
 elif [[ "$layout" == "dwindle" ]]; then
-    hyprctl -i "$instance" eval 'SetActiveWorkspaceLayout("master")' >/dev/null
-elif [[ "$layout" == "master" ]]; then
     hyprctl -i "$instance" eval 'ToggleFullscreenMode()' >/dev/null
 else
     hyprctl -i "$instance" eval 'SetActiveWorkspaceLayout("dwindle")' >/dev/null
