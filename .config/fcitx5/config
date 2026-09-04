@@ -17,25 +17,21 @@ EnumerateSkipFirst=False
 EnumerateGroupForwardKeys=
 # Enumerate Input Method Group Backward
 EnumerateGroupBackwardKeys=
+# Fallback Previous page
+PrevPage=
+# Fallback Next page
+NextPage=
+# Fallback Previous Candidate
+PrevCandidate=
+# Fallback Next Candidate
+NextCandidate=
 # Toggle embedded preedit
 TogglePreedit=
 # Time limit in milliseconds for triggering modifier key shortcuts
 ModifierOnlyKeyTimeout=250
 
 [Hotkey/TriggerKeys]
-0=Super+T
-
-[Hotkey/PrevPage]
-0=Up
-
-[Hotkey/NextPage]
-0=Down
-
-[Hotkey/PrevCandidate]
-0=Shift+Tab
-
-[Hotkey/NextCandidate]
-0=Tab
+0=Super+R
 
 [Behavior]
 # Activate input method by default

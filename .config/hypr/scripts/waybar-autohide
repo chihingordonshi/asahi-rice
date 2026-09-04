@@ -1,100 +1,135 @@
 #!/usr/bin/env bash
 
-# Dwindle and Master show Waybar by default.  In fullscreen mode, populated
-# workspaces hide it until the pointer reaches the monitor's top edge; once
-# visible it remains so until the pointer is 200 logical px below that edge.
-# Empty active workspaces always show it.
+# Fullscreen mode always autohides Waybar. In Dwindle, Super+R switches between
+# force-show and the same autohide behavior. Master always shows Waybar. Once
+# revealed, Waybar stays visible within twice its configured height.
 set -u
 
 runtime_dir="${XDG_RUNTIME_DIR:-/tmp}"
 force_show_file="$runtime_dir/waybar-autohide.force-show"
-normal_hidden_file="$runtime_dir/waybar-autohide.normal-hidden"
 fullscreen_mode_file="$runtime_dir/hypr-fullscreen-mode"
 lock_file="$runtime_dir/waybar-autohide.lock"
+hover_height=72
+trigger_delay_ms=200
 
 # This command is intentionally handled before taking the daemon lock.
 if [[ "${1:-}" == "--toggle-visibility" ]]; then
+    # Fullscreen is always automatic, and Master is always visible. The toggle
+    # is a Dwindle-only preference.
     if [[ -e "$fullscreen_mode_file" ]]; then
-        if [[ -e "$force_show_file" ]]; then
-            rm -f -- "$force_show_file"
-        else
-            : > "$force_show_file"
-        fi
-    else
+        exit 0
+    fi
+
+    workspace="$(hyprctl activeworkspace -j 2>/dev/null || true)"
+    layout="$(jq -r '.tiledLayout // empty' <<<"$workspace" 2>/dev/null || true)"
+    if [[ "$layout" != "dwindle" ]]; then
+        exit 0
+    fi
+
+    if [[ -e "$force_show_file" ]]; then
         rm -f -- "$force_show_file"
-        if [[ -e "$normal_hidden_file" ]]; then
-            rm -f -- "$normal_hidden_file"
-        else
-            : > "$normal_hidden_file"
-        fi
+    else
+        : > "$force_show_file"
     fi
     exit 0
 fi
+
+# Remove the obsolete force-hidden state left by older versions.
+rm -f -- "$runtime_dir/waybar-autohide.normal-hidden"
 
 # Config reloads may invoke this script again; retain exactly one controller.
 exec 9>"$lock_file"
 flock -n 9 || exit 0
 
-shown=1
-known_pids=""
+shown=0
+top_hover_started_ms=0
+
+get_waybar_visibility() {
+    local monitors
+    monitors="$(hyprctl monitors -j 2>/dev/null)" || {
+        printf '%s\n' unknown
+        return
+    }
+
+    if ! jq -e . >/dev/null 2>&1 <<<"$monitors"; then
+        printf '%s\n' unknown
+    elif jq -e 'any(.[]; (.reserved[1] // 0) > 0)' \
+        >/dev/null 2>&1 <<<"$monitors"; then
+        printf '%s\n' shown
+    else
+        printf '%s\n' hidden
+    fi
+}
 
 show_waybar() {
-    if (( shown )); then
-        return
-    fi
-
-    pkill -SIGUSR1 -x waybar 2>/dev/null || return
-    shown=1
+    case "$(get_waybar_visibility)" in
+        shown)
+            shown=1
+            ;;
+        hidden)
+            pkill -SIGUSR1 -x waybar 2>/dev/null || return
+            shown=1
+            ;;
+    esac
 }
 
 hide_waybar() {
-    if (( ! shown )); then
-        return
-    fi
-
-    pkill -SIGUSR1 -x waybar 2>/dev/null || return
-    shown=0
+    case "$(get_waybar_visibility)" in
+        shown)
+            pkill -SIGUSR1 -x waybar 2>/dev/null || return
+            shown=0
+            ;;
+        hidden)
+            shown=0
+            ;;
+    esac
 }
 
 while true; do
     waybar_pids="$(pgrep -d , -x waybar 2>/dev/null || true)"
     if [[ -z "$waybar_pids" ]]; then
-        known_pids=""
         shown=0
+        top_hover_started_ms=0
         sleep 0.1
         continue
     fi
 
-    # A restarted Waybar starts visible, so resynchronize the local state.
-    if [[ "$waybar_pids" != "$known_pids" ]]; then
-        known_pids="$waybar_pids"
-        shown=1
-    fi
-
-    # Dwindle and Master keep Waybar visible unless explicitly closed with the
-    # keybind.  Pointer-driven auto-hide runs only in fullscreen mode.
-    if [[ ! -e "$fullscreen_mode_file" ]]; then
-        rm -f -- "$force_show_file"
-        if [[ -e "$normal_hidden_file" ]]; then
-            hide_waybar
-        else
-            show_waybar
-        fi
+    visibility="$(get_waybar_visibility)"
+    if [[ "$visibility" == "unknown" ]]; then
+        top_hover_started_ms=0
         sleep 0.1
         continue
     fi
-
-    if [[ -e "$force_show_file" ]]; then
-        show_waybar
-        sleep 0.1
-        continue
-    fi
+    [[ "$visibility" == "shown" ]] && shown=1 || shown=0
 
     workspace="$(hyprctl activeworkspace -j 2>/dev/null || true)"
+    if [[ -z "$workspace" ]]; then
+        sleep 0.1
+        continue
+    fi
+
+    layout="$(jq -r '.tiledLayout // empty' <<<"$workspace" 2>/dev/null || true)"
+
+    if [[ ! -e "$fullscreen_mode_file" ]]; then
+        if [[ "$layout" != "dwindle" ]]; then
+            top_hover_started_ms=0
+            show_waybar
+            sleep 0.1
+            continue
+        fi
+
+        if [[ -e "$force_show_file" ]]; then
+            top_hover_started_ms=0
+            show_waybar
+            sleep 0.1
+            continue
+        fi
+    fi
+
     cursor="$(hyprctl cursorpos -j 2>/dev/null || true)"
     monitors="$(hyprctl monitors -j 2>/dev/null || true)"
-
-    if [[ -z "$workspace" || -z "$cursor" || -z "$monitors" ]]; then
+    if [[ -z "$cursor" || -z "$monitors" ]]; then
+        top_hover_started_ms=0
         sleep 0.1
         continue
     fi
@@ -113,13 +148,29 @@ while true; do
     ' 2>/dev/null || true)"
 
     if [[ "$active_is_empty" == "true" ]]; then
+        top_hover_started_ms=0
         show_waybar
     elif [[ "$cursor_y" =~ ^-?[0-9]+$ ]]; then
-        if (( cursor_y <= 0 || (shown && cursor_y < 200) )); then
+        if (( shown && cursor_y < hover_height )); then
+            top_hover_started_ms=0
             show_waybar
+        elif (( cursor_y <= 0 )); then
+            now_ms="$(date +%s%3N)"
+            if (( top_hover_started_ms == 0 )); then
+                top_hover_started_ms=$now_ms
+            fi
+
+            if (( now_ms - top_hover_started_ms >= trigger_delay_ms )); then
+                show_waybar
+            else
+                hide_waybar
+            fi
         else
+            top_hover_started_ms=0
             hide_waybar
         fi
+    else
+        top_hover_started_ms=0
     fi
 
     sleep 0.1

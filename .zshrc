@@ -15,10 +15,12 @@ bindkey -e
 # zstyle :compinstall filename '/home/chihin/.zshrc'
 
 alias kskbl='lsblk'
+alias zdjd='tldr'
+
 alias ls='eza --icons --group-directories-first'
 alias ll='eza -lah --icons --group-directories-first --git'
 alias la='eza -a --icons --group-directories-first'
-alias lt='eza --tree --icons --group-directories-first'
+alias tree='eza --tree --icons --group-directories-first'
 alias bat='bat --paging=never'
 alias grep='rg'
 alias find='fd'
@@ -26,15 +28,11 @@ alias du='dust'
 alias df='duf'
 alias ps='procs'
 alias ..='cd ..'
+alias ~='cd ~'
 alias top='btop'
 alias lg='lazygit'
-# alias vim='nvim'  # disabled: using true vim now
-
-alias dotbackup='/usr/bin/git --git-dir=$HOME/.dotfiles --work-tree=$HOME'
-alias gitlogin='git config --global user.email chihin.gordon.shi@gmail.com \
-    && git config --global user.name chihingordonshi'
-
-alias hotspot="nmcli device wifi hotspot ifname wld0 ssid AsahiFedora password 'gshi2029' band bg && nmcli dev wifi show-password"
+alias vim='exec vim'
+alias music='cmus'
 
 [[ -f /usr/share/zsh/plugins/zsh-autocomplete/zsh-autocomplete.plugin.zsh ]] && source /usr/share/zsh/plugins/zsh-autocomplete/zsh-autocomplete.plugin.zsh
 [[ -f ~/.local/share/zsh-autocomplete/zsh-autocomplete.plugin.zsh ]] && source ~/.local/share/zsh-autocomplete/zsh-autocomplete.plugin.zsh
@@ -70,7 +68,6 @@ fi
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 
-
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
  typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
@@ -85,8 +82,6 @@ export PATH
 [ -f "/home/chihin/.julia/juliaup/completions/zsh.zsh" ] && source "/home/chihin/.julia/juliaup/completions/zsh.zsh"
 
 # <<< juliaup initialize <<<
-
-alias music='cmus'
 
 eval "$(zoxide init zsh --cmd cd)"
 

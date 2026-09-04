@@ -9,7 +9,7 @@
 -- script holds a singleton lock, so this is safe when a controller is running.
 hl.exec_cmd(os.getenv("HOME") .. "/.config/hypr/scripts/waybar-autohide")
 
-hl.on("hyprland.start", function ()
+hl.on("hyprland.start", function()
     hl.exec_cmd("dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY XDG_CURRENT_DESKTOP HYPRLAND_INSTANCE_SIGNATURE")
     hl.exec_cmd("xrdb -merge " .. os.getenv("HOME") .. "/.Xresources")
     hl.exec_cmd("/usr/bin/kwalletd6")
