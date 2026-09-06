@@ -1,72 +1,15 @@
 #!/usr/bin/env bash
-# Mirrors dot-files' dotbackup-run pattern for ~/Projects/asahi-rice.
-#
-# asahi-rice is a normal clone (not a bare-repo-over-$HOME like dot-files), so
-# instead of `git add` picking up live changes directly, this rsyncs each known
-# config path from its live location into the repo, then commits/pushes.
-# New files created *within* these known paths are picked up automatically;
-# a genuinely new top-level path (e.g. a new ~/.config/<app>) still needs to be
-# added to LIVE_PATHS by hand, same limitation dot-files has for new dirs.
+# The tracked files used from $HOME are symlinks into ~/Projects/asahi-rice, so
+# edits already happen directly in this worktree. This job only commits and
+# pushes them; copying the links back with rsync would create self-referential
+# symlinks. New files must be added to the repository and linked into $HOME
+# deliberately.
 set -euo pipefail
 
 REPO="$HOME/Projects/asahi-rice"
 LOG="$HOME/.local/share/asahi-rice-sync.log"
 STAMP="$HOME/.local/share/asahi-rice-sync-last-run"
 TODAY=$(date +%F)
-
-LIVE_PATHS=(
-    .config/agents
-    .config/autostart
-    .config/btop
-    .config/cava
-    .config/fcitx5
-    .config/fastfetch
-    .config/fish
-    .config/fuzzel
-    .config/hypr
-    .config/hypr-quickmenu
-    .config/kdeglobals
-    .config/kitty
-    .config/Kvantum
-    .config/mako
-    .config/neofetch
-    .config/nvim
-    .config/pavucontrol.ini
-    .config/qt6ct
-    .config/rofi
-    .config/systemd/user
-    .config/waybar
-    .config/waypaper
-    .config/wireplumber
-    .local/bin
-    .local/share/applications
-    .p10k.zsh
-    .zsh_functions
-    .zshrc
-    Pictures/Wallpapers
-)
-
-sync_local_bin() {
-    local src="$HOME/.local/bin"
-    local dst="$REPO/.local/bin"
-    local file list
-
-    mkdir -p "$dst"
-    list=$(mktemp)
-    trap 'rm -f "$list"' RETURN
-
-    # Keep executable scripts only. Installed binaries, symlinks, and Python
-    # bytecode are architecture- or environment-specific, not dotfiles.
-    while IFS= read -r -d '' file; do
-        if [[ "$(head -c 2 -- "$file")" == '#!' ]]; then
-            printf '%s\0' "${file#"$src"/}" >> "$list"
-        fi
-    done < <(find "$src" -type f -print0)
-
-    rsync -a --delete --from0 --files-from="$list" "$src/" "$dst/"
-    trap - RETURN
-    rm -f "$list"
-}
 
 exec >> "$LOG" 2>&1
 echo "=== $(date -Is) : run start ==="
@@ -77,33 +20,8 @@ if [[ -f "$STAMP" ]] && [[ "$(cat "$STAMP")" == "$TODAY" ]]; then
     exit 0
 fi
 
-synced_paths=()
-for p in "${LIVE_PATHS[@]}"; do
-    src="$HOME/$p"
-    dst="$REPO/$p"
-    [[ -e "$src" ]] || continue
-    if [[ "$p" == ".local/bin" ]]; then
-        sync_local_bin
-        synced_paths+=("$p")
-        continue
-    fi
-    if [[ -d "$src" ]]; then
-        mkdir -p "$dst"
-        rsync -a --delete --delete-excluded \
-            --exclude='__pycache__/' --exclude='*.py[co]' \
-            --exclude='mimeinfo.cache' \
-            "$src/" "$dst/"
-    else
-        mkdir -p "$(dirname "$dst")"
-        cp -a "$src" "$dst"
-    fi
-    synced_paths+=("$p")
-done
-
 cd "$REPO"
-if [[ ${#synced_paths[@]} -gt 0 ]]; then
-    git add -A -- "${synced_paths[@]}"
-fi
+git add -A
 
 if git diff --cached --quiet; then
     echo "no tracked changes, skipping commit/push"
