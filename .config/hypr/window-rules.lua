@@ -66,6 +66,16 @@ hl.window_rule({
     opaque = true,
 })
 
+hl.window_rule({
+    name   = "nmtui",
+    match  = { 
+        class = "wifi-select",
+        float  = true,
+    },
+    size   = { 1280, 800 },
+})
+
+
 -- Enabled only while fullscreen mode is active.  Hyprland covers the monitor,
 -- but client state 0 keeps applications such as Brave unaware that
 -- they are fullscreen.
