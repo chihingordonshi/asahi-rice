@@ -11,6 +11,13 @@ padding=12
 margin=10
 progress-color=source #F6C177FF
 
+[app-name=waybar-osd]
+anchor=top-center
+default-timeout=1400
+ignore-timeout=1
+history=0
+text-alignment=center
+
 [urgency=low]
 border-color=#908CAAFF
 default-timeout=3000

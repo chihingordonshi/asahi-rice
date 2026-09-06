@@ -5,7 +5,7 @@
 
     "modules-left": ["custom/suspend", "custom/cpu", "custom/memory", "custom/fcitx5", "custom/power-profile", "hyprland/workspaces"],
     "modules-center": ["clock"],
-    "modules-right": ["tray", "custom/layout", "custom/wallpaper-backend", "custom/bluetooth", "backlight", "pulseaudio", "network", "battery"],
+    "modules-right": ["tray", "custom/layout", "custom/wallpaper-backend", "custom/bluetooth", "custom/brightness", "custom/volume", "network", "battery"],
 
     "hyprland/workspaces": {
         "format": "{icon} {windows}",
@@ -124,17 +124,26 @@
         "tooltip": true
     },
 
-    "backlight": {
-        "format": "󰃜  {percent}%"
+    "custom/brightness": {
+        "exec": "~/.local/bin/waybar-level brightness status",
+        "return-type": "json",
+        "interval": 2,
+        "signal": 11,
+        "on-scroll-up": "~/.local/bin/waybar-level brightness up",
+        "on-scroll-down": "~/.local/bin/waybar-level brightness down",
+        "tooltip": true
     },
 
-    "pulseaudio": {
-        "format": "{icon}  {volume}%",
-        "format-muted": "󰖁  muted",
-        "format-icons": ["󰕿", "󰖀", "󰕾"],
+    "custom/volume": {
+        "exec": "~/.local/bin/waybar-level volume status",
+        "return-type": "json",
+        "interval": 2,
+        "signal": 10,
         "on-click": "pavucontrol",
-        "on-click-right": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
-        "tooltip-format": "Volume: {volume}% (scroll to adjust, right-click to mute)"
+        "on-click-right": "~/.local/bin/waybar-level volume toggle",
+        "on-scroll-up": "~/.local/bin/waybar-level volume up",
+        "on-scroll-down": "~/.local/bin/waybar-level volume down",
+        "tooltip": true
     },
 
     "network": {

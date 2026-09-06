@@ -27,6 +27,20 @@ hl.window_rule({
     no_focus = true,
 })
 
+-- XWayland popups are often implemented as floating windows with transparent
+-- padding.  Do not blur through that padding, so it remains fully transparent.
+hl.window_rule({
+    name = "no-blur-xwayland-floats",
+    match = {
+        xwayland = true,
+        float    = true,
+    },
+
+    border_size = 0,
+    no_blur     = true,
+    no_shadow   = true,
+})
+
 -- Hyprland Run launcher
 hl.window_rule({
     name  = "move-hyprland-run",
@@ -134,6 +148,15 @@ hl.window_rule({
     name  = "wechat-tile",
     match = { class = "[Ww]e[Cc]hat" },
     tile  = true,
+})
+
+hl.window_rule({
+    name = "wechat-open-dialog-float",
+    match = {
+        class = "^[Ww]e[Cc]hat$",
+        title = "^Open$",
+    },
+    float = true,
 })
 
 hl.window_rule({

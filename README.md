@@ -6,8 +6,8 @@ see `.config/agents/fedora-asahi-setup.md` for the reasoning behind the whole se
 
 These files were originally curated from [dot-files](https://github.com/chihingordonshi/dot-files)
 (the Arch/XPS16 rice), then adapted and extended for this machine specifically. They are
-**live** — deployed to `$HOME` on the real M1 and kept in sync from it (see
-`asahi-rice-sync` under "Status" below) — not just a staged reference anymore.
+**live**: each tracked home file is symlinked from `$HOME` into this worktree, and
+`asahi-rice-sync` commits and pushes worktree changes once a day (see "Status" below).
 
 **New here?** Start with [Replicating this on your own M1](#replicating-this-on-your-own-m1)
 — it's the one section written as a checklist rather than a log.
@@ -64,19 +64,20 @@ setup on your own M1 running Fedora Asahi Remix, work through it in this order:
    [`ryanoasis/nerd-fonts`](https://github.com/ryanoasis/nerd-fonts) GitHub release, unzipped
    into `~/.local/share/fonts`, then `fc-cache`. Everything here (waybar, kitty, the
    Cairo clock) assumes this exact font is present.
-3. **Copy the config files into `$HOME`.** Every path under `.config/`, `.local/bin/`,
+3. **Link or copy the config files into `$HOME`.** Every path under `.config/`, `.local/bin/`,
    `.local/share/applications/`, `Pictures/Wallpapers/`, plus the top-level dotfiles
    (`.zshrc`, `.p10k.zsh`, `.zsh_functions`) in this repo maps 1:1 onto the same path
-   under your own `$HOME`. Plain `cp -r`, no symlinking needed (that's how this repo
-   itself is kept in sync — see `.local/bin/asahi-rice-sync`).
+   under your own `$HOME`. This machine uses file-by-file symlinks into the clone so
+   runtime-only files can remain beside them without entering Git; plain copies also
+   work on another machine.
    - `.local/bin/` specifically is a grab-bag, not all of it Hyprland config — the
      scripts actually referenced by the Hypr/waybar config are `hypr-quickmenu`,
      `hypr-overview`, `hypr-workspace-watch`, `mac-screenshot`,
      `wallpaper-auto-downscale`, `waypaper-set-backend.sh`, and the `waybar-*.sh`
      helpers (`waybar-cpu.sh`, `waybar-memory.sh`, `waybar-bluetooth.sh`,
      `waybar-fcitx5.sh`, `waybar-power-profile*.sh`, `waybar-wallpaper-backend*.sh`).
-     Everything else in there is unrelated CLI tooling that got swept in by
-     `asahi-rice-sync`'s blanket `.local/bin` entry — copy it too if you want it, skip
+     Everything else in there is unrelated CLI tooling retained from the old
+     copy-based sync setup — copy it too if you want it, skip
      it if you're only after the rice.
    - **Do not copy `.config/systemd/user/asahi-rice-sync.{service,timer}`, or enable
      them.** That unit pushes to `github.com/chihingordonshi/asahi-rice` — it's Chi
@@ -147,7 +148,7 @@ live partition — see "Build history" below for what that involved).
 | `.config/autostart/` | XDG autostart entries |
 | `.config/systemd/user/` | User systemd units — `hypridle`, `random-wallpaper`, `swaybg-wallpaper` are machine-generic; `asahi-rice-sync` is Chi Hin-specific, do not copy (see replication step 3) |
 | `.config/agents/fedora-asahi-setup.md` | The original research/decisions briefing this whole setup is built from |
-| `.local/bin/` | Scripts the config actually references, plus unrelated CLI tools swept in by the sync script — see replication step 3 for which is which |
+| `.local/bin/` | Scripts the config actually references, plus unrelated CLI tools retained from the old copy-based sync setup — see replication step 3 for which is which |
 | `.local/share/applications/` | Desktop-entry overrides (e.g. Electron app launch flags) |
 | `Pictures/Wallpapers/` | Images for the wallpaper rotation timer |
 | `.zshrc`, `.p10k.zsh`, `.zsh_functions` | Shell, prompt, and a couple of manual-trigger helper functions |
@@ -267,8 +268,9 @@ lines in `autostart.lua` are left in as a defensive fallback, but aren't the rea
 
 ## Status
 
-This repo is a live sync target, not a staged reference: `asahi-rice-sync` mirrors the
-real `$HOME` into this repo and pushes automatically once a day (see
+This repo is the source of truth for its tracked home files. The corresponding paths
+under `$HOME` are file-by-file symlinks into the clone; `asahi-rice-sync` commits and
+pushes worktree changes automatically once a day without copying files (see
 `.local/bin/asahi-rice-sync`). The full config — Lua Hyprland config, waybar, fonts,
 fcitx5, app set — is deployed and in daily use via a real `uwsm`-managed Hyprland
 session.

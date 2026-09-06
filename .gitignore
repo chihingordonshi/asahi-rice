@@ -2,3 +2,12 @@
 **/__pycache__/
 *.py[cod]
 **/mimeinfo.cache
+
+# cmus is a machine-local utility. Keep both its mutable settings and the
+# manually installed build out of this dotfiles repository.
+.config/cmus/
+.local/bin/cmus
+.local/bin/cmus-remote
+.local/lib/cmus/
+.local/share/cmus/
+.local/share/doc/cmus/
