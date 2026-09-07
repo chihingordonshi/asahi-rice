@@ -30,7 +30,6 @@ alias ps='procs'
 alias ..='cd ..'
 alias ~='cd ~'
 alias lg='lazygit'
-alias vim='exec vim'
 alias music='cmus'
 
 [[ -f /usr/share/zsh/plugins/zsh-autocomplete/zsh-autocomplete.plugin.zsh ]] && source /usr/share/zsh/plugins/zsh-autocomplete/zsh-autocomplete.plugin.zsh

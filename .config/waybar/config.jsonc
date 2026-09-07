@@ -41,9 +41,6 @@
         },
         "sort-by": "number",
         "show-special": true,
-        "ignore-workspaces": [
-            "special:sticky-hidden"
-        ]
     },
 
     "custom/suspend": {
