@@ -1,0 +1,5 @@
+# Third-party Fedora COPR repositories used by this setup.
+errornointernet/quickshell
+lionheartp/Hyprland
+victorvintorez/packages
+yselkowitz/xapps

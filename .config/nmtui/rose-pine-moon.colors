@@ -1,0 +1,31 @@
+# Rose Pine Moon palette for Newt (used by nmtui).
+# Color names map to the Kitty ANSI palette in current-theme.conf.
+root=white,black
+border=magenta,black
+window=white,black
+shadow=black,black
+title=magenta,black
+button=black,magenta
+actbutton=black,cyan
+checkbox=white,black
+actcheckbox=black,magenta
+entry=white,black
+label=white,black
+listbox=white,black
+actlistbox=black,magenta
+textbox=white,black
+acttextbox=black,magenta
+helpline=cyan,black
+roottext=white,black
+emptyscale=black,black
+fullscale=cyan,black
+disentry=lightgray,black
+compactbutton=white,black
+actsellistbox=black,magenta
+sellistbox=white,black
+
+# nmtui-specific colors (read through NMT_NEWT_COLORS_FILE).
+badLabel=red,black
+plainLabel=white,black
+disabledButton=lightgray,black
+textboxWithBackground=white,black

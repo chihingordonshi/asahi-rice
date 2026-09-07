@@ -1,0 +1,6 @@
+# scope  application ID
+# WPS uses a proprietary extra-data installer that cannot apply SELinux labels in a
+# system installation on this machine, so it remains the sole user-scoped exception.
+user cn.wps.wps_365
+system com.tencent.WeChat
+system org.localsend.localsend_app

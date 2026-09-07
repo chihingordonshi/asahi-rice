@@ -3,11 +3,45 @@
 *.py[cod]
 **/mimeinfo.cache
 
-# cmus is a machine-local utility. Keep both its mutable settings and the
-# manually installed build out of this dotfiles repository.
-.config/cmus/
+# Keep cmus preferences and theme, but not its mutable library/state.
+.config/cmus/*
+!.config/cmus/rc
+!.config/cmus/rose-pine-moon.theme
 .local/bin/cmus
 .local/bin/cmus-remote
 .local/lib/cmus/
 .local/share/cmus/
 .local/share/doc/cmus/
+
+# Credentials, identity material, browser data, histories, caches, and runtime state.
+.config/gh/hosts.yml
+.config/kdeconnect/
+.config/pulse/
+.config/mihomo-party/
+.config/google-chrome/
+.config/BraveSoftware/
+.config/chromium/
+.config/opencode/node_modules/
+.config/opencode/.npm/
+.config/**/Cache/
+.config/**/cache/
+.config/**/cookies*
+.config/**/history*
+.config/**/History*
+.config/**/PrivateKey*
+.config/**/privateKey*
+.config/**/credentials*
+.config/**/secrets*
+.config/**/tokens*
+.config/dconf/
+.config/session/
+.claude.json
+.histfile
+.*_history
+*.db
+*.sqlite
+*.sqlite3
+*.log
+
+# Backup directory created by setup/link-home.sh.
+.local/state/asahi-rice/

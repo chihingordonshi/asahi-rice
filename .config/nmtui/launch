@@ -1,0 +1,8 @@
+#!/bin/sh
+# Keep nmtui on the Rosé Pine Moon Newt palette in every launch context.
+theme_file="${XDG_CONFIG_HOME:-$HOME/.config}/nmtui/rose-pine-moon.colors"
+
+export NEWT_COLORS_FILE="$theme_file"
+export NMT_NEWT_COLORS_FILE="$theme_file"
+
+exec /usr/bin/nmtui "$@"
