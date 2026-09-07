@@ -67,12 +67,11 @@ hl.window_rule({
 })
 
 hl.window_rule({
-    name   = "nmtui",
-    match  = { 
-        class = "wifi-select",
-        float  = true,
-    },
-    size   = { 1280, 800 },
+    name   = "wifi-select",
+    match  = { class = "^wifi-select$" },
+    float  = true,
+    size   = { 800, 500 },
+    opaque = true,
 })
 
 
@@ -145,13 +144,6 @@ hl.window_rule({
     border_size  = 0,
     rounding    = 0,
     no_shadow   = true,
-})
-
-hl.window_rule({
-    name   = "wifi-select-float",
-    match  = { class = "wifi-select" },
-    float  = true,
-    opaque = true,
 })
 
 hl.window_rule({
