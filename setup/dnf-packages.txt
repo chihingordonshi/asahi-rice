@@ -163,6 +163,7 @@ rustup
 sdl2-compat-devel
 shim-aa64
 sl
+socat
 sqlite
 swaybg
 systemd-manager-tui

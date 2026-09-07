@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+socket=/tmp/mpv-asahi-gesture.sock
+[[ -S "$socket" ]] || exit 0
+
+case ${1:-} in
+    zoom)
+        amount=${2:-}
+        [[ $amount =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]] || exit 2
+        printf '{"command":["script-binding","positioning/cursor-centric-zoom","%s"]}\n' "$amount" \
+            | socat -u STDIN "UNIX-CONNECT:$socket" >/dev/null 2>&1
+        ;;
+    *)
+        printf 'Usage: %s zoom AMOUNT\n' "${0##*/}" >&2
+        exit 2
+        ;;
+esac

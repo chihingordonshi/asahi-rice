@@ -134,9 +134,10 @@ live partition — see "Build history" below for what that involved).
 - The apparent mpv MP4 failure was caused by macOS AppleDouble `._*.mp4` metadata
   files on the shared exFAT volume, not the real videos. The metadata files were moved
   to the volume's trash; the matching MP4s decode correctly in mpv.
-- mpv remains the minimal Hyprland-friendly player. Point at the video and use
-  Ctrl+wheel for cursor-centric zoom; Alt+plus/minus zooms, Alt+arrows pans, and
-  Alt+Backspace resets the view.
+- mpv remains the minimal Hyprland-friendly player. A small Hyprland gesture bridge
+  turns two-finger pinch into cursor-centric video zoom; ordinary two-finger vertical
+  and horizontal scrolling pans the zoomed video. Ctrl+wheel remains a mouse zoom
+  fallback, Alt+plus/minus zooms, Alt+arrows pans, and Alt+Backspace resets the view.
 - WeChat and LocalSend are system Flatpaks. WPS 365 remains user-scoped because its
   proprietary extra-data installer fails to apply SELinux labels system-wide on this
   machine; its existing user installation works.
@@ -166,7 +167,7 @@ live partition — see "Build history" below for what that involved).
 | `.config/wireplumber/` | Audio routing tweak (disables Bluetooth HFP) |
 | `.config/qt6ct/`, `.config/Kvantum/`, `.config/kdeglobals` | Qt/KDE theming, relevant if the KDE Plasma fallback is used instead of Hyprland |
 | `.config/pavucontrol.ini` | Audio mixer settings |
-| `.config/mpv/input.conf` | Minimal mpv controls with cursor-centric wheel zoom, keyboard zoom, pan, and reset |
+| `.config/mpv/`, `.local/bin/mpv-gesture` | Minimal mpv controls plus native Hyprland two-finger pinch zoom and scroll panning |
 | `.config/gtk-{3,4}.0/`, selected KDE configs | Durable toolkit, display, shortcut, file association, and Plasma fallback settings |
 | `.config/gh/config.yml` | Non-secret GitHub CLI preferences; `hosts.yml` is ignored because it contains the token |
 | `.config/autostart/` | XDG autostart entries |
