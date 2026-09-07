@@ -214,7 +214,7 @@ autostart hooks that shouldn't re-fire on every reload.
 `~/.config/hypridle/` (unlike most other apps' per-app-directory convention). This
 build's `hyprctl dispatch` parses its argument as a Lua expression, so DPMS calls need
 `hyprctl dispatch 'hl.dsp.dpms({action = "on"})'`, not the plain `dpms on/off` syntax in
-generic hypridle docs. Autolock is 15 minutes, no manual lock keybind — hypridle's
+generic hypridle docs. Autolock is 10 minutes, no manual lock keybind — hypridle's
 timeout is the sole way this machine locks.
 
 **Wallpaper rotation and systemd.** `random-wallpaper.service` is `Type=oneshot`, which

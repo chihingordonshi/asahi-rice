@@ -148,7 +148,7 @@
         "format-ethernet": "󰈀  {ifname}",
         "format-disconnected": "󰖪  disconnected",
         "tooltip-format": "{ifname}: {ipaddr}",
-        "on-click": "kitty --class wifi-select -e /home/chihin/.config/nmtui/launch connect"
+        "on-click": "kitty --class wifi-select --title wifi-select -o close_on_child_death=yes /home/chihin/.config/nmtui/launch connect"
     },
 
     "battery": {
