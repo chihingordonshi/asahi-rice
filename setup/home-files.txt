@@ -113,6 +113,7 @@
 .config/mako/config
 .config/mimeapps.list
 .config/mpv/input.conf
+.config/mpv/mpv.conf
 .config/neofetch/config.conf
 .config/nmtui/launch
 .config/nmtui/rose-pine-moon.colors
@@ -156,6 +157,7 @@
 .local/bin/hypr-workspace-watch
 .local/bin/iphone-last-photos.sh
 .local/bin/mac-screenshot
+.local/bin/mpv-gesture
 .local/bin/markdown-it
 .local/bin/nmtui
 .local/bin/pokemon-colorscripts
