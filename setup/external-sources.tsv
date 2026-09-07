@@ -1,0 +1,6 @@
+# component\tsource\tpinned revision
+mpvpaper\thttps://github.com/GhostNaN/mpvpaper.git\t8f375262cf542fd6c696f97837e2f28ac9440262
+powerlevel10k\thttps://github.com/romkatv/powerlevel10k.git\t9253fb1c5034410c43a0c681ff8294181c54016c
+zsh-autocomplete\thttps://github.com/marlonrichert/zsh-autocomplete.git\t027cdab14451e98c9d36d72b1f79d9488ac88e46
+JetBrainsMono Nerd Font\thttps://github.com/ryanoasis/nerd-fonts/releases/tag/v3.5.0\tv3.5.0
+lazygit\thttps://github.com/jesseduffield/lazygit/releases/tag/v0.64.0\tv0.64.0 Linux arm64 release binary

@@ -1,8 +1,9 @@
 # asahi-rice
 
-Config backup for Chi Hin's spare M1 MacBook running **Fedora Asahi Remix**, for
-schoolday-only use (browser, notes, light writing). Not a full system dotfiles repo —
-see `.config/agents/fedora-asahi-setup.md` for the reasoning behind the whole setup.
+Reproducible configuration for Chi Hin's M1 MacBook running **Fedora Asahi Remix**.
+It covers the installed application set, third-party repositories, Flatpak scopes,
+user services, durable desktop/app configuration, and file-by-file symlink
+deployment. See `.config/agents/fedora-asahi-setup.md` for the original reasoning.
 
 These files were originally curated from [dot-files](https://github.com/chihingordonshi/dot-files)
 (the Arch/XPS16 rice), then adapted and extended for this machine specifically. They are
@@ -27,8 +28,10 @@ SDDM session picker. Getting that wrong silently breaks portals, polkit, and the
 
 ## Replicating this on your own M1
 
-This repo isn't a turnkey installer — there's no `install.sh` here. To get an equivalent
-setup on your own M1 running Fedora Asahi Remix, work through it in this order:
+`setup/install.sh` is the idempotent bootstrap for an M1 running Fedora Asahi Remix.
+It enables the recorded repositories, installs the explicit RPM/Flatpak manifests,
+links every path in `setup/home-files.txt`, and enables the recorded user services.
+Review the hardware-pinned settings and package list before running it on another M1.
 
 1. **Enable COPRs, then install packages.** (List verified against this machine's
    actual `rpm -q` / `dnf repoquery --installed` output, not reconstructed from memory.)
@@ -50,8 +53,9 @@ setup on your own M1 running Fedora Asahi Remix, work through it in this order:
      is a leftover from before the switch. Skip installing `neofetch` unless you want it.
    - `mpvpaper` — used by `waypaper` as the video-wallpaper backend (see
      `.config/waypaper/config.ini`, `waybar-wallpaper-backend*.sh`) — isn't packaged for
-     Fedora and is installed to `/usr/local/bin/mpvpaper` here by building it manually
-     (see [`mpvpaper`](https://github.com/GhostNaN/mpvpaper) upstream). Only needed if
+     Fedora and is installed to `/usr/local/bin/mpvpaper` from the pinned revision by
+     `setup/install-external.sh` (see [`mpvpaper`](https://github.com/GhostNaN/mpvpaper)
+     upstream). Only needed if
      you want video wallpapers from `~/Videos/Wallpapers`; static-image wallpapers via
      `swaybg` work without it.
    - `dolphin` (file manager) and `firefox` (browser) — swap for your own picks if you
@@ -64,12 +68,12 @@ setup on your own M1 running Fedora Asahi Remix, work through it in this order:
    [`ryanoasis/nerd-fonts`](https://github.com/ryanoasis/nerd-fonts) GitHub release, unzipped
    into `~/.local/share/fonts`, then `fc-cache`. Everything here (waybar, kitty, the
    Cairo clock) assumes this exact font is present.
-3. **Link or copy the config files into `$HOME`.** Every path under `.config/`, `.local/bin/`,
+3. **Link the config files into `$HOME`.** Every path under `.config/`, `.local/bin/`,
    `.local/share/applications/`, `Pictures/Wallpapers/`, plus the top-level dotfiles
-   (`.zshrc`, `.p10k.zsh`, `.zsh_functions`) in this repo maps 1:1 onto the same path
-   under your own `$HOME`. This machine uses file-by-file symlinks into the clone so
-   runtime-only files can remain beside them without entering Git; plain copies also
-   work on another machine.
+   (`.zshrc`, `.p10k.zsh`, `.zsh_functions`, Bash startup files, `.gitconfig`, `.vimrc`,
+   `.Xresources`, and `.gtkrc-2.0`) in this repo maps 1:1 onto the same path under your
+   own `$HOME`. Run `setup/link-home.sh`; it preserves replaced files under
+   `~/.local/state/asahi-rice/backups/` and creates file-by-file symlinks.
    - `.local/bin/` specifically is a grab-bag, not all of it Hyprland config — the
      scripts actually referenced by the Hypr/waybar config are `hypr-quickmenu`,
      `hypr-overview`, `hypr-workspace-watch`, `mac-screenshot`,
@@ -86,9 +90,8 @@ setup on your own M1 running Fedora Asahi Remix, work through it in this order:
      `random-wallpaper.{service,timer}`, `swaybg-wallpaper.service`) is
      machine-generic and safe to bring over — enable with `systemctl --user enable
      --now hypridle.service random-wallpaper.timer`.
-   - **Do not copy `.gitconfig`** (it isn't tracked here for exactly this reason — see
-     "Key decisions and gotchas" below). Keep your own; it needs your own identity and
-     credential-helper setup, not Chi Hin's.
+   - `.gitconfig` contains Chi Hin's public Git identity and the `gh` credential-helper
+     command. The actual GitHub token remains only in ignored `.config/gh/hosts.yml`.
 4. **Verify the hardware-pinned values before trusting them, even on identical
    hardware.** `.config/hypr/monitors.lua` hardcodes `output = "eDP-1", mode =
    "2560x1600@60", scale = 1.6` and `.config/hypr/input.lua` hardcodes `kb_layout =
@@ -104,9 +107,9 @@ setup on your own M1 running Fedora Asahi Remix, work through it in this order:
    This is not optional — see "Critical finding" below for why plain Hyprland silently
    breaks portals, polkit, and the D-Bus secret-service keyring. `hyprland-uwsm` (from
    step 1) provides this session entry.
-7. **Everything requiring `sudo` is on you.** COPR enablement and `dnf install` need to
-   be run interactively — there's no scripted path here, by design (see "Provenance"
-   below).
+7. **The installer uses `sudo` for system packages, repositories, WARP, and system-wide
+   Flatpaks.** Cloudflare account registration remains a separate interactive step:
+   `warp-cli registration new && warp-cli connect`.
    - Optional convenience: put your user in `wheel` with passwordless sudo, so you're
      not typing your password for every `dnf`/`copr` command in step 1 —
      `sudo usermod -aG wheel <you>`, then in `sudo visudo` add (or uncomment)
@@ -121,6 +124,24 @@ installed via `rpm -i --nodeps` plus two chased runtime deps — see "Key decisi
 gotchas" below), and a shared exFAT partition between macOS and Fedora (destructive,
 only do this if you actually want cross-OS file sharing and are comfortable resizing a
 live partition — see "Build history" below for what that involved).
+
+## Media, WARP, and Flatpak notes
+
+- Fedora's restricted `ffmpeg-free` build is replaced with RPM Fusion's full `ffmpeg`.
+  The manifest also installs GStreamer libav, OpenH264, dav1d, bad-freeworld, and ugly
+  plugins. `setup/audit.sh` checks the common H.264, HEVC, AV1, VP9, AAC, Opus,
+  Vorbis, MP3, and FLAC decode paths.
+- The apparent mpv MP4 failure was caused by macOS AppleDouble `._*.mp4` metadata
+  files on the shared exFAT volume, not the real videos. The metadata files were moved
+  to the volume's trash; the matching MP4s decode correctly in mpv.
+- mpv remains the minimal Hyprland-friendly player. Point at the video and use
+  Ctrl+wheel for cursor-centric zoom; Alt+plus/minus zooms, Alt+arrows pans, and
+  Alt+Backspace resets the view.
+- WeChat and LocalSend are system Flatpaks. WPS 365 remains user-scoped because its
+  proprietary extra-data installer fails to apply SELinux labels system-wide on this
+  machine; its existing user installation works.
+- WARP is installed in `warp+doh` mode. Device registration and identity remain in
+  Cloudflare's local state and are intentionally never committed.
 
 ## What's here and why
 
@@ -145,6 +166,9 @@ live partition — see "Build history" below for what that involved).
 | `.config/wireplumber/` | Audio routing tweak (disables Bluetooth HFP) |
 | `.config/qt6ct/`, `.config/Kvantum/`, `.config/kdeglobals` | Qt/KDE theming, relevant if the KDE Plasma fallback is used instead of Hyprland |
 | `.config/pavucontrol.ini` | Audio mixer settings |
+| `.config/mpv/input.conf` | Minimal mpv controls with cursor-centric wheel zoom, keyboard zoom, pan, and reset |
+| `.config/gtk-{3,4}.0/`, selected KDE configs | Durable toolkit, display, shortcut, file association, and Plasma fallback settings |
+| `.config/gh/config.yml` | Non-secret GitHub CLI preferences; `hosts.yml` is ignored because it contains the token |
 | `.config/autostart/` | XDG autostart entries |
 | `.config/systemd/user/` | User systemd units — `hypridle`, `random-wallpaper`, `swaybg-wallpaper` are machine-generic; `asahi-rice-sync` is Chi Hin-specific, do not copy (see replication step 3) |
 | `.config/agents/fedora-asahi-setup.md` | The original research/decisions briefing this whole setup is built from |
@@ -152,6 +176,7 @@ live partition — see "Build history" below for what that involved).
 | `.local/share/applications/` | Desktop-entry overrides (e.g. Electron app launch flags) |
 | `Pictures/Wallpapers/` | Images for the wallpaper rotation timer |
 | `.zshrc`, `.p10k.zsh`, `.zsh_functions` | Shell, prompt, and a couple of manual-trigger helper functions |
+| `setup/` | Reproducible RPM/Flatpak/repository/service manifests plus installer, linker, and audit scripts |
 
 ## Deliberately left out
 
@@ -213,9 +238,9 @@ FontAwesome, which isn't in this bar's font stack.
 file and let it pick up the change on its own; killing/relaunching mid-session is
 disruptive. `hyprctl reload` remains fine for Hyprland-owned Lua config changes.
 
-**`.gitconfig` is never tracked here.** This machine's real `.gitconfig` has the `gh`
-credential-helper setup that fixes the D-Bus/keyring auth issue described in "Critical
-finding" below — overwriting it with a copied one would break that again.
+**`.gitconfig` is tracked, credentials are not.** It records the public author identity
+and `gh` credential-helper integration. `.config/gh/hosts.yml`, browser profiles,
+proxy state, key material, cookies, histories, databases, and caches are excluded.
 
 **caelestia-widget replacements**, mapped onto real tools and added as waybar buttons
 (caelestia's quick-access widgets don't exist without caelestia installed):
@@ -232,8 +257,9 @@ finding" below — overwriting it with a copied one would break that again.
 | Workspace overview | not done — needs the `hyprexpo` plugin compiled via `hyprpm`, flagged as a future step |
 
 **Left un-replicated on purpose:** `power-profiles-daemon` (conflicts with `tuned-ppd`,
-which already provides the same D-Bus interface), `cloudflare-warp-bin` (present on the
-XPS16 but not referenced by any config here), `safeeyes` (not packaged for Fedora).
+which already provides the same D-Bus interface) and `safeeyes` (not packaged for Fedora).
+Cloudflare WARP is installed from Cloudflare's official Fedora repository by the setup
+script; registration is kept interactive and its identity/state is not committed.
 Sticky notes (`org.x.sticky`, real package `linuxmint/sticky` via the `yselkowitz/xapps`
 COPR) needed `rpm -i --nodeps` due to a naming bug in that COPR's spec
 (`python3-xapps-override` vs. the real `python3-xapps-overrides`), plus two chased
@@ -291,6 +317,12 @@ exFAT partition work (see "Build history" below) were all run interactively by C
 Condensed changelog — see git log for exact diffs, and the sections above for anything
 still relevant to replicating or maintaining this setup.
 
+- **2026-09-07** — Added a reproducible Fedora bootstrap, explicit package/Flatpak/
+  repository/service manifests, safe symlink deployment and auditing, broader durable
+  app configuration coverage, full RPM Fusion media codecs, Cloudflare WARP, and mpv
+  cursor-centric zoom. Removed macOS AppleDouble metadata that masqueraded as broken
+  MP4 videos. Migrated WeChat to a system Flatpak; WPS remains user-scoped due to its
+  upstream SELinux extra-data failure.
 - **2026-08-10** — Initial build: Hyprland (Lua config), ironbar panel, core app set,
   JetBrains Mono Nerd Font.
 - **2026-08-10 (later)** — Real Hyprland config landed once `dot-files` got proper

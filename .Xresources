@@ -1,0 +1,10 @@
+! Xwayland DPI: base 96 * 1.6 monitor scale = 153.6, rounded to 154.
+! Read by DPI-aware Xwayland/X11 clients (Qt, and GTK apps for font size)
+! since force_zero_scaling in hypr/misc.lua keeps Xwayland itself at 1x.
+Xft.dpi: 154
+Xft.autohint: 0
+Xft.lcdfilter: lcddefault
+Xft.hintstyle: hintfull
+Xft.hinting: 1
+Xft.antialias: 1
+Xft.rgba: rgb

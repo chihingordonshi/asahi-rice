@@ -1,0 +1,22 @@
+[General]
+LastUsedVersion=210800
+SideBarPage=operations
+
+[MainWindow]
+MenuBar=Disabled
+
+[Recent Files]
+File1[$e]=$HOME/Pictures/Screenshots/Screenshot 2026-08-13 at 21.09.07.png
+File2[$e]=$HOME/Pictures/Screenshots/Screenshot 2026-08-18 at 09.31.03.png
+File3[$e]=$HOME/Pictures/Screenshots/Screenshot 2026-08-18 at 09.31.12.png
+File4[$e]=$HOME/Pictures/Wallpapers/Arch.png
+File5[$e]=$HOME/Downloads/img.png
+Name1[$e]=Screenshot 2026-08-13 at 21.09.07.png
+Name2[$e]=Screenshot 2026-08-18 at 09.31.03.png
+Name3[$e]=Screenshot 2026-08-18 at 09.31.12.png
+Name4[$e]=Arch.png
+Name5[$e]=img.png
+
+[SideBar]
+InformationSplitterSizes=227,248
+SideBarSplitterSizes=280,501
