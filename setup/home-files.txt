@@ -135,6 +135,7 @@
 .config/systemd/user/random-wallpaper.service
 .config/systemd/user/random-wallpaper.timer
 .config/systemd/user/swaybg-wallpaper.service
+.config/systemd/user/waybar.service.d/restart.conf
 .config/systemd/user/timers.target.wants/asahi-rice-sync.timer
 .config/systemd/user/timers.target.wants/random-wallpaper.timer
 .config/waybar/config.jsonc
