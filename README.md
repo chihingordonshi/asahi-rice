@@ -237,7 +237,8 @@ FontAwesome, which isn't in this bar's font stack.
 
 **Never `pkill` a live UI process (waybar, etc.) to force a config reload.** Save the
 file and let it pick up the change on its own; killing/relaunching mid-session is
-disruptive. `hyprctl reload` remains fine for Hyprland-owned Lua config changes.
+disruptive. Use `systemctl --user restart waybar.service` to recover or explicitly
+restart Waybar. `hyprctl reload` remains fine for Hyprland-owned Lua config changes.
 
 **`.gitconfig` is tracked, credentials are not.** It records the public author identity
 and `gh` credential-helper integration. `.config/gh/hosts.yml`, browser profiles,

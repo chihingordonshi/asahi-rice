@@ -1,4 +1,5 @@
 # Repo-managed user units to enable.
 hypridle.service
+waybar.service
 random-wallpaper.timer
 asahi-rice-sync.timer

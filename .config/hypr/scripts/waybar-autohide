@@ -11,6 +11,7 @@ fullscreen_mode_file="$runtime_dir/hypr-fullscreen-mode"
 lock_file="$runtime_dir/waybar-autohide.lock"
 hover_height=72
 trigger_delay_ms=200
+startup_grace_ms=1000
 
 # This command is intentionally handled before taking the daemon lock.
 if [[ "${1:-}" == "--toggle-visibility" ]]; then
@@ -42,65 +43,56 @@ exec 9>"$lock_file"
 flock -n 9 || exit 0
 
 shown=0
+known_pids=""
+waybar_started_ms=0
 top_hover_started_ms=0
 
-get_waybar_visibility() {
-    local monitors
-    monitors="$(hyprctl monitors -j 2>/dev/null)" || {
-        printf '%s\n' unknown
-        return
-    }
-
-    if ! jq -e . >/dev/null 2>&1 <<<"$monitors"; then
-        printf '%s\n' unknown
-    elif jq -e 'any(.[]; (.reserved[1] // 0) > 0)' \
-        >/dev/null 2>&1 <<<"$monitors"; then
-        printf '%s\n' shown
-    else
-        printf '%s\n' hidden
-    fi
-}
-
 show_waybar() {
-    case "$(get_waybar_visibility)" in
-        shown)
-            shown=1
-            ;;
-        hidden)
-            pkill -SIGUSR1 -x waybar 2>/dev/null || return
-            shown=1
-            ;;
-    esac
+    if (( shown )); then
+        return
+    fi
+
+    pkill -SIGUSR1 -x waybar 2>/dev/null || return
+    shown=1
 }
 
 hide_waybar() {
-    case "$(get_waybar_visibility)" in
-        shown)
-            pkill -SIGUSR1 -x waybar 2>/dev/null || return
-            shown=0
-            ;;
-        hidden)
-            shown=0
-            ;;
-    esac
+    if (( ! shown )); then
+        return
+    fi
+
+    pkill -SIGUSR1 -x waybar 2>/dev/null || return
+    shown=0
 }
 
 while true; do
     waybar_pids="$(pgrep -d , -x waybar 2>/dev/null || true)"
     if [[ -z "$waybar_pids" ]]; then
+        known_pids=""
         shown=0
+        waybar_started_ms=0
         top_hover_started_ms=0
         sleep 0.1
         continue
     fi
 
-    visibility="$(get_waybar_visibility)"
-    if [[ "$visibility" == "unknown" ]]; then
+    # A newly started Waybar is visible by default. Resynchronize once per
+    # process change, then track visibility locally because Hyprland's reserved
+    # area does not follow Waybar's SIGUSR1 visibility toggle reliably.
+    if [[ "$waybar_pids" != "$known_pids" ]]; then
+        known_pids="$waybar_pids"
+        shown=1
+        waybar_started_ms="$(date +%s%3N)"
         top_hover_started_ms=0
+    fi
+
+    # Do not toggle a bar before GTK and its Wayland surfaces finish starting.
+    # This also gives a systemd-restarted bar a deterministic visible state.
+    now_ms="$(date +%s%3N)"
+    if (( now_ms - waybar_started_ms < startup_grace_ms )); then
         sleep 0.1
         continue
     fi
-    [[ "$visibility" == "shown" ]] && shown=1 || shown=0
 
     workspace="$(hyprctl activeworkspace -j 2>/dev/null || true)"
     if [[ -z "$workspace" ]]; then

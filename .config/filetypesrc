@@ -1,5 +1,6 @@
 [EmbedSettings]
 embed-application/json=false
+embed-application/pdf=false
 embed-application/x-docbook+xml=false
 embed-application/x-matroska=false
 embed-application/x-yaml=false
