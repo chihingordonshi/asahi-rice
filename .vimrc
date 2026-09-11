@@ -16,6 +16,30 @@ set incsearch
 set expandtab
 set shiftwidth=4
 set tabstop=4
+
+" Use wl-clipboard as Vim's clipboard provider on Wayland.  This Vim build
+" has +clipboard_provider, but was compiled without native +clipboard.
+if has('clipboard_provider') && executable('wl-copy') && executable('wl-paste')
+    function! ChihinWlClipboardCopy(reg, type, lines) abort
+        let l:args = a:reg ==# '*' ? 'wl-copy --primary' : 'wl-copy'
+        call system(l:args, a:lines)
+    endfunction
+
+    function! ChihinWlClipboardPaste(reg) abort
+        let l:args = 'wl-paste --no-newline'
+        if a:reg ==# '*'
+            let l:args .= ' --primary'
+        endif
+        return ['', systemlist(l:args)]
+    endfunction
+
+    let v:clipproviders['wl_clipboard'] = {
+        \ 'available': {-> v:true},
+        \ 'copy': {'+': function('ChihinWlClipboardCopy'), '*': function('ChihinWlClipboardCopy')},
+        \ 'paste': {'+': function('ChihinWlClipboardPaste'), '*': function('ChihinWlClipboardPaste')}
+        \ }
+    set clipmethod=wl_clipboard
+endif
 set clipboard=unnamedplus
 set termguicolors
 set cursorline
