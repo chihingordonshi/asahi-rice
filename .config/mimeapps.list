@@ -92,3 +92,4 @@ x-scheme-handler/https=brave-browser.desktop
 x-scheme-handler/mailto=brave-browser.desktop
 x-scheme-handler/mihomo=mihomo-party.desktop
 x-scheme-handler/unknown=brave-browser.desktop
+x-scheme-handler/codex=chatgpt.desktop
