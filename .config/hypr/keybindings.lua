@@ -9,8 +9,6 @@ hl.bind(mainMod .. " + Q", hl.dsp.exec_cmd(terminal .. " --class terminal"))
 hl.bind(mainMod .. " + C", hl.dsp.window.close())
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
 hl.bind(mainMod .. " + F", hl.dsp.window.float({ action = "toggle" }))
-hl.bind(mainMod .. " + SHIFT + F", FullscreenActiveWindow)
-hl.bind(mainMod .. " + SPACE", ToggleFullscreenMode)
 
 hl.bind(mainMod .. " + B", ToggleWaybarVisibility)
 hl.bind(mainMod .. " + P", hl.dsp.window.pseudo())
@@ -34,9 +32,11 @@ for i = 1, 10 do
     hl.bind(mainMod .. " + SHIFT + " .. key,     function() MoveWindowToWorkspace(i) end)
 end
 
--- Special workspace (scratchpad)
+-- Special workspaces (scratchpads)
 hl.bind(mainMod .. " + S",         hl.dsp.workspace.toggle_special("magic"))
 hl.bind(mainMod .. " + SHIFT + S", hl.dsp.window.move({ workspace = "special:magic" }))
+hl.bind(mainMod .. " + SPACE",         hl.dsp.workspace.toggle_special("calendar"))
+hl.bind(mainMod .. " + SHIFT + SPACE", hl.dsp.window.move({ workspace = "special:calendar" }))
 
 -- Jump to / move current window to the first empty workspace
 hl.bind(mainMod .. " + G",         GoToFirstEmptyWorkspace)

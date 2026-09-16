@@ -84,6 +84,7 @@ json-c-devel
 kdenlive
 kernel-16k
 kernel-16k-modules-extra
+kew
 kitty
 kvantum
 kvantum-qt5

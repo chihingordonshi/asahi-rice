@@ -5,7 +5,7 @@
 
     "modules-left": ["custom/suspend", "custom/cpu", "custom/memory", "custom/fcitx5", "custom/power-profile", "hyprland/workspaces"],
     "modules-center": ["clock"],
-    "modules-right": ["tray", "custom/layout", "custom/wallpaper-backend", "custom/bluetooth", "custom/brightness", "custom/volume", "network", "battery"],
+    "modules-right": ["tray", "custom/wallpaper-backend", "custom/bluetooth", "custom/brightness", "custom/volume", "network", "battery"],
 
     "hyprland/workspaces": {
         "format": "{icon} {windows}",
@@ -20,7 +20,8 @@
             "8": "8",
             "9": "9",
             "10": "10",
-            "magic": "S"
+            "magic": "S",
+            "calendar": "󰃭"
         },
         "window-rewrite-default": "󰀻",
         "window-rewrite": {
@@ -69,15 +70,6 @@
         "return-type": "json",
         "format": "{}",
         "on-click": "~/.local/bin/waybar-power-profile-cycle.sh",
-        "tooltip": true
-    },
-
-    "custom/layout": {
-        "exec": "/home/chihin/.local/bin/waybar-layout",
-        "return-type": "json",
-        "signal": 9,
-        "interval": 2,
-        "on-click": "/home/chihin/.local/bin/waybar-layout-cycle",
         "tooltip": true
     },
 

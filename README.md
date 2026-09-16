@@ -161,6 +161,7 @@ live partition — see "Build history" below for what that involved).
 | `.config/fish/` | Alternate shell config (`.zshrc` is the default) |
 | `.config/nvim/` | Neovim config |
 | `.config/cava/` | Audio visualizer config + themes + shaders |
+| `.config/kew/` | Terminal music player configured for the local library, with a Rosé Pine Moon theme and Kitty cover art |
 | `.config/btop/` | System monitor |
 | `.config/fastfetch/` | System-info banner — the currently-used one (see "neofetch" note below) |
 | `.config/neofetch/` | Superseded by fastfetch; kept as a leftover, not actively used |

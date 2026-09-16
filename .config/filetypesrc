@@ -8,6 +8,7 @@ embed-image/png=false
 embed-text/markdown=false
 embed-text/plain=false
 embed-text/x-cmake=false
+embed-text/x-python=false
 embed-video/3gp=false
 embed-video/3gpp=false
 embed-video/3gpp2=false

@@ -1,13 +1,11 @@
 #!/usr/bin/env bash
 
-# Fullscreen mode always autohides Waybar. In Dwindle, Super+R switches between
-# force-show and the same autohide behavior. Master always shows Waybar. Once
-# revealed, Waybar stays visible within twice its configured height.
+# Super+B switches between force-show and automatic hiding. Once revealed,
+# Waybar stays visible within twice its configured height.
 set -u
 
 runtime_dir="${XDG_RUNTIME_DIR:-/tmp}"
 force_show_file="$runtime_dir/waybar-autohide.force-show"
-fullscreen_mode_file="$runtime_dir/hypr-fullscreen-mode"
 lock_file="$runtime_dir/waybar-autohide.lock"
 hover_height=72
 trigger_delay_ms=200
@@ -15,18 +13,6 @@ startup_grace_ms=1000
 
 # This command is intentionally handled before taking the daemon lock.
 if [[ "${1:-}" == "--toggle-visibility" ]]; then
-    # Fullscreen is always automatic, and Master is always visible. The toggle
-    # is a Dwindle-only preference.
-    if [[ -e "$fullscreen_mode_file" ]]; then
-        exit 0
-    fi
-
-    workspace="$(hyprctl activeworkspace -j 2>/dev/null || true)"
-    layout="$(jq -r '.tiledLayout // empty' <<<"$workspace" 2>/dev/null || true)"
-    if [[ "$layout" != "dwindle" ]]; then
-        exit 0
-    fi
-
     if [[ -e "$force_show_file" ]]; then
         rm -f -- "$force_show_file"
     else
@@ -100,22 +86,11 @@ while true; do
         continue
     fi
 
-    layout="$(jq -r '.tiledLayout // empty' <<<"$workspace" 2>/dev/null || true)"
-
-    if [[ ! -e "$fullscreen_mode_file" ]]; then
-        if [[ "$layout" != "dwindle" ]]; then
-            top_hover_started_ms=0
-            show_waybar
-            sleep 0.1
-            continue
-        fi
-
-        if [[ -e "$force_show_file" ]]; then
-            top_hover_started_ms=0
-            show_waybar
-            sleep 0.1
-            continue
-        fi
+    if [[ -e "$force_show_file" ]]; then
+        top_hover_started_ms=0
+        show_waybar
+        sleep 0.1
+        continue
     fi
 
     cursor="$(hyprctl cursorpos -j 2>/dev/null || true)"

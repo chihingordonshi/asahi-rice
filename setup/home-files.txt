@@ -105,6 +105,8 @@
 .config/kdeglobals
 .config/kglobalshortcutsrc
 .config/kiorc
+.config/kew/kewrc
+.config/kew/themes/rose-pine-moon.theme
 .config/kitty/current-theme.conf
 .config/kitty/kitty.conf
 .config/kwinoutputconfig.json
@@ -171,8 +173,6 @@
 .local/bin/waybar-bluetooth.sh
 .local/bin/waybar-cpu.sh
 .local/bin/waybar-fcitx5.sh
-.local/bin/waybar-layout
-.local/bin/waybar-layout-cycle
 .local/bin/waybar-memory.sh
 .local/bin/waybar-power-profile-cycle.sh
 .local/bin/waybar-power-profile.sh

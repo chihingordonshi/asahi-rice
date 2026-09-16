@@ -1,0 +1,58 @@
+# Rosé Pine Moon for kew.
+
+[theme]
+name=Rosé Pine Moon
+
+# Core colors
+accent=#c4a7e7
+text=#e0def4
+textDim=#908caa
+textMuted=#6e6a86
+
+# General colors
+logo=#c4a7e7
+header=#9ccfd8
+footer=#6e6a86
+help=#e0def4
+link=#9ccfd8
+nowplaying=#f6c177
+playbackstatus=#3e8fb0
+
+# Playlist view
+playlist.rownum=#6e6a86
+playlist.title=#e0def4
+playlist.playing=#f6c177
+
+# Track view
+trackview.title=#c4a7e7
+trackview.artist=#ea9a97
+trackview.album=#9ccfd8
+trackview.year=#f6c177
+trackview.time=#908caa
+trackview.visualizer=#c4a7e7
+trackview.lyrics=#e0def4
+
+# Library view
+library.artist=#c4a7e7
+library.album=#9ccfd8
+library.track=#e0def4
+library.enqueued=#ea9a97
+library.playing=#f6c177
+
+# Search
+search.label=#908caa
+search.query=#c4a7e7
+search.result=#e0def4
+search.enqueued=#ea9a97
+search.playing=#f6c177
+
+# Progress
+progress.filled=#c4a7e7
+progress.empty=#393552
+progress.elapsed=#f6c177
+
+# Status
+status.info=#9ccfd8
+status.warning=#f6c177
+status.error=#eb6f92
+status.success=#3e8fb0

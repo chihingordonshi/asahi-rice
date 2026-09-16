@@ -1,0 +1,30 @@
+# kew settings for the local music library.
+
+[miscellaneous]
+path=/home/chihin/Music
+useArtistsDb=1
+allowNotifications=1
+stripTrackNumbers=1
+autoResume=1
+trackTitleAsWindowTitle=1
+
+[colors]
+theme=rose-pine-moon
+colorMode=2
+
+[track cover]
+coverEnabled=1
+coverAnsi=0
+coverStyle=kitty
+
+[mouse]
+mouseEnabled=1
+
+[discord]
+discordRPCEnabled=0
+
+[visualizer]
+visualizerColorType=3
+visualizerHeight=6
+visualizerBrailleMode=0
+visualizerBarWidth=2

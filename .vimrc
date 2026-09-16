@@ -65,5 +65,21 @@ call plug#end()
 
 colorscheme catppuccin
 
+" Let Kitty's background opacity and blur show through Vim's main editing
+" areas. Reapply after every colorscheme change, since themes reset these.
+function! s:EnableKittyTransparency() abort
+    highlight Normal       guibg=NONE ctermbg=NONE
+    highlight NormalNC     guibg=NONE ctermbg=NONE
+    highlight SignColumn   guibg=NONE ctermbg=NONE
+    highlight FoldColumn   guibg=NONE ctermbg=NONE
+    highlight EndOfBuffer  guibg=NONE ctermbg=NONE
+endfunction
+
+augroup kitty_transparency
+    autocmd!
+    autocmd ColorScheme * call <SID>EnableKittyTransparency()
+augroup END
+call <SID>EnableKittyTransparency()
+
 highlight LineNr guifg=#9399b2 ctermfg=249
 highlight CursorLineNr guifg=#f9e2af gui=bold cterm=bold ctermfg=222

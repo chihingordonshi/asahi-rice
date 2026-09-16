@@ -1,6 +1,6 @@
 ﻿<settings>
-  <setting name="window-size-width" type="System.Int32">1259</setting>
-  <setting name="window-size-height" type="System.Int32">750</setting>
+  <setting name="window-size-width" type="System.Int32">1258</setting>
+  <setting name="window-size-height" type="System.Int32">1574</setting>
   <setting name="ruler-metric" type="System.Int32">0</setting>
   <setting name="window-maximized" type="System.Boolean">False</setting>
   <setting name="ruler-shown" type="System.Boolean">False</setting>
