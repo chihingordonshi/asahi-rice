@@ -45,3 +45,7 @@
 
 # Backup directory created by setup/link-home.sh.
 .local/state/asahi-rice/
+
+# Wallpapers are a local media library, not dotfiles. Keep image binaries and
+# downloaded collections out of Git; the wallpaper tools read them from here.
+Pictures/Wallpapers/

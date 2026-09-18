@@ -69,7 +69,7 @@ Review the hardware-pinned settings and package list before running it on anothe
    into `~/.local/share/fonts`, then `fc-cache`. Everything here (waybar, kitty, the
    Cairo clock) assumes this exact font is present.
 3. **Link the config files into `$HOME`.** Every path under `.config/`, `.local/bin/`,
-   `.local/share/applications/`, `Pictures/Wallpapers/`, plus the top-level dotfiles
+   `.local/share/applications/`, plus the top-level dotfiles
    (`.zshrc`, `.p10k.zsh`, `.zsh_functions`, Bash startup files, `.gitconfig`, `.vimrc`,
    `.Xresources`, and `.gtkrc-2.0`) in this repo maps 1:1 onto the same path under your
    own `$HOME`. Run `setup/link-home.sh`; it preserves replaced files under
@@ -176,7 +176,7 @@ live partition — see "Build history" below for what that involved).
 | `.config/agents/fedora-asahi-setup.md` | The original research/decisions briefing this whole setup is built from |
 | `.local/bin/` | Scripts the config actually references, plus unrelated CLI tools retained from the old copy-based sync setup — see replication step 3 for which is which |
 | `.local/share/applications/` | Desktop-entry overrides (e.g. Electron app launch flags) |
-| `Pictures/Wallpapers/` | Images for the wallpaper rotation timer |
+| `~/Pictures/Wallpapers/` | Local, Git-ignored media library used by the wallpaper rotation timer; supply your own images |
 | `.zshrc`, `.p10k.zsh`, `.zsh_functions` | Shell, prompt, and a couple of manual-trigger helper functions |
 | `setup/` | Reproducible RPM/Flatpak/repository/service manifests plus installer, linker, and audit scripts |
 
