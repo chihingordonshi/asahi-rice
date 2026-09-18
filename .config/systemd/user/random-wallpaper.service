@@ -16,4 +16,4 @@ KillMode=process
 # so it automatically follows whichever backend is currently selected (swaybg
 # from ~/Pictures/Wallpapers, or mpvpaper from ~/Videos/Wallpapers -- switched
 # via the waybar mpv/sway menu, see waypaper-set-backend.sh).
-ExecStart=/usr/bin/waypaper --random
+ExecStart=%h/.local/bin/random-wallpaper

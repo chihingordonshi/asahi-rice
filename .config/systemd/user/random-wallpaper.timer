@@ -1,9 +1,9 @@
 [Unit]
-Description=Change wallpaper every 20 minutes
+Description=Change wallpaper every 10 minutes
 
 [Timer]
 OnBootSec=1min
-OnUnitActiveSec=20min
+OnUnitActiveSec=10min
 Persistent=true
 
 [Install]

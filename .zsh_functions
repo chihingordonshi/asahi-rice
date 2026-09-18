@@ -2,6 +2,14 @@ wallpaper() {
     systemctl --user restart swaybg-wallpaper.service
 }
 
+week1() {
+    hyprctl eval 'hl.exec_cmd([[feh "$HOME/Documents/schedule_chi_hin_shi_page-1.png"]], { workspace = [[special:calendar]] })'
+}
+
+week2() {
+    hyprctl eval 'hl.exec_cmd([[feh "$HOME/Documents/schedule_chi_hin_shi_page-2.png"]], { workspace = [[special:calendar]] })'
+}
+
 hqm-reload() {
     # Restart the hypr-quickmenu HUD launcher widget to pick up
     # ~/.config/hypr-quickmenu/config.json changes.

@@ -184,6 +184,7 @@
 .local/share/applications/chrome-mnnncmnfcndlghkomlbaadoonfnjcadg-Profile_1.desktop
 .local/share/applications/claude-code-url-handler.desktop
 .local/share/applications/google-chrome.desktop
+.local/share/applications/kew.desktop
 .local/share/applications/mimeapps.list
 .local/share/applications/touchbar-defender.desktop
 .p10k.zsh

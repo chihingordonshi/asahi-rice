@@ -5,7 +5,7 @@
 
     "modules-left": ["custom/suspend", "custom/cpu", "custom/memory", "custom/fcitx5", "custom/power-profile", "hyprland/workspaces"],
     "modules-center": ["clock"],
-    "modules-right": ["tray", "custom/wallpaper-backend", "custom/bluetooth", "custom/brightness", "custom/volume", "network", "battery"],
+    "modules-right": ["tray", "custom/random-wallpaper", "custom/wallpaper-backend", "custom/bluetooth", "custom/brightness", "custom/volume", "network", "battery"],
 
     "hyprland/workspaces": {
         "format": "{icon} {windows}",
@@ -80,6 +80,12 @@
         "format": "󰸉  {}",
         "on-click": "~/.local/bin/waybar-wallpaper-backend-cycle.sh",
         "tooltip": true
+    },
+
+    "custom/random-wallpaper": {
+        "format": "󰒟",
+        "on-click": "systemctl --user start --no-block random-wallpaper.service",
+        "tooltip-format": "Switch to a random wallpaper (including subfolders)"
     },
 
     "custom/fcitx5": {

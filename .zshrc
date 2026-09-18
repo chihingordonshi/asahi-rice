@@ -38,9 +38,6 @@ alias ipynb='cd ~/amsr-venv && source .venv/bin/activate && uv run jupyter lab'
 alias pluto='cd ~/amsr-venv && ./julia -e "using Pluto; Pluto.run()"'
 alias amsr='cd ~/amsr-venv && source .venv/bin/activate'
 
-alias week1='nohup feh ~/Documents/schedule_chi_hin_shi_page-1.png &'
-alias week2='nohup feh ~/Documents/schedule_chi_hin_shi_page-2.png &'
-
 [[ -f /usr/share/zsh/plugins/zsh-autocomplete/zsh-autocomplete.plugin.zsh ]] && source /usr/share/zsh/plugins/zsh-autocomplete/zsh-autocomplete.plugin.zsh
 [[ -f ~/.local/share/zsh-autocomplete/zsh-autocomplete.plugin.zsh ]] && source ~/.local/share/zsh-autocomplete/zsh-autocomplete.plugin.zsh
 source ~/.zsh_functions
@@ -78,6 +75,8 @@ fi
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
  typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
+
+ eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv zsh)"
 
 # >>> juliaup initialize >>>
 
