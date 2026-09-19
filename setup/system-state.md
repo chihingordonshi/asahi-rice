@@ -20,3 +20,14 @@ before reuse:
   Registration and device identity stay outside Git.
 - `lazygit` v0.64.0 is installed from its pinned upstream ARM64 release by
   `setup/install-external.sh`.
+
+## Codex Touch Bar privilege boundary
+
+`/etc/sudoers.d/codex-touchbar` is installed from `setup/codex-touchbar.sudoers`
+with owner `root:root` and mode `0440`. It grants `chihin` passwordless access to
+exactly `systemctl stop tiny-dfr` and `systemctl start tiny-dfr`, allowing the
+unprivileged animation player to borrow the panel and restore its normal media-key
+daemon. `setup/install.sh` validates the source with `visudo` before installing it.
+This machine also retains its older `%wheel ALL=(ALL) NOPASSWD: ALL` policy by owner
+choice, so the feature-specific entry is redundant here but remains the reproducible
+least-privilege default for other installations.

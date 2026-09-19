@@ -42,6 +42,10 @@ fi
 mapfile -t packages < <(sed '/^\s*#/d; /^\s*$/d' "$repo_root/setup/dnf-packages.txt")
 sudo dnf install -y --allowerasing "${packages[@]}"
 
+sudo /usr/bin/visudo -cf "$repo_root/setup/codex-touchbar.sudoers"
+sudo install -o root -g root -m 0440 \
+    "$repo_root/setup/codex-touchbar.sudoers" /etc/sudoers.d/codex-touchbar
+
 "$repo_root/setup/install-external.sh"
 
 sudo flatpak remote-add --system --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo

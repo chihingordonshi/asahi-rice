@@ -61,7 +61,7 @@ export TLDR_CACHE_MAX_AGE=8760
 
 # Show a small random Pokémon sprite when an interactive terminal starts.
 if (( $+commands[pokemon-colorscripts] )); then
-  pokemon-colorscripts --random --no-title
+# pokemon-colorscripts --random --no-title
 fi
 
 if [[ -f /usr/share/zsh-theme-powerlevel10k/powerlevel10k.zsh-theme ]]; then

@@ -31,6 +31,24 @@ for unit in $(sed '/^\s*#/d; /^\s*$/d' "$repo_root/setup/user-services.txt"); do
     systemctl --user is-enabled --quiet "$unit" || fail "user unit not enabled: $unit"
 done
 
+for asset in codex-train.mkv codex-vines.mkv; do
+    asset_path="$HOME/.local/share/touchbar-animations/$asset"
+    probe=$(ffprobe -v error -select_streams v:0 \
+        -show_entries stream=codec_name,width,height,pix_fmt,r_frame_rate \
+        -of csv=p=0 "$asset_path" 2>/dev/null) || { fail "Touch Bar asset is unreadable: $asset"; continue; }
+    [[ "$probe" == "ffv1,2008,60,yuv420p,30/1" ]] || fail "Touch Bar asset has unexpected video format: $asset ($probe)"
+    duration=$(ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 "$asset_path" 2>/dev/null)
+    awk -v duration="$duration" 'BEGIN { exit !(duration >= 3.49 && duration <= 3.51) }' || fail "Touch Bar asset has unexpected duration: $asset ($duration)"
+    [[ -z $(ffprobe -v error -select_streams a -show_entries stream=index -of csv=p=0 "$asset_path" 2>/dev/null) ]] || fail "Touch Bar asset unexpectedly contains audio: $asset"
+done
+
+/usr/bin/python3 -c 'import ast, pathlib, sys; [ast.parse(pathlib.Path(path).read_text()) for path in sys.argv[1:]]' \
+    "$repo_root/tools/generate-codex-touchbar-animations.py" \
+    "$repo_root/.local/bin/codex-touchbar-notify" \
+    "$repo_root/.local/bin/codex-touchbar-daemon" || fail 'Codex Touch Bar Python syntax check failed'
+/usr/bin/python3 "$repo_root/tests/test_codex_touchbar.py" || fail 'Codex Touch Bar behavior tests failed'
+/usr/bin/sudo -n /usr/bin/systemctl start tiny-dfr >/dev/null 2>&1 || fail 'noninteractive tiny-dfr start permission is unavailable'
+
 for codec in h264 hevc av1 vp9 aac opus vorbis mp3 flac; do
     ffmpeg -hide_banner -decoders 2>/dev/null | grep -E "[[:space:]]${codec}[[:space:]]" >/dev/null || fail "FFmpeg decoder missing: $codec"
 done

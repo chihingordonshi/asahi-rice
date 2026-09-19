@@ -3,7 +3,7 @@
     "position": "top",
     "height": 36,
 
-    "modules-left": ["custom/suspend", "custom/cpu", "custom/memory", "custom/fcitx5", "custom/power-profile", "hyprland/workspaces"],
+    "modules-left": ["custom/suspend", "custom/cpu", "custom/memory", "custom/fcitx5", "custom/terminal-art", "custom/power-profile", "hyprland/workspaces"],
     "modules-center": ["clock"],
     "modules-right": ["tray", "custom/random-wallpaper", "custom/wallpaper-backend", "custom/bluetooth", "custom/brightness", "custom/volume", "network", "battery"],
 
@@ -53,6 +53,13 @@
     "tray": {
         "icon-size": 18,
         "spacing": 10
+    },
+
+    "custom/terminal-art": {
+        "format": "󰆍",
+        "on-click": "~/.local/bin/waybar-kitty-art.sh spawn",
+        "on-click-right": "~/.local/bin/waybar-kitty-art.sh close",
+        "tooltip-format": "Terminal composition\nLeft: create on an empty workspace\n1–7 tiled windows: do nothing\n8+ tiled windows: close them all\nRight: close the composition"
     },
 
     "custom/bluetooth": {

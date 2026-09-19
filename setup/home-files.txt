@@ -133,6 +133,7 @@
 .config/rofi/config.rasi
 .config/systemd/user/asahi-rice-sync.service
 .config/systemd/user/asahi-rice-sync.timer
+.config/systemd/user/codex-touchbar.service
 .config/systemd/user/graphical-session.target.wants/hypridle.service
 .config/systemd/user/random-wallpaper.service
 .config/systemd/user/random-wallpaper.timer
@@ -153,6 +154,8 @@
 .local/bin/claude-code-monitor
 .local/bin/claude-monitor
 .local/bin/cmonitor
+.local/bin/codex-touchbar-daemon
+.local/bin/codex-touchbar-notify
 .local/bin/dotenv
 .local/bin/hypr-compact-workspaces
 .local/bin/hypr-overview
@@ -174,6 +177,7 @@
 .local/bin/waybar-cpu.sh
 .local/bin/waybar-fcitx5.sh
 .local/bin/waybar-memory.sh
+.local/bin/waybar-kitty-art.sh
 .local/bin/waybar-power-profile-cycle.sh
 .local/bin/waybar-power-profile.sh
 .local/bin/waybar-wallpaper-backend-cycle.sh
@@ -187,6 +191,8 @@
 .local/share/applications/kew.desktop
 .local/share/applications/mimeapps.list
 .local/share/applications/touchbar-defender.desktop
+.local/share/touchbar-animations/codex-train.mkv
+.local/share/touchbar-animations/codex-vines.mkv
 .p10k.zsh
 .vimrc
 .zsh_functions

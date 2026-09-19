@@ -85,12 +85,20 @@ play() {
         esac
     done
 
-    cleanup() { sudo systemctl start tiny-dfr; }
+    cleanup() { /usr/bin/sudo -n /usr/bin/systemctl start tiny-dfr; }
     trap cleanup EXIT
 
-    sudo systemctl stop tiny-dfr
+    /usr/bin/sudo -n /usr/bin/systemctl stop tiny-dfr
     sleep 0.5
-    sg video -c "'$MPV_BIN' --vo=drm --drm-connector=$CONNECTOR --video-rotate=$ROTATE $loop_opt $audio_flag --really-quiet -- '$file'"
+    sg video -c "'$MPV_BIN' --vo=drm --drm-connector=$CONNECTOR --video-rotate=$ROTATE $loop_opt $audio_flag --really-quiet -- '$file'" &
+    local player_pid=$!
+    sleep 0.1
+    if kill -0 "$player_pid" 2>/dev/null && [[ -n "${TOUCHBAR_STARTED_FILE:-}" ]]; then
+        local started_tmp="${TOUCHBAR_STARTED_FILE}.$$"
+        : > "$started_tmp"
+        mv -f -- "$started_tmp" "$TOUCHBAR_STARTED_FILE"
+    fi
+    wait "$player_pid"
 }
 
 [[ $# -ge 1 ]] || usage

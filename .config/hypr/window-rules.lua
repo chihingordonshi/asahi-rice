@@ -74,6 +74,20 @@ hl.window_rule({
     opaque = true,
 })
 
+-- Randomized colored Kitty mosaic launched from Waybar. Keep every block in
+-- the dwindle tree so Hyprland, rather than absolute coordinates, owns it.
+hl.window_rule({
+    name  = "abstract-kitty",
+    match = { class = "^abstract-kitty$" },
+
+    tile         = true,
+    opaque       = true,
+    border_size  = 2,
+    border_color = "rgba(c4a7e7cc)",
+    rounding     = 3,
+    no_shadow    = true,
+})
+
 
 -- Dwindle is the sole tiled layout.
 hl.window_rule({

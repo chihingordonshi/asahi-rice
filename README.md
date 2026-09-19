@@ -47,7 +47,8 @@ Review the hardware-pinned settings and package list before running it on anothe
      `brightnessctl`, `grim`, `slurp`, `playerctl`, `fcitx5`, `fcitx5-chinese-addons`,
      `exfatprogs`, `gtk4-layer-shell`, `python3-gobject`, `python3-cairo` (the last
      three are for `hypr-quickmenu` and the Cairo clock in `autostart.lua` — both are
-     Python/GTK4, and silently no-op at startup if these are missing).
+     Python/GTK4, and silently no-op at startup if these are missing), plus
+     `python3-pillow` for reproducibly generating the Codex Touch Bar animations.
    - `.config/neofetch/` exists in this repo but `neofetch` itself isn't installed here
      — `fastfetch` (`.config/fastfetch/`) is what's actually live; the neofetch config
      is a leftover from before the switch. Skip installing `neofetch` unless you want it.
@@ -78,8 +79,9 @@ Review the hardware-pinned settings and package list before running it on anothe
      scripts actually referenced by the Hypr/waybar config are `hypr-quickmenu`,
      `hypr-overview`, `hypr-workspace-watch`, `mac-screenshot`,
      `wallpaper-auto-downscale`, `waypaper-set-backend.sh`, and the `waybar-*.sh`
-     helpers (`waybar-cpu.sh`, `waybar-memory.sh`, `waybar-bluetooth.sh`,
-     `waybar-fcitx5.sh`, `waybar-power-profile*.sh`, `waybar-wallpaper-backend*.sh`).
+    helpers (`waybar-cpu.sh`, `waybar-memory.sh`, `waybar-bluetooth.sh`,
+    `waybar-fcitx5.sh`, `waybar-kitty-art.sh`, `waybar-power-profile*.sh`,
+    `waybar-wallpaper-backend*.sh`).
      Everything else in there is unrelated CLI tooling retained from the old
      copy-based sync setup — copy it too if you want it, skip
      it if you're only after the rice.
@@ -88,8 +90,10 @@ Review the hardware-pinned settings and package list before running it on anothe
      Hin's repo sync, not a general-purpose tool, and you don't have push access to it
      anyway. Everything else under `.config/systemd/user/` (`hypridle.service`,
      `random-wallpaper.{service,timer}`, `swaybg-wallpaper.service`) is
-     machine-generic and safe to bring over — enable with `systemctl --user enable
-     --now hypridle.service random-wallpaper.timer`.
+     machine-generic and safe to bring over. `codex-touchbar.service` is also safe,
+     but only useful after installing its narrow sudoers rule and adding the Codex
+     `notify` setting described below. Enable the recorded set with the installer or
+     from `setup/user-services.txt`.
    - `.gitconfig` contains Chi Hin's public Git identity and the `gh` credential-helper
      command. The actual GitHub token remains only in ignored `.config/gh/hosts.yml`.
 4. **Verify the hardware-pinned values before trusting them, even on identical
@@ -176,6 +180,7 @@ live partition — see "Build history" below for what that involved).
 | `.config/agents/fedora-asahi-setup.md` | The original research/decisions briefing this whole setup is built from |
 | `.local/bin/` | Scripts the config actually references, plus unrelated CLI tools retained from the old copy-based sync setup — see replication step 3 for which is which |
 | `.local/share/applications/` | Desktop-entry overrides (e.g. Electron app launch flags) |
+| `.local/share/touchbar-animations/` | Deterministic 2008×60 FFV1 train/vines assets used for Codex completion notifications; regenerate them with `tools/generate-codex-touchbar-animations.py` |
 | `~/Pictures/Wallpapers/` | Local, Git-ignored media library used by the wallpaper rotation timer; supply your own images |
 | `.zshrc`, `.p10k.zsh`, `.zsh_functions` | Shell, prompt, and a couple of manual-trigger helper functions |
 | `setup/` | Reproducible RPM/Flatpak/repository/service manifests plus installer, linker, and audit scripts |
@@ -241,6 +246,21 @@ file and let it pick up the change on its own; killing/relaunching mid-session i
 disruptive. Use `systemctl --user restart waybar.service` to recover or explicitly
 restart Waybar. `hyprctl reload` remains fine for Hyprland-owned Lua config changes.
 
+**Codex completion animations.** The user-level Codex config contains
+`notify = ["/home/chihin/.local/bin/codex-touchbar-notify"]`, following Codex's
+documented single-JSON-argument notification interface. The notifier accepts only
+`agent-turn-complete` and atomically drops a small event below
+`~/.local/state/codex-touchbar/`; it never handles the display or runs privileged
+commands. `codex-touchbar.service` consumes only fresh events, alternates the train and
+vines persistently, and calls the existing silent, non-looping `touchbar play` path.
+Events received while playback is active are discarded, not queued. The player and
+unit both restore `tiny-dfr` after normal playback, errors, or shutdown. The feature
+itself invokes only the two commands in `setup/codex-touchbar.sudoers`; there is no
+root animation daemon. This machine retains its pre-existing wheel-wide `NOPASSWD`
+policy by owner choice, while the feature-specific rule keeps replicas from needing
+that broader policy. Codex clients must be restarted after adding or changing the
+top-level `notify` setting.
+
 **`.gitconfig` is tracked, credentials are not.** It records the public author identity
 and `gh` credential-helper integration. `.config/gh/hosts.yml`, browser profiles,
 proxy state, key material, cookies, histories, databases, and caches are excluded.
@@ -302,7 +322,9 @@ under `$HOME` are file-by-file symlinks into the clone; `asahi-rice-sync` commit
 pushes worktree changes automatically once a day without copying files (see
 `.local/bin/asahi-rice-sync`). The full config — Lua Hyprland config, waybar, fonts,
 fcitx5, app set — is deployed and in daily use via a real `uwsm`-managed Hyprland
-session.
+session. Codex turn completions are also live through `codex-touchbar.service`:
+successive idle turns alternate between the generated train and growing-vines
+animations, while overlapping completions are intentionally skipped.
 
 ## Provenance
 
@@ -319,6 +341,10 @@ exFAT partition work (see "Build history" below) were all run interactively by C
 
 Condensed changelog — see git log for exact diffs, and the sections above for anything
 still relevant to replicating or maintaining this setup.
+
+- **2026-09-18** — Added silent alternating Codex completion animations on the Touch
+  Bar, with deterministic FFV1 assets, an atomic notification handoff, a supervised
+  unprivileged user daemon, and a two-command `tiny-dfr` sudo boundary.
 
 - **2026-09-07** — Added a reproducible Fedora bootstrap, explicit package/Flatpak/
   repository/service manifests, safe symlink deployment and auditing, broader durable

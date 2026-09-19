@@ -1,0 +1,182 @@
+#!/usr/bin/env python3
+"""Consume Codex completion events and play alternating Touch Bar animations."""
+
+from __future__ import annotations
+
+import json
+import os
+import signal
+import subprocess
+import sys
+import tempfile
+import time
+from pathlib import Path
+
+
+HOME = Path.home()
+STATE_DIR = Path(os.environ.get("CODEX_TOUCHBAR_STATE_DIR", HOME / ".local/state/codex-touchbar"))
+EVENTS_DIR = STATE_DIR / "events"
+NEXT_FILE = STATE_DIR / "next-animation"
+TOUCHBAR = Path(os.environ.get("CODEX_TOUCHBAR_COMMAND", HOME / ".local/bin/touchbar"))
+ASSET_DIR = Path(os.environ.get("CODEX_TOUCHBAR_ASSET_DIR", HOME / ".local/share/touchbar-animations"))
+ASSETS = {
+    "train": ASSET_DIR / "codex-train.mkv",
+    "vines": ASSET_DIR / "codex-vines.mkv",
+}
+
+stopping = False
+player: subprocess.Popen[bytes] | None = None
+
+
+def stop(_signum: int, _frame: object) -> None:
+    global stopping
+    stopping = True
+    if player is not None and player.poll() is None:
+        try:
+            os.killpg(player.pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+
+
+def atomic_text(path: Path, value: str) -> None:
+    with tempfile.NamedTemporaryFile(
+        mode="w", encoding="utf-8", dir=path.parent, prefix=f".{path.name}-", delete=False
+    ) as temporary:
+        temporary.write(value)
+        temporary.flush()
+        os.fsync(temporary.fileno())
+        temporary_path = Path(temporary.name)
+    os.replace(temporary_path, path)
+
+
+def read_event(path: Path) -> int | None:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        received_ns = payload.get("received_ns")
+        if payload.get("type") != "agent-turn-complete" or not isinstance(received_ns, int):
+            return None
+        return received_ns
+    except (OSError, json.JSONDecodeError, AttributeError):
+        return None
+
+
+def remove_event(path: Path) -> None:
+    try:
+        path.unlink()
+    except FileNotFoundError:
+        pass
+
+
+def next_eligible_event(cutoff_ns: int, busy_intervals: list[tuple[int, int]]) -> Path | None:
+    # Notification writes are effectively immediate; retaining five minutes of
+    # completed playback windows also bounds this long-running daemon's memory.
+    recent_ns = time.time_ns() - 300_000_000_000
+    busy_intervals[:] = [interval for interval in busy_intervals if interval[1] >= recent_ns]
+    try:
+        candidates = sorted(EVENTS_DIR.glob("*.event"))
+    except OSError:
+        return None
+    for path in candidates:
+        received_ns = read_event(path)
+        stale = received_ns is None or received_ns <= cutoff_ns
+        busy = received_ns is not None and any(start <= received_ns <= end for start, end in busy_intervals)
+        if stale or busy:
+            remove_event(path)
+            continue
+        return path
+    return None
+
+
+def cleanup_touchbar() -> None:
+    try:
+        subprocess.run(
+            ["/usr/bin/sudo", "-n", "/usr/bin/systemctl", "start", "tiny-dfr"],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=8,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        pass
+
+
+def main() -> int:
+    global player
+    STATE_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
+    EVENTS_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
+
+    # Anything delivered before this process starts is intentionally stale.
+    startup_cutoff_ns = time.time_ns()
+    for stale_path in EVENTS_DIR.iterdir():
+        received_ns = read_event(stale_path) if stale_path.name.endswith(".event") else None
+        if stale_path.is_file() and (received_ns is None or received_ns <= startup_cutoff_ns):
+            remove_event(stale_path)
+
+    try:
+        next_animation = NEXT_FILE.read_text(encoding="utf-8").strip()
+    except OSError:
+        next_animation = "train"
+    if next_animation not in ASSETS:
+        next_animation = "train"
+
+    busy_intervals: list[tuple[int, int]] = []
+    while not stopping:
+        event = next_eligible_event(startup_cutoff_ns, busy_intervals)
+        if event is None:
+            time.sleep(0.08)
+            continue
+        remove_event(event)
+
+        asset = ASSETS[next_animation]
+        started_marker = STATE_DIR / f"playback-started-{time.time_ns()}"
+        environment = os.environ.copy()
+        environment["TOUCHBAR_STARTED_FILE"] = str(started_marker)
+        command_started_ns = time.time_ns()
+        try:
+            player = subprocess.Popen(
+                [str(TOUCHBAR), "play", str(asset)],
+                stdin=subprocess.DEVNULL,
+                start_new_session=True,
+                env=environment,
+            )
+        except OSError as error:
+            print(f"codex-touchbar: could not start player: {error}", file=sys.stderr, flush=True)
+            time.sleep(0.25)
+            continue
+
+        playback_began = False
+        while player.poll() is None:
+            if started_marker.exists():
+                playback_began = True
+                break
+            time.sleep(0.01)
+        if started_marker.exists():
+            playback_began = True
+
+        # Advance only after the player confirms its mpv process stayed alive.
+        if playback_began:
+            next_animation = "vines" if next_animation == "train" else "train"
+            try:
+                atomic_text(NEXT_FILE, next_animation + "\n")
+            except OSError as error:
+                print(f"codex-touchbar: could not persist alternation: {error}", file=sys.stderr, flush=True)
+
+        return_code = player.wait()
+        playback_ended_ns = time.time_ns()
+        busy_intervals.append((command_started_ns, playback_ended_ns))
+        player = None
+        started_marker.unlink(missing_ok=True)
+        if return_code != 0 and not stopping:
+            print(f"codex-touchbar: player exited with status {return_code}", file=sys.stderr, flush=True)
+
+    return 0
+
+
+if __name__ == "__main__":
+    for handled_signal in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP):
+        signal.signal(handled_signal, stop)
+    try:
+        raise SystemExit(main())
+    finally:
+        cleanup_touchbar()

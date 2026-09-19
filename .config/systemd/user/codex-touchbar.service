@@ -1,0 +1,14 @@
+[Unit]
+Description=Play alternating Touch Bar animations after Codex turns
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /home/chihin/.local/bin/codex-touchbar-daemon
+ExecStopPost=/usr/bin/sudo -n /usr/bin/systemctl start tiny-dfr
+Restart=on-failure
+RestartSec=1s
+KillMode=mixed
+TimeoutStopSec=10s
+
+[Install]
+WantedBy=default.target

@@ -150,6 +150,7 @@ pulseaudio-libs-devel
 python3-docutils
 python3-evdev
 python3-pip
+python3-pillow
 python3-xapp
 python3-xapps-overrides
 qalculate-qt

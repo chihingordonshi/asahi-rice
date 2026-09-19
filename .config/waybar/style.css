@@ -82,6 +82,13 @@ window#waybar {
     border-radius: 6px;
 }
 
+#custom-terminal-art {
+    color: #c4a7e7;
+    padding: 0 10px;
+    margin: 0 2px;
+    border-radius: 6px;
+}
+
 #custom-random-wallpaper {
     color: #c6c4e0;
     padding: 0 8px;
@@ -99,6 +106,7 @@ window#waybar {
 #custom-kill:hover, #custom-bluetooth:hover,
 #custom-proxy:hover, #custom-power-profile:hover,
 #custom-fcitx5:hover, #custom-suspend:hover,
-#custom-wallpaper-backend:hover, #custom-random-wallpaper:hover {
+#custom-wallpaper-backend:hover, #custom-random-wallpaper:hover,
+#custom-terminal-art:hover {
     background-color: #201f23;
 }

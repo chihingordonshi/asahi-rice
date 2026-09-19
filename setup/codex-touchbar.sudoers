@@ -1,0 +1,2 @@
+# Allow the unprivileged Touch Bar player to hand the panel to mpv and back.
+chihin ALL=(root) NOPASSWD: /usr/bin/systemctl stop tiny-dfr, /usr/bin/systemctl start tiny-dfr
