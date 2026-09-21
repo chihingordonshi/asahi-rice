@@ -16,6 +16,8 @@
 # Credentials, identity material, browser data, histories, caches, and runtime state.
 .config/gh/hosts.yml
 .config/kdeconnect/
+.config/bluedevilglobalrc
+.config/fcitx5/
 .config/pulse/
 .config/mihomo-party/
 .config/google-chrome/

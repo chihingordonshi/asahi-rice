@@ -74,6 +74,16 @@ hl.window_rule({
     opaque = true,
 })
 
+-- Keep GTK file chooser dialogs comfortably sized and centered.
+hl.window_rule({
+    name  = "gtk-file-chooser",
+    match = { class = "^Xdg-desktop-portal-gtk$" },
+
+    float  = true,
+    size   = { 1000, 800 },
+    center = true,
+})
+
 -- Randomized colored Kitty mosaic launched from Waybar. Keep every block in
 -- the dwindle tree so Hyprland, rather than absolute coordinates, owns it.
 hl.window_rule({

@@ -6,7 +6,7 @@
 local mainMod = "SUPER" -- Sets "Windows" key as main modifier
 
 hl.bind(mainMod .. " + Q", hl.dsp.exec_cmd(terminal .. " --class terminal"))
-hl.bind(mainMod .. " + C", hl.dsp.window.close())
+hl.bind(mainMod .. " + SHIFT + C", hl.dsp.window.close())
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
 hl.bind(mainMod .. " + F", hl.dsp.window.float({ action = "toggle" }))
 

@@ -6,3 +6,5 @@ if [ -f ~/.bashrc ]; then
 fi
 
 # User specific environment and startup programs
+
+if [ -e /home/chihin/.nix-profile/etc/profile.d/nix.sh ]; then . /home/chihin/.nix-profile/etc/profile.d/nix.sh; fi # added by Nix installer
