@@ -82,7 +82,7 @@ hl.bind(mainMod .. " + N", hl.dsp.exec_cmd("kitty --class spacer &"))
 hl.bind(mainMod .. " + W", hl.dsp.exec_cmd(browser))
 
 -- App launcher
-hl.bind(mainMod .. " + D", hl.dsp.exec_cmd("rofi -show drun"))
+hl.bind(mainMod .. " + D", hl.dsp.exec_cmd("pgrep -x rofi >/dev/null && pkill -x rofi || rofi -show drun"))
 
 -- Sticky
 hl.bind(mainMod .. " + V", hl.dsp.exec_cmd("kitty --class sticky -e vim \"$HOME/sticky/$(date '+%Y-%m-%d-%H:%M:%S').txt\""))

@@ -728,3 +728,30 @@ zzz() {
     # so no manual lock call needed here.
     systemctl suspend
 }
+
+system-upgrade() {
+    emulate -L zsh
+    local -a failed=()
+
+    echo '==> Fedora packages (DNF)'
+    sudo dnf upgrade --refresh || failed+=(dnf)
+
+    echo '\n==> Homebrew packages (herdr and Codex)'
+    (brew update && brew upgrade) || failed+=(homebrew)
+
+    echo '\n==> System Flatpaks (WeChat and LocalSend)'
+    flatpak update --system || failed+=(flatpak-system)
+
+    echo '\n==> User Flatpaks (WPS 365 and Ghostwriter)'
+    flatpak update --user || failed+=(flatpak-user)
+
+    echo '\n==> Global npm package (@rivolink/leaf)'
+    sudo npm update --global || failed+=(npm)
+
+    if (( ${#failed} )); then
+        echo "\nUpgrade finished with failures: ${failed[*]}"
+        return 1
+    fi
+
+    echo '\nSystem upgrade complete.'
+}
