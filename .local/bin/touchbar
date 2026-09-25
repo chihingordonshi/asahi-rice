@@ -85,20 +85,43 @@ play() {
         esac
     done
 
-    cleanup() { /usr/bin/sudo -n /usr/bin/systemctl start tiny-dfr; }
+    # The booth loop owns the display for much longer than Codex notifications.
+    # Pause their daemon for a direct `touchbar play linux-showcase --loop` too.
+    showcase_service_was_active=0
+    if [[ "$file" == "$ASSETS_DIR/linux-showcase.mkv" && "$loop_opt" == "--loop-file=inf" ]] && \
+       /usr/bin/systemctl --user is-active --quiet codex-touchbar.service; then
+        /usr/bin/systemctl --user stop codex-touchbar.service
+        showcase_service_was_active=1
+    fi
+
+    cleanup() {
+        local result=$?
+        trap - EXIT INT TERM
+        if [[ -n "${touchbar_player_pid:-}" ]] && kill -0 "$touchbar_player_pid" 2>/dev/null; then
+            kill -TERM "$touchbar_player_pid" 2>/dev/null || true
+            wait "$touchbar_player_pid" 2>/dev/null || true
+        fi
+        /usr/bin/sudo -n /usr/bin/systemctl start tiny-dfr || true
+        if (( showcase_service_was_active )); then
+            /usr/bin/systemctl --user start codex-touchbar.service || true
+        fi
+        return "$result"
+    }
     trap cleanup EXIT
+    trap 'exit 130' INT
+    trap 'exit 143' TERM
 
     /usr/bin/sudo -n /usr/bin/systemctl stop tiny-dfr
     sleep 0.5
     sg video -c "'$MPV_BIN' --vo=drm --drm-connector=$CONNECTOR --video-rotate=$ROTATE $loop_opt $audio_flag --really-quiet -- '$file'" &
-    local player_pid=$!
+    touchbar_player_pid=$!
     sleep 0.1
-    if kill -0 "$player_pid" 2>/dev/null && [[ -n "${TOUCHBAR_STARTED_FILE:-}" ]]; then
+    if kill -0 "$touchbar_player_pid" 2>/dev/null && [[ -n "${TOUCHBAR_STARTED_FILE:-}" ]]; then
         local started_tmp="${TOUCHBAR_STARTED_FILE}.$$"
         : > "$started_tmp"
         mv -f -- "$started_tmp" "$TOUCHBAR_STARTED_FILE"
     fi
-    wait "$player_pid"
+    wait "$touchbar_player_pid"
 }
 
 [[ $# -ge 1 ]] || usage

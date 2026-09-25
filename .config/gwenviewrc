@@ -6,26 +6,26 @@ SideBarPage=operations
 MenuBar=Disabled
 
 [Recent Files]
-File1[$e]=/usr/local/share/doc/xschem/xschem2.png
-File10[$e]=$HOME/amsr-venv/circuit/pnt.png
-File2[$e]=$HOME/amsr-venv/btern-main/doc/hardware/cpu.png
-File3[$e]=$HOME/amsr-venv/circuit/n_cntfet_high.png
-File4[$e]=$HOME/amsr-venv/circuit/not_schemdraw.png
-File5[$e]=$HOME/amsr-venv/circuit/p_cntfet_high.png
-File6[$e]=$HOME/amsr-venv/circuit/cntfet_symbols.png
-File7[$e]=$HOME/amsr-venv/circuit/not_v2.png
-File8[$e]=$HOME/amsr-venv/circuit/not.png
-File9[$e]=$HOME/amsr-venv/circuit/pnot.png
-Name1[$e]=xschem2.png
-Name10[$e]=pnt.png
-Name2[$e]=cpu.png
-Name3[$e]=n_cntfet_high.png
-Name4[$e]=not_schemdraw.png
-Name5[$e]=p_cntfet_high.png
-Name6[$e]=cntfet_symbols.png
-Name7[$e]=not_v2.png
-Name8[$e]=not.png
-Name9[$e]=pnot.png
+File1[$e]=$HOME/amsr-venv/btern-main/doc/hardware/cpu.png
+File10[$e]=$HOME/Downloads/forms.png
+File2[$e]=$HOME/amsr-venv/circuit/n_cntfet_high.png
+File3[$e]=$HOME/amsr-venv/circuit/not_schemdraw.png
+File4[$e]=$HOME/amsr-venv/circuit/p_cntfet_high.png
+File5[$e]=$HOME/amsr-venv/circuit/cntfet_symbols.png
+File6[$e]=$HOME/amsr-venv/circuit/not_v2.png
+File7[$e]=$HOME/amsr-venv/circuit/not.png
+File8[$e]=$HOME/amsr-venv/circuit/pnot.png
+File9[$e]=$HOME/amsr-venv/circuit/pnt.png
+Name1[$e]=cpu.png
+Name10[$e]=forms.png
+Name2[$e]=n_cntfet_high.png
+Name3[$e]=not_schemdraw.png
+Name4[$e]=p_cntfet_high.png
+Name5[$e]=cntfet_symbols.png
+Name6[$e]=not_v2.png
+Name7[$e]=not.png
+Name8[$e]=pnot.png
+Name9[$e]=pnt.png
 
 [SideBar]
 InformationSplitterSizes=227,248

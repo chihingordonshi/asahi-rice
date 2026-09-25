@@ -13,6 +13,7 @@ NightTemperature=5600
 
 [Plugins]
 krohnkiteEnabled=false
+screentime-trackerEnabled=true
 
 [Tiling][b46519e2-54db-417b-b94e-cbc984360557][8d502c9f-5afe-4489-b3b4-d47b8ad1d2e5]
 padding=4
