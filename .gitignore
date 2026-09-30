@@ -3,6 +3,9 @@
 *.py[cod]
 **/mimeinfo.cache
 
+# Isolated integration-test working directories.
+/.test-artifacts/
+
 # Keep cmus preferences and theme, but not its mutable library/state.
 .config/cmus/*
 !.config/cmus/rc

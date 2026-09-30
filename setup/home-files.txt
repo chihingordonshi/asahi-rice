@@ -193,6 +193,7 @@
 .local/share/applications/touchbar-defender.desktop
 .local/share/touchbar-animations/codex-train.mkv
 .local/share/touchbar-animations/codex-vines.mkv
+.pi/agent/extensions/touchbar-notify.ts
 .p10k.zsh
 .vimrc
 .zsh_functions

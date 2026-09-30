@@ -92,8 +92,8 @@ Review the hardware-pinned settings and package list before running it on anothe
      `random-wallpaper.{service,timer}`, `swaybg-wallpaper.service`) is
      machine-generic and safe to bring over. `codex-touchbar.service` is also safe,
      but only useful after installing its narrow sudoers rule and adding the Codex
-     `notify` setting described below. Enable the recorded set with the installer or
-     from `setup/user-services.txt`.
+     `notify` setting or linking the Pi extension described below. Enable the
+     recorded set with the installer or from `setup/user-services.txt`.
    - `.gitconfig` contains Chi Hin's public Git identity and the `gh` credential-helper
      command. The actual GitHub token remains only in ignored `.config/gh/hosts.yml`.
 4. **Verify the hardware-pinned values before trusting them, even on identical
@@ -180,7 +180,8 @@ live partition — see "Build history" below for what that involved).
 | `.config/agents/fedora-asahi-setup.md` | The original research/decisions briefing this whole setup is built from |
 | `.local/bin/` | Scripts the config actually references, plus unrelated CLI tools retained from the old copy-based sync setup — see replication step 3 for which is which |
 | `.local/share/applications/` | Desktop-entry overrides (e.g. Electron app launch flags) |
-| `.local/share/touchbar-animations/` | Deterministic 2008×60 FFV1 train/vines assets used for Codex completion notifications; regenerate them with `tools/generate-codex-touchbar-animations.py` |
+| `.local/share/touchbar-animations/` | Deterministic 2008×60 FFV1 train/vines assets shared by Codex and Pi completion notifications; regenerate them with `tools/generate-codex-touchbar-animations.py` |
+| `.pi/agent/extensions/touchbar-notify.ts` | Personal Pi extension that hands completed interactive responses to the existing Codex Touch Bar service |
 | `~/Pictures/Wallpapers/` | Local, Git-ignored media library used by the wallpaper rotation timer; supply your own images |
 | `.zshrc`, `.p10k.zsh`, `.zsh_functions` | Shell, prompt, and a couple of manual-trigger helper functions |
 | `setup/` | Reproducible RPM/Flatpak/repository/service manifests plus installer, linker, and audit scripts |
@@ -246,7 +247,7 @@ file and let it pick up the change on its own; killing/relaunching mid-session i
 disruptive. Use `systemctl --user restart waybar.service` to recover or explicitly
 restart Waybar. `hyprctl reload` remains fine for Hyprland-owned Lua config changes.
 
-**Codex completion animations.** The user-level Codex config contains
+**Codex and Pi completion animations.** The user-level Codex config contains
 `notify = ["/home/chihin/.local/bin/codex-touchbar-notify"]`, following Codex's
 documented single-JSON-argument notification interface. The notifier accepts only
 `agent-turn-complete` and atomically drops a small event below
@@ -260,6 +261,18 @@ root animation daemon. This machine retains its pre-existing wheel-wide `NOPASSW
 policy by owner choice, while the feature-specific rule keeps replicas from needing
 that broader policy. Codex clients must be restarted after adding or changing the
 top-level `notify` setting.
+
+Pi uses `~/.pi/agent/extensions/touchbar-notify.ts`, linked by
+`setup/link-home.sh`. It listens for `agent_settled`, not individual model/tool
+turns or `agent_end`, so retries, compaction, and queued continuations finish before
+notifying. Only interactive TUI sessions notify; JSON/print/RPC workers and
+subagents are silent. The extension calls the same notifier with session/leaf IDs
+only, never prompt or response text, and bounds delivery to two seconds. Both
+clients share the existing service, queue, busy-event policy, and persistent
+train/vines selection; no second daemon or additional sudo permissions are needed.
+Run `/reload` in an existing Pi session (or restart Pi) after linking the extension.
+Test with `bun test tests/pi-touchbar.test.ts` and
+`python3 tests/test_codex_touchbar.py`; the audit runs Pi tests when Bun is available.
 
 **`.gitconfig` is tracked, credentials are not.** It records the public author identity
 and `gh` credential-helper integration. `.config/gh/hosts.yml`, browser profiles,
@@ -322,7 +335,7 @@ under `$HOME` are file-by-file symlinks into the clone; `asahi-rice-sync` commit
 pushes worktree changes automatically once a day without copying files (see
 `.local/bin/asahi-rice-sync`). The full config — Lua Hyprland config, waybar, fonts,
 fcitx5, app set — is deployed and in daily use via a real `uwsm`-managed Hyprland
-session. Codex turn completions are also live through `codex-touchbar.service`:
+session. Codex and interactive Pi completions share `codex-touchbar.service`:
 successive idle turns alternate between the generated train and growing-vines
 animations, while overlapping completions are intentionally skipped.
 
