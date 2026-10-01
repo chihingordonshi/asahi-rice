@@ -14,6 +14,8 @@ bindkey -e
 # The following lines were added by compinstall
 # zstyle :compinstall filename '/home/chihin/.zshrc'
 
+export EDITOR=vim
+
 alias kskbl='lsblk'
 alias zdjd='tldr'
 
