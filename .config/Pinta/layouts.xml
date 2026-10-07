@@ -1,14 +1,14 @@
 ﻿<layouts>
-  <layout name="Default" width="1258" height="1448" size="1258" prefSize="1258" defaultHorSize="-1" defaultVerSize="-1" type="Horizontal">
+  <layout name="Default" width="2534" height="652" size="2534" prefSize="2534" defaultHorSize="-1" defaultVerSize="-1" type="Horizontal">
     <group size="60" prefSize="60" defaultHorSize="35" defaultVerSize="250" type="Vertical">
-      <item size="723" prefSize="723" defaultHorSize="35" defaultVerSize="250" id="Toolbox" visible="True" status="Dockable" />
-      <item size="724" prefSize="724" defaultHorSize="35" defaultVerSize="250" id="Palette" visible="True" status="Dockable" />
+      <item size="325" prefSize="325" defaultHorSize="35" defaultVerSize="250" id="Toolbox" visible="True" status="Dockable" />
+      <item size="326" prefSize="326" defaultHorSize="35" defaultVerSize="250" id="Palette" visible="True" status="Dockable" />
     </group>
-    <item size="995" prefSize="995" defaultHorSize="300" defaultVerSize="250" id="Canvas" visible="True" status="Dockable" />
+    <item size="2271" prefSize="2271" defaultHorSize="300" defaultVerSize="250" id="Canvas" visible="True" status="Dockable" />
     <group size="201" prefSize="201" defaultHorSize="100" defaultVerSize="250" type="Vertical">
-      <item size="723" prefSize="723" defaultHorSize="100" defaultVerSize="250" id="Layers" visible="True" status="Dockable" />
+      <item size="325" prefSize="325" defaultHorSize="100" defaultVerSize="250" id="Layers" visible="True" status="Dockable" />
       <item size="250" prefSize="250" defaultHorSize="100" defaultVerSize="250" id="Images" visible="False" status="Dockable" />
-      <item size="724" prefSize="724" defaultHorSize="100" defaultVerSize="250" id="History" visible="True" status="Dockable" />
+      <item size="326" prefSize="326" defaultHorSize="100" defaultVerSize="250" id="History" visible="True" status="Dockable" />
     </group>
   </layout>
 </layouts>
