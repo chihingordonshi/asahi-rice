@@ -12,17 +12,27 @@ hl.bind(mainMod .. " + F", hl.dsp.window.float({ action = "toggle" }))
 
 hl.bind(mainMod .. " + B", ToggleWaybarVisibility)
 hl.bind(mainMod .. " + P", hl.dsp.window.pseudo())
-hl.bind(mainMod .. " + J", hl.dsp.layout("togglesplit")) -- Dwindle only
-hl.bind(mainMod .. " + L", resize_monitor)
+hl.bind(mainMod .. " + U", hl.dsp.layout("togglesplit")) -- Dwindle only
 hl.bind(mainMod .. " + SHIFT + L", resize_monitor_2x)
-
-hl.bind(mainMod .. " + H", hl.dsp.exec_cmd("pkill -TERM -f 'touchbar-defender --underworld=touchbar'"))
 
 -- Move focus with mainMod + arrow keys
 hl.bind(mainMod .. " + left",  hl.dsp.focus({ direction = "left" }))
+hl.bind(mainMod .. " + J",     hl.dsp.focus({ direction = "left" }))
 hl.bind(mainMod .. " + right", hl.dsp.focus({ direction = "right" }))
+hl.bind(mainMod .. " + K",     hl.dsp.focus({ direction = "right" }))
 hl.bind(mainMod .. " + up",    hl.dsp.focus({ direction = "up" }))
 hl.bind(mainMod .. " + down",  hl.dsp.focus({ direction = "down" }))
+
+-- Move between numbered workspaces without wrapping left of workspace 1
+local function step_workspace(offset)
+    local active = hl.get_active_workspace()
+    if active and active.id + offset >= 1 then
+        GoToWorkspace(active.id + offset)
+    end
+end
+
+hl.bind(mainMod .. " + H", function() step_workspace(-1) end)
+hl.bind(mainMod .. " + L", function() step_workspace(1) end)
 
 -- Switch workspaces with mainMod + [0-9]
 -- Move active window to a workspace with mainMod + SHIFT + [0-9]

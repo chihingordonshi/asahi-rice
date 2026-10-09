@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 """HUD-style quick launcher for Hyprland, ported from the KDE Plasma
 "org.cachyos.quickmenu" plasmoid (contents/ui/MenuBar.qml + main.qml).
 

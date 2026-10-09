@@ -107,11 +107,17 @@ yta() {
         --add-header "Origin:https://www.bilibili.com"
         --add-header "Referer:https://www.bilibili.com"
     )
-    local -a limit=()
+    local -a limit=() auth=()
     (( max > 0 )) && limit=(--max-downloads "$max")
+    # Scheduled public-playlist downloads run without browser credentials.
+    if [[ "${YTA_NO_COOKIES:-0}" == 1 ]]; then
+        auth=(--no-config)
+    else
+        auth=(--cookies-from-browser brave)
+    fi
     mkdir -p "$out"
     PATH="/usr/bin:/bin:/usr/sbin:/sbin:$PATH" \
-    yt-dlp --cookies-from-browser chrome \
+    yt-dlp "${auth[@]}" \
         "${extra[@]}" \
         -x --audio-format best \
         --download-archive "${out}/.yta-archive.txt" \
