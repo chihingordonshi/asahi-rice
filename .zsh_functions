@@ -735,6 +735,41 @@ zzz() {
     systemctl suspend
 }
 
+srv-forward() {
+    emulate -L zsh
+    local port=3000
+
+    while (( $# )); do
+        case "$1" in
+            -p)
+                if (( $# < 2 )); then
+                    print -u2 'Usage: srv-forward [-p port]'
+                    return 2
+                fi
+                port="$2"
+                shift 2
+                ;;
+            -h|--help)
+                print 'Usage: srv-forward [-p port]'
+                return 0
+                ;;
+            *)
+                print -u2 'Usage: srv-forward [-p port]'
+                return 2
+                ;;
+        esac
+    done
+
+    if [[ "$port" != <-> ]] || (( port < 1 || port > 65535 )); then
+        print -u2 'Port must be a number from 1 to 65535.'
+        return 2
+    fi
+
+    print "Forwarding localhost:$port to the server's localhost:$port (Ctrl-C to stop)"
+    ssh -N -o ExitOnForwardFailure=yes \
+        -L "127.0.0.1:${port}:127.0.0.1:${port}" 100.72.197.95
+}
+
 system-upgrade() {
     emulate -L zsh
     local -a failed=()

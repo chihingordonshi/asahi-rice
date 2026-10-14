@@ -31,7 +31,12 @@ alias df='duf'
 alias ps='procs'
 alias ..='cd ..'
 alias ~='cd ~'
+alias so='source .zshrc'
 alias ff='fastfetch'
+
+alias srv="doas warp-cli disconnect && doas tailscale up && TERM=xterm-256color ssh -i .ssh/gentoo_server 'chihin@100.72.197.95'"
+alias warp="doas tailscale down && doas warp-cli connect"
+
 
 alias stickman='touchbar play stickman'
 alias lg='lazygit'

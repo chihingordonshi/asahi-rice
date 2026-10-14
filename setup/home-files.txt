@@ -190,7 +190,9 @@
 .local/share/applications/google-chrome.desktop
 .local/share/applications/kew.desktop
 .local/share/applications/mimeapps.list
+.local/share/applications/navidrome.desktop
 .local/share/applications/touchbar-defender.desktop
+.local/share/icons/hicolor/512x512/apps/navidrome.png
 .local/share/touchbar-animations/codex-train.mkv
 .local/share/touchbar-animations/codex-vines.mkv
 .pi/agent/extensions/touchbar-notify.ts

@@ -6,26 +6,26 @@ SideBarPage=operations
 MenuBar=Disabled
 
 [Recent Files]
-File1[$e]=$HOME/Downloads/forms.png
-File10[$e]=$HOME/amsr-venv/doc/alu.png
-File2[$e]=$HOME/amsr-venv/circuit/renders/circuits/tg.svg
-File3[$e]=$HOME/amsr-venv/circuit/renders/circuits/btc.svg
-File4[$e]=$HOME/amsr-venv/circuit/renders/circuits/tbc.svg
-File5[$e]=$HOME/amsr-venv/circuit/renders/circuits/fa.svg
-File6[$e]=$HOME/amsr-venv/circuit/renders/circuits/mux.svg
-File7[$e]=$HOME/amsr-venv/circuit/renders/circuits/add.svg
-File8[$e]=$HOME/amsr-venv/circuit/renders/circuits/nany.svg
-File9[$e]=$HOME/amsr-venv/circuit/renders/circuits/c_element.svg
-Name1[$e]=forms.png
-Name10[$e]=alu.png
-Name2[$e]=tg.svg
-Name3[$e]=btc.svg
-Name4[$e]=tbc.svg
-Name5[$e]=fa.svg
-Name6[$e]=mux.svg
-Name7[$e]=add.svg
-Name8[$e]=nany.svg
-Name9[$e]=c_element.svg
+File1[$e]=$HOME/amsr-venv/circuit/renders/circuits/btc.svg
+File10[$e]=$HOME/Pictures/Screenshots/Screenshot 2026-10-11 at 20.37.18.png
+File2[$e]=$HOME/amsr-venv/circuit/renders/circuits/tbc.svg
+File3[$e]=$HOME/amsr-venv/circuit/renders/circuits/fa.svg
+File4[$e]=$HOME/amsr-venv/circuit/renders/circuits/mux.svg
+File5[$e]=$HOME/amsr-venv/circuit/renders/circuits/add.svg
+File6[$e]=$HOME/amsr-venv/circuit/renders/circuits/nany.svg
+File7[$e]=$HOME/amsr-venv/circuit/renders/circuits/c_element.svg
+File8[$e]=$HOME/amsr-venv/doc/alu.png
+File9[$e]=$HOME/Pictures/Screenshots/Screenshot 2026-10-11 at 20.36.59.png
+Name1[$e]=btc.svg
+Name10[$e]=Screenshot 2026-10-11 at 20.37.18.png
+Name2[$e]=tbc.svg
+Name3[$e]=fa.svg
+Name4[$e]=mux.svg
+Name5[$e]=add.svg
+Name6[$e]=nany.svg
+Name7[$e]=c_element.svg
+Name8[$e]=alu.png
+Name9[$e]=Screenshot 2026-10-11 at 20.36.59.png
 
 [SideBar]
 InformationSplitterSizes=227,248

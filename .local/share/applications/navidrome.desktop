@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Navidrome
+Comment=Navidrome music server webapp
+Exec=brave-browser "--profile-directory=Profile 1" --app=http://100.72.197.95:4533/
+Icon=navidrome
+Terminal=false
+Categories=AudioVideo;Audio;Music;Player;
