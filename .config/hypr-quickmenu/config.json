@@ -39,7 +39,7 @@
   "items": [
     {"id": "wechat", "number": "01", "title": "WeChat", "subtitle": "Messaging", "icon": "com.tencent.WeChat", "command": "flatpak run com.tencent.WeChat", "enabled": true, "override": false},
     {"id": "kew", "number": "02", "title": "kew", "subtitle": "Music Player", "icon": "cmus", "command": "hyprctl eval 'hl.exec_cmd([[kitty --class kew -e kew all]], { workspace = [[special:magic]] })'", "enabled": true, "override": false},
-    {"id": "navidrome", "number": "03", "title": "Navidrome", "subtitle": "Music Server", "icon": "navidrome", "command": "brave-browser \"--profile-directory=Profile 1\" --app=http://100.72.197.95:4533/", "enabled": true, "override": false},
+    {"id": "navidrome", "number": "03", "title": "Navidrome", "subtitle": "Music Server", "icon": "navidrome", "command": "brave-browser \"--profile-directory=Profile 1\" --app=http://172.16.8.31:4533/", "enabled": true, "override": false},
     {"id": "localsend", "number": "04", "title": "LocalSend", "subtitle": "File Sharing", "icon": "org.localsend.localsend_app", "command": "flatpak run org.localsend.localsend_app", "enabled": true, "override": false},
     {"id": "qalculate", "number": "05", "title": "Qalculate", "subtitle": "Calculator", "icon": "qalculate-qt", "command": "qalculate-qt", "enabled": true, "override": false},
     {"id": "zoom", "number": "06", "title": "Zoom", "subtitle": "Video Conference", "icon": "brave-zoom-pwa-Profile_1", "command": "brave-browser \"--profile-directory=Profile 1\" --app=https://app.zoom.us/wc/home?source=pwa --password-store=basic", "enabled": true, "override": false},

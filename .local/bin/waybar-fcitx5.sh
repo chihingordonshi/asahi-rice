@@ -5,7 +5,7 @@ im=$(fcitx5-remote -n)
 
 case "$im" in
     keyboard-us) text="EN" ;;
-    pinyin)      text="CN" ;;
+    pinyin|rime) text="CN" ;;
     *)           text="$im" ;;
 esac
 
