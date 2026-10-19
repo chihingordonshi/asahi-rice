@@ -125,7 +125,7 @@ hl.window_rule({
         class = "^[Ww]e[Cc]hat$",
         title = "^Open$",
     },
-    float = true,
+    float = false,
 })
 
 hl.window_rule({
