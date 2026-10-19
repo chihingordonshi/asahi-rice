@@ -46,6 +46,11 @@ sudo /usr/bin/visudo -cf "$repo_root/setup/codex-touchbar.sudoers"
 sudo install -o root -g root -m 0440 \
     "$repo_root/setup/codex-touchbar.sudoers" /etc/sudoers.d/codex-touchbar
 
+# Disable logind's power-button action before enabling the Hyprland shortcut.
+sudo install -D -o root -g root -m 0644 \
+    "$repo_root/setup/logind-power-button.conf" /etc/systemd/logind.conf.d/90-power-button.conf
+sudo systemctl reload systemd-logind.service
+
 "$repo_root/setup/install-external.sh"
 
 sudo flatpak remote-add --system --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo

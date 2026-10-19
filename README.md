@@ -217,6 +217,11 @@ all 14 were authored fresh against the upstream example config
 restart to take effect, since the Lua registers one-shot `hl.on("hyprland.start", ...)`
 autostart hooks that shouldn't re-fire on every reload.
 
+**Power button.** A short press opens Kitty in Hyprland, matching Super+Q.
+`setup/install.sh` installs `setup/logind-power-button.conf` to disable logind's
+power-button shutdown action; see `setup/system-state.md` for deployment and undo.
+Holding the physical button can still force the Mac off in firmware.
+
 **`hypridle` config location.** Goes in `~/.config/hypr/hypridle.conf`, not
 `~/.config/hypridle/` (unlike most other apps' per-app-directory convention). This
 build's `hyprctl dispatch` parses its argument as a Lua expression, so DPMS calls need

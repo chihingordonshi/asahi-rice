@@ -9,6 +9,8 @@ local mainMod = "SUPER" -- Sets "Windows" key as main modifier
 hl.bind(mainMod .. " + R", hl.dsp.exec_cmd("fcitx5-remote -t"))
 
 hl.bind(mainMod .. " + Q", hl.dsp.exec_cmd(terminal .. " --class terminal"))
+-- logind must ignore this key; see setup/logind-power-button.conf.
+hl.bind("XF86PowerOff", hl.dsp.exec_cmd(terminal .. " --class terminal"), { ignore_mods = true })
 hl.bind(mainMod .. " + SHIFT + C", hl.dsp.window.close())
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
 hl.bind(mainMod .. " + F", hl.dsp.window.float({ action = "toggle" }))
