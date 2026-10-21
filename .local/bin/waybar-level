@@ -1,0 +1,160 @@
+#!/bin/sh
+
+# Present volume on its native device scale, and brightness on a perceptual
+# scale. Device values remain on their native scales.
+
+kind=${1:-}
+action=${2:-status}
+
+round_step() {
+    awk -v value="$1" 'BEGIN {
+        rounded = int((value + 2.5) / 5) * 5
+        if (rounded < 0) rounded = 0
+        if (rounded > 100) rounded = 100
+        print rounded
+    }'
+}
+
+volume_state() {
+    state=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null) || return 1
+    raw=$(printf '%s\n' "$state" | awk '{print $2}')
+    muted=0
+    case $state in
+        *MUTED*) muted=1 ;;
+    esac
+
+    native=$(awk -v volume="$raw" 'BEGIN { printf "%.0f", volume * 100 }')
+    # Show the native device percentage, rounded to its 5% control step. Muting
+    # does not overwrite the saved device level, so keep showing that level.
+    level=$(awk -v volume="$raw" 'BEGIN {
+        shown = int((volume * 100 + 2.5) / 5) * 5
+        if (shown < 0) shown = 0
+        if (shown > 100) shown = 100
+        print shown
+    }')
+}
+
+brightness_state() {
+    current=$(brightnessctl get 2>/dev/null) || return 1
+    maximum=$(brightnessctl max 2>/dev/null) || return 1
+    perceptual=$(awk -v current="$current" -v maximum="$maximum" 'BEGIN {
+        if (maximum > 0 && current > 0) print sqrt(current / maximum) * 100
+        else print 0
+    }')
+    level=$(round_step "$perceptual")
+    native=$(awk -v current="$current" -v maximum="$maximum" 'BEGIN {
+        if (maximum > 0) printf "%.1f", current * 100 / maximum
+        else print "0.0"
+    }')
+}
+
+notify_level() {
+    label=$1
+    icon=$2
+    body="$level%"
+    if [ "${muted:-0}" -eq 1 ] || [ "$level" -eq 0 ]; then
+        body="Muted · $body"
+    fi
+
+    # Keep the OSD singular and prevent dismissed notifications entering history.
+    makoctl dismiss --all --no-history >/dev/null 2>&1 || true
+    notify-send \
+        --app-name=waybar-osd \
+        --category=device \
+        --expire-time=1400 \
+        --icon="$icon" \
+        --hint=int:value:"$level" \
+        --hint=string:x-canonical-private-synchronous:waybar-osd \
+        "$label" "$body"
+}
+
+json_volume() {
+    if [ "$muted" -eq 1 ] || [ "$level" -eq 0 ]; then
+        text="󰖁  $level%"
+        class=muted
+    elif [ "$level" -lt 35 ]; then
+        text="󰕿  $level%"
+        class=low
+    elif [ "$level" -lt 70 ]; then
+        text="󰖀  $level%"
+        class=medium
+    else
+        text="󰕾  $level%"
+        class=high
+    fi
+    printf '{"text":"%s","tooltip":"Displayed volume: %s%%\\nDevice volume: %s%%","class":"%s","percentage":%s}\n' \
+        "$text" "$level" "$native" "$class" "$level"
+}
+
+json_brightness() {
+    printf '{"text":"󰃜  %s%%","tooltip":"Perceptual brightness: %s%%\\nDevice brightness: %s%%","percentage":%s}\n' \
+        "$level" "$level" "$native" "$level"
+}
+
+case "$kind" in
+    volume)
+        if [ "$action" != status ]; then
+            runtime_dir=${XDG_RUNTIME_DIR:-/tmp}
+            exec 9>"$runtime_dir/waybar-level-volume-${UID:-$(id -u)}.lock"
+            flock 9
+        fi
+        volume_state || exit 1
+        case "$action" in
+            status) json_volume; exit ;;
+            up|down)
+                # Ignore outward repeats at the device limits, including the OSD.
+                # Use raw volume, not the display rounded to a 5% step.
+                if awk -v volume="$raw" -v action="$action" 'BEGIN {
+                    exit !((action == "up" && volume >= 1) ||
+                           (action == "down" && volume <= 0))
+                }'; then
+                    exit 0
+                fi
+                if [ "$action" = up ]; then
+                    wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+ || exit 1
+                else
+                    wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%- || exit 1
+                fi
+                ;;
+            toggle)
+                wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle || exit 1
+                ;;
+            *) exit 2 ;;
+        esac
+        volume_state || exit 1
+        pkill -RTMIN+10 -x waybar 2>/dev/null || true
+        notify_level Volume audio-volume-high
+        ;;
+    brightness)
+        if [ "$action" != status ]; then
+            runtime_dir=${XDG_RUNTIME_DIR:-/tmp}
+            exec 9>"$runtime_dir/waybar-level-brightness-${UID:-$(id -u)}.lock"
+            flock 9
+        fi
+        brightness_state || exit 1
+        case "$action" in
+            status) json_brightness; exit ;;
+            up|down)
+                if [ "$action" = up ]; then delta=5; else delta=-5; fi
+                target=$((level + delta))
+                [ "$target" -lt 5 ] && target=5
+                [ "$target" -gt 100 ] && target=100
+                target_brightness=$(awk -v value="$target" -v maximum="$maximum" 'BEGIN {
+                    raw = int((value / 100) ^ 2 * maximum + 0.5)
+                    if (value > 0 && raw < 1) raw = 1
+                    if (raw > maximum) raw = maximum
+                    print raw
+                }')
+                brightnessctl -q set "$target_brightness" || exit 1
+                ;;
+            *) exit 2 ;;
+        esac
+        brightness_state || exit 1
+        pkill -RTMIN+11 -x waybar 2>/dev/null || true
+        notify_level Brightness display-brightness
+        ;;
+    *)
+        printf 'usage: %s {volume|brightness} {status|up|down|toggle}\n' "$0" >&2
+        exit 2
+        ;;
+esac

@@ -178,6 +178,7 @@
 .local/bin/waybar-fcitx5.sh
 .local/bin/waybar-memory.sh
 .local/bin/waybar-kitty-art.sh
+.local/bin/waybar-level
 .local/bin/waybar-power-profile-cycle.sh
 .local/bin/waybar-power-profile.sh
 .local/bin/waybar-wallpaper-backend-cycle.sh
