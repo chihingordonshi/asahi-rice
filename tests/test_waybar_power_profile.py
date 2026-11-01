@@ -95,6 +95,47 @@ class WaybarPowerProfileTest(unittest.TestCase):
                 self.assertEqual(len(calls), 1)
                 self.assertEqual(calls[0][:3], ["busctl", "--system", "get-property"])
 
+    def test_icons_are_neutral_monochrome_glyphs(self):
+        try:
+            import gi
+            gi.require_version("Gtk", "3.0")
+            from gi.repository import Gtk
+        except (ImportError, ValueError):
+            self.skipTest("GTK/PyGObject unavailable; run with /usr/bin/python3")
+        if not Gtk.init_check()[0]:
+            self.skipTest("GTK rendering requires a display")
+
+        provider = Gtk.CssProvider()
+        provider.load_from_path(str(ROOT / ".config/waybar/style.css"))
+        for profile in ("performance", "balanced", "power-saver"):
+            with self.subTest(profile=profile):
+                result, _, _ = self.run_script(STATUS, profile)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                icon = json.loads(result.stdout)["text"]
+                self.assertEqual(len(icon), 1)
+                self.assertTrue(0xF0000 <= ord(icon) <= 0xFFFFD)
+                label = Gtk.Label(label=icon)
+                label.set_name("custom-power-profile")
+                context = label.get_style_context()
+                context.add_provider(provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+                self.assertEqual(
+                    context.get_property("font-family", Gtk.StateFlags.NORMAL)[0],
+                    "JetBrainsMono Nerd Font",
+                )
+                color = context.get_color(Gtk.StateFlags.NORMAL)
+                for actual, expected in zip(
+                    (color.red, color.green, color.blue, color.alpha),
+                    (0xE5 / 255, 0xE1 / 255, 0xE7 / 255, 1),
+                ):
+                    self.assertAlmostEqual(actual, expected, places=5)
+                layout = label.create_pango_layout(icon)
+                self.assertEqual(layout.get_unknown_glyphs_count(), 0)
+                for line in layout.get_lines_readonly():
+                    for run in line.runs:
+                        self.assertIn(
+                            "JetBrainsMono Nerd Font", run.item.analysis.font.describe().to_string()
+                        )
+
     def test_missing_service_keeps_button_visible(self):
         result, _, calls = self.run_script(STATUS, available=False)
         self.assertEqual(result.returncode, 0, result.stderr)

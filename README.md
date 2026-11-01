@@ -249,8 +249,10 @@ after fcitx5 has actually been launched once — see replication step 5.
 `Adwaita` instead, which does have the specific symbolic icons the default module
 profiles reference. Waybar uses Inter for text and JetBrains Mono Nerd Font for
 icon glyphs; icon-only buttons explicitly select the patched font. The custom
-power-profile button stays visible with an unavailable tooltip if its optional
-D-Bus service is missing or unreachable.
+power-profile button uses simple monochrome rocket / scale-balance / leaf glyphs
+for performance / balanced / power-saver, all in the same neutral foreground.
+It stays visible with an unavailable tooltip if its D-Bus service is missing or
+unreachable.
 
 **Never `pkill` a live UI process (waybar, etc.) to force a config reload.** Save the
 file and let it pick up the change on its own; killing/relaunching mid-session is
@@ -297,15 +299,15 @@ proxy state, key material, cookies, histories, databases, and caches are exclude
 | Bluetooth | `kcmshell6 kcm_bluetooth` (bluedevil) |
 | Wallpaper picker | `waypaper` |
 | Proxy client | `/opt/clash-party/mihomo-party` |
-| Power profile | Custom D-Bus scripts; switching requires `tuned-ppd` or a compatible power-profile service |
+| Power profile | Custom D-Bus scripts backed by `tuned-ppd`; rocket / scale / leaf for performance / balanced / power-saver |
 | Wifi settings | network module's `on-click` → `nm-connection-editor` |
 | Lock screen | not on the bar — superseded by hypridle's 15-minute autolock |
 | Workspace overview | not done — needs the `hyprexpo` plugin compiled via `hyprpm`, flagged as a future step |
 
 **Left un-replicated on purpose:** `power-profiles-daemon` (conflicts with `tuned-ppd`,
 which provides the same D-Bus interface when installed) and `safeeyes` (not packaged
-for Fedora). Neither power-profile provider is currently installed on this machine;
-the bar still renders, but profile switching needs one provider installed separately.
+for Fedora). This machine runs `tuned.service` and `tuned-ppd.service`, both enabled
+at boot; the bootstrap installs and enables them for Waybar profile switching.
 Cloudflare WARP is installed from Cloudflare's official Fedora repository by the setup
 script; registration is kept interactive and its identity/state is not committed.
 Sticky notes (`org.x.sticky`, real package `linuxmint/sticky` via the `yselkowitz/xapps`

@@ -72,6 +72,7 @@ while IFS= read -r unit || [[ -n "$unit" ]]; do
     systemctl --user enable --now "$unit"
 done < "$repo_root/setup/user-services.txt"
 sudo systemctl daemon-reload
+sudo systemctl enable --now tuned.service tuned-ppd.service
 sudo systemctl enable --now warp-svc.service
 
 printf '\nBase setup installed. Run setup/audit.sh to check it.\n'

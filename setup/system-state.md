@@ -66,6 +66,24 @@ again before rebooting. This staging is a one-time migration step, not part of t
 bootstrap or theme installer. No broad autoremove or whole-environment removal is
 used, to preserve networking, firmware, fonts and apps.
 
+## Waybar power profiles
+
+Fedora's `tuned` and `tuned-ppd` packages provide the power-profile backend;
+`tuned.service` and `tuned-ppd.service` are enabled and running. Replicate with:
+
+```sh
+sudo dnf install tuned-ppd
+sudo systemctl enable --now tuned.service tuned-ppd.service
+```
+
+`tuned-ppd` exposes both `net.hadess.PowerProfiles` and
+`org.freedesktop.UPower.PowerProfiles` on the system bus. Waybar's custom helpers
+use the former to read and cycle performance / balanced / power-saver; their
+rocket / scale / leaf symbols are monochrome Nerd Font glyphs, not color emoji.
+There are no per-profile color overrides. The active profile remains a runtime
+choice, not a setting pinned by the bootstrap. On this machine all three profiles
+are advertised by the backend.
+
 ## Power button opens a terminal
 
 `/etc/systemd/logind.conf.d/90-power-button.conf` is installed from

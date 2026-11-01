@@ -177,6 +177,8 @@ tldr
 tmux
 toilet
 tokei
+tuned
+tuned-ppd
 uboot-images-armv8
 uchardet-devel
 update-m1n1

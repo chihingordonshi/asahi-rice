@@ -81,6 +81,11 @@ window#waybar {
     border-radius: 6px;
 }
 
+/* Profile shape, not color, distinguishes the power modes. */
+#custom-power-profile {
+    color: #e5e1e7;
+}
+
 #custom-wallpaper-backend {
     color: #c6c4e0;
     padding: 0 8px;

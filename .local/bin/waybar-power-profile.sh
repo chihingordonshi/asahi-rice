@@ -8,6 +8,7 @@ if ! profile=$(busctl --system get-property net.hadess.PowerProfiles /net/hadess
     exit 0
 fi
 
+# Plain monochrome Nerd Font glyphs: rocket, scale-balance, and leaf (not emoji).
 case "$profile" in
     performance) icon="󰑣" ;;
     balanced)    icon="󰗑" ;;
