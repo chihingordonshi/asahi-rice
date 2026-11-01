@@ -15,10 +15,32 @@ sources. SDDM uses Weston in kiosk mode, not KWin or Plasma, for its Wayland gre
 MacBook's 2560×1600 `eDP-1` panel by 2 for a readable Retina login screen without
 changing Hyprland's separate 1.6 scale. Verify the output name before reuse.
 The same Weston file explicitly enables libinput devices, touchpad tap-to-click
-and tap-and-drag for the greeter. SDDM uses the installed Adwaita cursor theme at
-size 24, configured in `setup/sddm/10-macos.conf`. These input/cursor settings take
-effect on the next greeter launch; they do not alter Hyprland's input preferences.
-The original SVG background and icons do not need external downloads or Apple assets.
+and tap-and-drag for the greeter. SDDM uses **Bibata Original Classic** at size 24,
+configured in `setup/sddm/10-macos.conf`, matching the existing Hyprland cursor.
+These input/cursor settings take effect on the next greeter launch; they do not
+alter Hyprland's input preferences. The original SVG background and icons do not
+need external downloads or Apple assets.
+
+Before running the installer on a new host, install a trusted copy of the
+Bibata Original Classic Xcursor theme system-wide. This machine uses the existing
+v2.0.6 assets, copied from the user's theme rather than downloaded or loaded from
+home by the greeter. Cursor aliases must be relative links within the theme.
+For an existing local installation:
+
+```sh
+cursor_source="$HOME/.local/share/icons/Bibata-Original-Classic"
+cursor_target=/usr/share/icons/Bibata-Original-Classic
+sudo install -d -o root -g root -m 0755 "$cursor_target"
+sudo cp -a --no-preserve=ownership "$cursor_source/." "$cursor_target/"
+sudo chown -hR root:root "$cursor_target"
+sudo find "$cursor_target" -type d -exec chmod 0755 {} +
+sudo find "$cursor_target" -type f -exec chmod 0644 {} +
+sudo restorecon -RF "$cursor_target"
+```
+
+The installer checks for the system cursor's `cursors/left_ptr` before deploying
+SDDM. Cursor binaries are not stored in Git; existing Adwaita packages are not
+uninstalled.
 
 On first deployment, `/var/lib/sddm/state.conf` preselects the current user and
 **Hyprland (uwsm-managed)**. Subsequent deployments preserve the remembered state.

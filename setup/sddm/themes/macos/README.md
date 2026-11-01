@@ -9,8 +9,11 @@ otherwise Sans Serif.
 
 - SDDM 0.21 with its Qt 6 greeter and `SddmComponents`.
 - Qt Quick, Qt Quick Controls 2 (Basic style), and Qt SVG.
-- The host SDDM configuration uses Adwaita cursors (`adwaita-cursor-theme`);
-  its Weston configuration enables libinput, tap-to-click, and tap-and-drag.
+- The host SDDM configuration uses Bibata Original Classic cursors at size 24.
+  Install the Xcursor theme as a root-owned copy in
+  `/usr/share/icons/Bibata-Original-Classic/` before running the installer; see
+  `setup/system-state.md`. Its Weston configuration enables libinput,
+  tap-to-click, and tap-and-drag.
 - Copy this whole directory to the **root-owned**
   `/usr/local/share/sddm/themes/macos/`. Configure SDDM separately with
   `ThemeDir=/usr/local/share/sddm/themes` and `Current=macos` in `[Theme]`.

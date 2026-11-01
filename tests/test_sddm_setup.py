@@ -30,15 +30,15 @@ class SddmSetupTest(unittest.TestCase):
     def test_greeter_enables_pointer_and_touchpad_clicking(self):
         config = configparser.ConfigParser()
         config.read(ROOT / "setup/sddm/10-macos.conf")
-        self.assertEqual(config["Theme"]["CursorTheme"], "Adwaita")
+        self.assertEqual(config["Theme"]["CursorTheme"], "Bibata-Original-Classic")
         self.assertEqual(config["Theme"].getint("CursorSize"), 24)
         weston = configparser.ConfigParser()
         weston.read(ROOT / "setup/sddm/weston.ini")
         self.assertFalse(weston["libinput"].getboolean("disable-input"))
         self.assertTrue(weston["libinput"].getboolean("enable-tap"))
         self.assertTrue(weston["libinput"].getboolean("tap-and-drag"))
-        packages = set((ROOT / "setup/dnf-packages.txt").read_text().splitlines())
-        self.assertIn("adwaita-cursor-theme", packages)
+        installer = (ROOT / "setup/install-sddm.sh").read_text()
+        self.assertIn("test -r /usr/share/icons/Bibata-Original-Classic/cursors/left_ptr", installer)
 
     def test_theme_pins_uwsm_managed_hyprland(self):
         config = configparser.ConfigParser()

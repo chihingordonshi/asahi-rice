@@ -12,6 +12,11 @@ rpm -q --quiet sddm sddm-wayland-generic || {
 }
 test -f "$theme_source/Main.qml"
 test -f /usr/share/wayland-sessions/hyprland-uwsm.desktop
+# The greeter cannot rely on cursor assets in a user's home directory.
+test -r /usr/share/icons/Bibata-Original-Classic/cursors/left_ptr || {
+    printf 'Install Bibata-Original-Classic system-wide first; see setup/system-state.md.\n' >&2
+    exit 1
+}
 
 while IFS= read -r -d '' file; do
     relative=${file#"$theme_source/"}

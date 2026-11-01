@@ -4,7 +4,6 @@ NetworkManager-tui
 NetworkManager-wifi
 SDL2_image-devel
 aajohan-comfortaa-fonts
-adwaita-cursor-theme
 alsa-lib-devel
 alsa-ucm-asahi
 asahi-fwupdate
