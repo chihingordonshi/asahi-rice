@@ -2,6 +2,7 @@
     "layer": "top",
     "position": "top",
     "height": 36,
+    "reload_style_on_change": true,
 
     "modules-left": ["custom/suspend", "custom/cpu", "custom/memory", "custom/fcitx5", "custom/terminal-art", "custom/power-profile", "hyprland/workspaces"],
     "modules-center": ["clock"],

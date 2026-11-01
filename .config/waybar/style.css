@@ -5,6 +5,12 @@
     font-size: 14px;
 }
 
+/* Keep icon-only buttons on the patched font rather than the UI font. */
+#custom-suspend, #custom-terminal-art, #custom-power-profile,
+#custom-bluetooth, #custom-random-wallpaper {
+    font-family: "JetBrainsMono Nerd Font", sans-serif;
+}
+
 window#waybar {
     background-color: #131317;
     color: #e5e1e7;
