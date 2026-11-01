@@ -114,33 +114,6 @@ Rectangle {
         }
     }
 
-    Row {
-        anchors.top: parent.top
-        anchors.right: parent.right
-        anchors.topMargin: 25 * root.uiScale
-        anchors.rightMargin: 30 * root.uiScale
-        spacing: 7 * root.uiScale
-        opacity: 0.72
-
-        Image {
-            source: "assets/lock.svg"
-            width: 13 * root.uiScale
-            height: width
-            sourceSize.width: width
-            sourceSize.height: height
-            anchors.verticalCenter: parent.verticalCenter
-        }
-        Text {
-            text: sddm.hostName
-            textFormat: Text.PlainText
-            color: "#ffffff"
-            font.family: root.uiFont
-            font.pixelSize: 11 * root.uiScale
-            elide: Text.ElideRight
-            width: Math.min(implicitWidth, 220 * root.uiScale)
-        }
-    }
-
     Column {
         anchors.horizontalCenter: parent.horizontalCenter
         y: 64 * root.uiScale

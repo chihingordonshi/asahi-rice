@@ -168,6 +168,14 @@ class SddmThemeTest(unittest.TestCase):
         self.assertTrue(root.property("canSubmit"))
         self.assertEqual(self.manager.attempts, [])
 
+    def test_hostname_and_lock_badge_are_not_displayed(self):
+        root = self.create_theme()
+        for child in root.findChildren(QObject):
+            self.assertNotEqual(child.property("text"), self.manager.hostName)
+            source = child.property("source")
+            if isinstance(source, QUrl):
+                self.assertNotEqual(source.fileName(), "lock.svg")
+
     def test_user_and_session_selectors_are_hidden_and_not_focusable(self):
         root = self.create_theme()
         for name in ("userSelector", "sessionSelector"):
