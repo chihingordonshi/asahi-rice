@@ -6,7 +6,7 @@
 }
 
 /* Keep icon-only buttons on the patched font rather than the UI font. */
-#custom-suspend, #custom-terminal-art, #custom-power-profile,
+#custom-suspend, #custom-kill, #custom-terminal-art, #custom-power-profile,
 #custom-bluetooth, #custom-random-wallpaper {
     font-family: "JetBrainsMono Nerd Font", sans-serif;
 }
@@ -81,8 +81,8 @@ window#waybar {
     border-radius: 6px;
 }
 
-/* Profile shape, not color, distinguishes the power modes. */
-#custom-power-profile {
+/* Neutral action icons; profile shape, not color, distinguishes power modes. */
+#custom-kill, #custom-power-profile {
     color: #e5e1e7;
 }
 

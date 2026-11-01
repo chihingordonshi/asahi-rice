@@ -295,7 +295,7 @@ proxy state, key material, cookies, histories, databases, and caches are exclude
 
 | Caelestia widget | Backing tool |
 |---|---|
-| Kill unresponsive window | `hyprctl kill` |
+| Kill unresponsive window | Waybar `custom/kill` → `hyprctl kill` on mouse release (avoids cancelling the picker with the initiating click); select a window to force-close, Esc cancels (unsaved work may be lost) |
 | Bluetooth | `kcmshell6 kcm_bluetooth` (bluedevil) |
 | Wallpaper picker | `waypaper` |
 | Proxy client | `/opt/clash-party/mihomo-party` |

@@ -4,7 +4,7 @@
     "height": 36,
     "reload_style_on_change": true,
 
-    "modules-left": ["custom/suspend", "custom/cpu", "custom/memory", "custom/fcitx5", "custom/terminal-art", "custom/power-profile", "hyprland/workspaces"],
+    "modules-left": ["custom/suspend", "custom/kill", "custom/cpu", "custom/memory", "custom/fcitx5", "custom/terminal-art", "custom/power-profile", "hyprland/workspaces"],
     "modules-center": ["clock"],
     "modules-right": ["tray", "custom/random-wallpaper", "custom/wallpaper-backend", "custom/bluetooth", "custom/brightness", "custom/volume", "network", "battery"],
 
@@ -43,6 +43,12 @@
         },
         "sort-by": "number",
         "show-special": true,
+    },
+
+    "custom/kill": {
+        "format": "󰅖",
+        "on-click-release": "hyprctl kill",
+        "tooltip-format": "Kill a window\nClick, then select a window to force-close\nEsc: cancel\nUnsaved work may be lost"
     },
 
     "custom/suspend": {
