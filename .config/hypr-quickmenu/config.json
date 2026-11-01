@@ -43,6 +43,7 @@
     {"id": "qalculate", "number": "04", "title": "Qalculate", "subtitle": "Calculator", "icon": "qalculate-qt", "command": "qalculate-qt", "enabled": true, "override": false},
     {"id": "zoom", "number": "05", "title": "Zoom", "subtitle": "Video Conference", "icon": "brave-zoom-pwa-Profile_1", "command": "brave-browser \"--profile-directory=Profile 1\" --app=https://app.zoom.us/wc/home?source=pwa --password-store=basic", "enabled": true, "override": false},
     {"id": "vim", "number": "06", "title": "Vim", "subtitle": "Text Editor", "icon": "vim", "command": "kitty --class terminal -e vim", "enabled": true, "override": false},
-    {"id": "icloud-photos", "number": "07", "title": "iCloud Photos", "subtitle": "Photo Library", "icon": "brave-icloud-photos-pwa-Profile_1", "command": "brave-browser \"--profile-directory=Profile 1\" --app=https://www.icloud.com/photos --password-store=basic", "enabled": true, "override": false}
+    {"id": "icloud-photos", "number": "07", "title": "iCloud Photos", "subtitle": "Photo Library", "icon": "brave-icloud-photos-pwa-Profile_1", "command": "brave-browser \"--profile-directory=Profile 1\" --app=https://www.icloud.com/photos --password-store=basic", "enabled": true, "override": false},
+    {"id": "btop", "number": "08", "title": "btop", "subtitle": "System Monitor", "icon": "btop", "command": "kitty --class terminal -e btop", "enabled": true, "override": false}
   ]
 }
