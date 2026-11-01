@@ -10,7 +10,7 @@ Rectangle {
     color: "#0b153e"
 
     // Qt already handles display DPI. This only keeps the composition on small
-    // screens, without transforms that would mis-scale popup menus.
+    // screens, without transforms that would distort the controls.
     readonly property real uiScale: Math.min(1.25, width / 1100, height / 850)
     readonly property string uiFont: Qt.fontFamilies().indexOf("Inter") >= 0 ? "Inter" : "Sans Serif"
     property date now: new Date()
@@ -20,6 +20,7 @@ Rectangle {
     property bool initialized: false
     readonly property string accountName: userSelector.currentIndex >= 0 ? userSelector.currentText : ""
     readonly property string displayName: userSelector.currentValue || accountName
+    readonly property string sessionFile: config.sessionFile || "/usr/share/wayland-sessions/hyprland-uwsm.desktop"
     readonly property bool canSubmit: initialized && !authenticating && accountName.length > 0
                                       && userSelector.currentIndex >= 0 && userSelector.count > 0
                                       && sessionSelector.currentIndex >= 0 && sessionSelector.count > 0
@@ -31,21 +32,18 @@ Rectangle {
     }
 
     function restoreSelections() {
-        // Honor SDDM's persisted state, including hyprland-uwsm.desktop seeded
-        // by the host setup. Never guess a session by its translated label.
+        // Restore the saved account, but pin the session by its desktop file.
+        // Never fall back to plain Hyprland or match a translated session label.
         var rememberedUser = userSelector.find(userModel.lastUser, Qt.MatchExactly);
         userSelector.currentIndex = validIndex(rememberedUser, userSelector.count) ? rememberedUser
                                   : validIndex(userModel.lastIndex, userSelector.count) ? userModel.lastIndex
                                   : userSelector.count > 0 ? 0 : -1;
-        sessionSelector.currentIndex = validIndex(sessionModel.lastIndex, sessionSelector.count)
-                                     ? sessionModel.lastIndex : sessionSelector.count > 0 ? 0 : -1;
+        sessionSelector.currentIndex = sessionSelector.indexOfValue(root.sessionFile);
         initialized = true;
-        if (userSelector.count === 0)
-            userSelector.forceActiveFocus();
-        else if (sessionSelector.count === 0)
-            sessionSelector.forceActiveFocus();
-        else
+        if (root.canSubmit)
             password.forceActiveFocus();
+        else
+            root.forceActiveFocus();
     }
 
     function resetPrompt() {
@@ -208,7 +206,7 @@ Rectangle {
                 id: password
                 objectName: "password"
                 anchors.fill: parent
-                enabled: !root.authenticating && userSelector.count > 0 && sessionSelector.count > 0
+                enabled: !root.authenticating && userSelector.count > 0 && sessionSelector.currentIndex >= 0
                 opacity: enabled || root.authenticating ? 1 : 0.45
                 leftPadding: 16 * root.uiScale
                 rightPadding: 50 * root.uiScale
@@ -237,7 +235,7 @@ Rectangle {
                         root.resetPrompt();
                 }
                 KeyNavigation.tab: submitButton
-                KeyNavigation.backtab: sessionSelector
+                KeyNavigation.backtab: shutdownButton.visible ? shutdownButton : restartButton.visible ? restartButton : sleepButton.visible ? sleepButton : submitButton
 
                 background: Rectangle {
                     radius: 22 * root.uiScale
@@ -262,7 +260,7 @@ Rectangle {
                 text: strings.login
                 Accessible.name: strings.login
                 onClicked: root.submit()
-                KeyNavigation.tab: userSelector
+                KeyNavigation.tab: sleepButton.visible ? sleepButton : restartButton.visible ? restartButton : shutdownButton.visible ? shutdownButton : password
                 KeyNavigation.backtab: password
                 padding: 0
                 background: Rectangle {
@@ -300,6 +298,7 @@ Rectangle {
                 width: parent.width
                 text: root.statusMessage || (userSelector.count === 0 ? qsTr("No users are available. Check SDDM configuration.")
                        : sessionSelector.count === 0 ? qsTr("No desktop sessions are installed.")
+                       : sessionSelector.currentIndex < 0 ? qsTr("The configured desktop session is unavailable. Check SDDM configuration.")
                        : qsTr("Enter your password to sign in"))
                 textFormat: Text.PlainText
                 color: root.loginError ? "#ffdae1" : "#dce4ff"
@@ -325,43 +324,21 @@ Rectangle {
         }
     }
 
-    // Wide-screen layout keeps the secondary choices away from the login form.
-    // All dimensions share uiScale, so the three groups also fit at 640 × 480.
-    Column {
-        anchors.left: parent.left
-        anchors.bottom: parent.bottom
-        anchors.leftMargin: 32 * root.uiScale
-        anchors.bottomMargin: 38 * root.uiScale
-        spacing: 8 * root.uiScale
-
-        Text {
-            text: qsTr("User")
-            color: "#d2dbf8"
-            font.family: root.uiFont
-            font.pixelSize: 10 * root.uiScale
-            leftPadding: 12 * root.uiScale
-        }
-        GlassSelector {
-            id: userSelector
-            objectName: "userSelector"
-            uiScale: root.uiScale
-            model: userModel
-            textRole: "name"
-            valueRole: "realName"
-            labelRole: "realName"
-            displayText: count > 0 ? root.displayName : qsTr("No users available")
-            font.family: root.uiFont
-            font.pixelSize: 11 * root.uiScale
-            enabled: !root.authenticating && count > 0
-            Accessible.name: qsTr("User")
-            Accessible.description: qsTr("Choose the account to sign in to")
-            onCurrentIndexChanged: {
-                if (root.initialized)
-                    root.resetPrompt();
-            }
-            onActivated: password.forceActiveFocus()
-            KeyNavigation.tab: sleepButton.visible ? sleepButton : restartButton.visible ? restartButton : shutdownButton.visible ? shutdownButton : sessionSelector
-            KeyNavigation.backtab: submitButton
+    // Internal model adapters only: no account/session pickers are displayed,
+    // focusable, or exposed to accessibility tools.
+    Controls.ComboBox {
+        id: userSelector
+        objectName: "userSelector"
+        model: userModel
+        textRole: "name"
+        valueRole: "realName"
+        visible: false
+        enabled: false
+        activeFocusOnTab: false
+        Accessible.ignored: true
+        onCurrentIndexChanged: {
+            if (root.initialized)
+                root.resetPrompt();
         }
     }
 
@@ -373,6 +350,7 @@ Rectangle {
 
         PowerAction {
             id: sleepButton
+            objectName: "sleepButton"
             uiScale: root.uiScale
             iconSource: "assets/sleep.svg"
             text: qsTr("Sleep")
@@ -381,11 +359,12 @@ Rectangle {
             visible: sddm.canSuspend
             enabled: !root.authenticating
             onClicked: sddm.suspend()
-            KeyNavigation.tab: restartButton.visible ? restartButton : shutdownButton.visible ? shutdownButton : sessionSelector
-            KeyNavigation.backtab: userSelector
+            KeyNavigation.tab: restartButton.visible ? restartButton : shutdownButton.visible ? shutdownButton : password
+            KeyNavigation.backtab: submitButton
         }
         PowerAction {
             id: restartButton
+            objectName: "restartButton"
             uiScale: root.uiScale
             iconSource: "assets/restart.svg"
             text: qsTr("Restart")
@@ -394,11 +373,12 @@ Rectangle {
             visible: sddm.canReboot
             enabled: !root.authenticating
             onClicked: sddm.reboot()
-            KeyNavigation.tab: shutdownButton.visible ? shutdownButton : sessionSelector
-            KeyNavigation.backtab: sleepButton.visible ? sleepButton : userSelector
+            KeyNavigation.tab: shutdownButton.visible ? shutdownButton : password
+            KeyNavigation.backtab: sleepButton.visible ? sleepButton : submitButton
         }
         PowerAction {
             id: shutdownButton
+            objectName: "shutdownButton"
             uiScale: root.uiScale
             iconSource: "assets/shutdown.svg"
             text: qsTr("Shut Down")
@@ -407,41 +387,21 @@ Rectangle {
             visible: sddm.canPowerOff
             enabled: !root.authenticating
             onClicked: sddm.powerOff()
-            KeyNavigation.tab: sessionSelector
-            KeyNavigation.backtab: restartButton.visible ? restartButton : sleepButton.visible ? sleepButton : userSelector
+            KeyNavigation.tab: password
+            KeyNavigation.backtab: restartButton.visible ? restartButton : sleepButton.visible ? sleepButton : submitButton
         }
     }
 
-    Column {
-        anchors.right: parent.right
-        anchors.bottom: parent.bottom
-        anchors.rightMargin: 32 * root.uiScale
-        anchors.bottomMargin: 38 * root.uiScale
-        spacing: 8 * root.uiScale
-
-        Text {
-            text: strings.session
-            color: "#d2dbf8"
-            font.family: root.uiFont
-            font.pixelSize: 10 * root.uiScale
-            leftPadding: 12 * root.uiScale
-        }
-        GlassSelector {
-            id: sessionSelector
-            objectName: "sessionSelector"
-            uiScale: root.uiScale
-            model: sessionModel
-            textRole: "name"
-            displayText: count > 0 ? currentText : qsTr("No sessions available")
-            font.family: root.uiFont
-            font.pixelSize: 11 * root.uiScale
-            enabled: !root.authenticating && count > 0
-            Accessible.name: strings.session
-            Accessible.description: qsTr("Choose the desktop session")
-            onActivated: password.forceActiveFocus()
-            KeyNavigation.tab: password
-            KeyNavigation.backtab: shutdownButton.visible ? shutdownButton : restartButton.visible ? restartButton : sleepButton.visible ? sleepButton : userSelector
-        }
+    Controls.ComboBox {
+        id: sessionSelector
+        objectName: "sessionSelector"
+        model: sessionModel
+        textRole: "name"
+        valueRole: "file"
+        visible: false
+        enabled: false
+        activeFocusOnTab: false
+        Accessible.ignored: true
     }
 
     Component.onCompleted: Qt.callLater(restoreSelections)

@@ -27,6 +27,12 @@ class SddmSetupTest(unittest.TestCase):
         self.assertEqual(weston["output"]["name"], "eDP-1")
         self.assertEqual(weston["output"]["scale"], "2")
 
+    def test_theme_pins_uwsm_managed_hyprland(self):
+        config = configparser.ConfigParser()
+        config.read(THEME / "theme.conf")
+        self.assertEqual(config["General"]["sessionFile"],
+                         "/usr/share/wayland-sessions/hyprland-uwsm.desktop")
+
     def test_qt6_theme_metadata(self):
         metadata = configparser.ConfigParser()
         metadata.read(THEME / "metadata.desktop")

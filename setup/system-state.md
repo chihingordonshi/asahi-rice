@@ -17,7 +17,11 @@ changing Hyprland's separate 1.6 scale. Verify the output name before reuse.
 The original SVG background and icons do not need external downloads or Apple assets.
 
 On first deployment, `/var/lib/sddm/state.conf` preselects the current user and
-**Hyprland (uwsm-managed)**. Subsequent deployments preserve the remembered choice.
+**Hyprland (uwsm-managed)**. Subsequent deployments preserve the remembered state.
+The theme shows no user/session pickers: it restores the saved account and pins
+`sessionFile` to `/usr/share/wayland-sessions/hyprland-uwsm.desktop`, regardless of
+the remembered session index. If that session is unavailable, sign-in is disabled
+rather than falling back to plain Hyprland.
 Password authentication remains enabled; no autologin or PAM changes are made.
 The installer disables Plasma Login Manager and enables SDDM for the **next boot**,
 without stopping/restarting the running login manager or terminating a session.

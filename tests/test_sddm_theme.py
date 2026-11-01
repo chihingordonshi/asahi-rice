@@ -14,10 +14,13 @@ try:
     from PySide6.QtCore import QAbstractListModel, QModelIndex, QMetaObject, QObject, Property, QSettings, Qt, QUrl, Signal, Slot
     from PySide6.QtGui import QGuiApplication
     from PySide6.QtQml import QQmlComponent, QQmlEngine, QQmlPropertyMap
+    from PySide6.QtQuick import QQuickWindow
+    from PySide6.QtTest import QTest
 except ImportError:
     QGuiApplication = None
 
 ROOT = Path(__file__).resolve().parents[1]
+UWSM_SESSION = "/usr/share/wayland-sessions/hyprland-uwsm.desktop"
 
 if QGuiApplication is not None:
     class Model(QAbstractListModel):
@@ -34,7 +37,7 @@ if QGuiApplication is not None:
             return 0 if parent.isValid() else len(self.rows)
 
         def roleNames(self):
-            return {Qt.UserRole + 1: b"name", Qt.UserRole + 2: b"realName"}
+            return {Qt.UserRole + 1: b"name", Qt.UserRole + 2: b"realName", Qt.UserRole + 3: b"file"}
 
         def data(self, index, role):
             if not index.isValid() or not 0 <= index.row() < len(self.rows):
@@ -103,6 +106,7 @@ class SddmThemeTest(unittest.TestCase):
         self.config = QQmlPropertyMap.create()
         self.config.insert("clockFormat", "hh:mm")
         self.config.insert("dateFormat", "dddd, MMMM d")
+        self.config.insert("sessionFile", UWSM_SESSION)
         self.root = None
 
     def tearDown(self):
@@ -111,11 +115,13 @@ class SddmThemeTest(unittest.TestCase):
         self.engine.deleteLater()
         self.app.processEvents()
 
-    def create_theme(self, users=True, sessions=True):
+    def create_theme(self, users=True, sessions=True, uwsm=True, last_session=1):
         self.users = Model([{"name": "bob", "realName": "Bob"},
                             {"name": "alice", "realName": "Alice"}] if users else [])
-        self.sessions = Model([{"name": "Hyprland"},
-                               {"name": "Hyprland (uwsm-managed)"}] if sessions else [], last_index=1)
+        session_rows = [{"name": "Hyprland", "file": "/usr/share/wayland-sessions/hyprland.desktop"}]
+        if uwsm:
+            session_rows.append({"name": "Hyprland (uwsm-managed)", "file": UWSM_SESSION})
+        self.sessions = Model(session_rows if sessions else [], last_index=last_session)
         for key, value in {"sddm": self.manager, "keyboard": self.keyboard,
                            "config": self.config, "userModel": self.users,
                            "sessionModel": self.sessions}.items():
@@ -149,17 +155,64 @@ class SddmThemeTest(unittest.TestCase):
                 scale = root.property("uiScale")
                 self.assertEqual(clock.property("font").pixelSize(), round(100 * scale))
                 self.assertEqual(password.property("font").pixelSize(), round(14 * scale))
-                for name in ("userSelector", "sessionSelector"):
-                    selector = root.findChild(QObject, name)
-                    self.assertEqual(selector.property("font").pixelSize(), round(11 * scale))
                 self.assertAlmostEqual(password.property("width"), 300 * scale)
                 self.assertAlmostEqual(password.property("height"), 44 * scale)
 
-    def test_restores_account_and_session_without_autologin(self):
-        root = self.create_theme()
+    def test_restores_account_and_pins_uwsm_even_if_plain_hyprland_was_remembered(self):
+        root = self.create_theme(last_session=0)
         self.assertEqual(root.property("accountName"), "alice")
         self.assertEqual(root.property("displayName"), "Alice")
+        session = root.findChild(QObject, "sessionSelector")
+        self.assertEqual(session.property("currentValue"), UWSM_SESSION)
+        self.assertEqual(session.property("currentIndex"), 1)
         self.assertTrue(root.property("canSubmit"))
+        self.assertEqual(self.manager.attempts, [])
+
+    def test_user_and_session_selectors_are_hidden_and_not_focusable(self):
+        root = self.create_theme()
+        for name in ("userSelector", "sessionSelector"):
+            with self.subTest(name=name):
+                selector = root.findChild(QObject, name)
+                self.assertFalse(selector.property("visible"))
+                self.assertFalse(selector.property("enabled"))
+                self.assertFalse(selector.property("activeFocusOnTab"))
+
+    def test_keyboard_navigation_skips_hidden_selectors_and_unavailable_power_actions(self):
+        root = self.create_theme()
+        window = QQuickWindow()
+        root.setParentItem(window.contentItem())
+        window.resize(1280, 800)
+        window.show()
+        window.requestActivate()
+        self.app.processEvents()
+        password = root.findChild(QObject, "password")
+        power_names = ("sleepButton", "restartButton", "shutdownButton")
+        try:
+            for unavailable in ((), power_names, ("sleepButton", "shutdownButton")):
+                with self.subTest(unavailable=unavailable):
+                    for name in power_names:
+                        root.findChild(QObject, name).setProperty("visible", name not in unavailable)
+                    password.forceActiveFocus()
+                    self.app.processEvents()
+                    forward = ["submitButton"] + [name for name in power_names if name not in unavailable] + ["password"]
+                    for name in forward:
+                        QTest.keyClick(window, Qt.Key_Tab)
+                        self.assertEqual(window.activeFocusItem().objectName(), name)
+                    for name in reversed(forward[:-1]):
+                        QTest.keyClick(window, Qt.Key_Backtab, Qt.ShiftModifier)
+                        self.assertEqual(window.activeFocusItem().objectName(), name)
+                    QTest.keyClick(window, Qt.Key_Backtab, Qt.ShiftModifier)
+                    self.assertEqual(window.activeFocusItem().objectName(), "password")
+        finally:
+            window.close()
+            root.setParentItem(None)
+
+    def test_missing_uwsm_never_falls_back_to_plain_hyprland(self):
+        root = self.create_theme(uwsm=False, last_session=0)
+        self.submit()
+        self.assertFalse(root.property("canSubmit"))
+        self.assertFalse(root.findChild(QObject, "password").property("enabled"))
+        self.assertEqual(root.findChild(QObject, "sessionSelector").property("currentIndex"), -1)
         self.assertEqual(self.manager.attempts, [])
 
     def test_duplicate_submit_blocked_until_failure_and_password_cleared(self):

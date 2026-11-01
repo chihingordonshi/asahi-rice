@@ -18,13 +18,13 @@ These files were originally curated from [dot-files](https://github.com/chihingo
 - [Deliberately left out](#deliberately-left-out) — things considered and skipped, and why
 - [Key decisions and gotchas](#key-decisions-and-gotchas) — grouped by topic, the "why" behind non-obvious choices
 - [Open question to revisit](#open-question-to-revisit--caelestia-may-no-longer-be-aarch64-dead) — one unresolved item
-- [Critical finding — SDDM session picker](#critical-finding--log-in-via-hyprland-uwsm-managed-not-plain-hyprland) — read before your first login
+- [Critical finding — SDDM session selection](#critical-finding--log-in-via-hyprland-uwsm-managed-not-plain-hyprland) — read before your first login
 - [Status](#status) — what's live right now
 - [Provenance](#provenance) — how this repo was built
 - [Build history](#build-history) — condensed changelog, newest info wins over anything above
 
 If you only read one thing before touching the M1: the "Critical finding" section on the
-SDDM session picker. Getting that wrong silently breaks portals, polkit, and the keyring.
+SDDM session selection. Getting that wrong silently breaks portals, polkit, and the keyring.
 
 ## Replicating this on your own M1
 
@@ -110,10 +110,11 @@ Review the hardware-pinned settings and package list before running it on anothe
    and having `~/.config/fcitx5/profile` in place isn't enough — fcitx5 has to
    actually launch once to generate its real profile state. See "Key decisions and
    gotchas" below if Ctrl+Space doesn't switch input methods afterward.
-6. **Log in via "Hyprland (uwsm-managed)" at the SDDM screen, not plain "Hyprland."**
-   This is not optional — see "Critical finding" below for why plain Hyprland silently
-   breaks portals, polkit, and the D-Bus secret-service keyring. `hyprland-uwsm` (from
-   step 1) provides this session entry.
+6. **Use "Hyprland (uwsm-managed)", not plain "Hyprland."**
+   The SDDM theme pins `/usr/share/wayland-sessions/hyprland-uwsm.desktop` without
+   showing a session picker. This is not optional — see "Critical finding" below
+   for why plain Hyprland silently breaks portals, polkit, and the D-Bus
+   secret-service keyring. `hyprland-uwsm` (from step 1) provides this session entry.
 7. **The installer uses `sudo` for system packages, repositories, WARP, and system-wide
    Flatpaks.** Cloudflare account registration remains a separate interactive step:
    `warp-cli registration new && warp-cli connect`.
@@ -329,9 +330,12 @@ daemon (Hyprland was drawing its own placeholder background — fixed by adding
 `swaybg`), and other session-level breakage that initially looked like separate config
 bugs but weren't.
 
-**The fix is the session picker, not a config change.** At SDDM, select **"Hyprland
-(uwsm-managed)"**, not plain "Hyprland". `uwsm start -e -D Hyprland hyprland.desktop`
-properly binds startup to `graphical-session-pre.target` → `graphical-session.target`,
+**The fix is starting the uwsm-managed session, not plain Hyprland.** The current
+SDDM theme has no user/session pickers and pins
+`/usr/share/wayland-sessions/hyprland-uwsm.desktop`; missing that entry disables
+sign-in instead of silently selecting plain Hyprland. Its
+`uwsm start -e -D Hyprland hyprland.desktop` command properly binds startup to
+`graphical-session-pre.target` → `graphical-session.target`,
 which is what actually activates portals, polkit, and D-Bus secret-service in the right
 order. The manual `dbus-update-activation-environment`/`kwalletd6`/`hyprpolkitagent`
 lines in `autostart.lua` are left in as a defensive fallback, but aren't the real fix.

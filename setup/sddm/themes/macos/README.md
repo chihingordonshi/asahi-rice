@@ -15,27 +15,27 @@ otherwise Sans Serif.
   Do not point the system greeter at a user-writable Git checkout.
 
 This directory does not install itself or change authentication, autologin,
-sessions, or system services. The selected user is restored from
-`userModel.lastUser` / `lastIndex`; the session is restored from
-`sessionModel.lastIndex`. The host setup should preseed SDDM's `[Last]` session
-state with `hyprland-uwsm.desktop`. The theme honors that state rather than
-hardcoding a session index or matching a translated session name. Invalid saved
-indices fall back to the first available entry; an empty user/session model
-shows an explanation and disables sign-in.
+sessions, or system services. The account is restored from
+`userModel.lastUser` / `lastIndex`, falling back to the first available account.
+There are no visible user/session pickers. `theme.conf` pins the session to
+`/usr/share/wayland-sessions/hyprland-uwsm.desktop`, using SDDM's `file` role rather
+than a session index or translated name. The host setup also seeds this path in
+SDDM's `[Last]` state. If the configured session or all accounts are missing,
+the theme shows an explanation and disables sign-in; it never falls back to
+plain Hyprland.
 
 ## Interaction
 
 - Enter in the password field or the arrow submits through `sddm.login()`.
-- Tab / Shift+Tab move through sign-in, user, power, and session controls;
-  arrow keys and Enter operate the selectors. Escape dismisses a selector or
-  clears the password when the password field has focus.
-- The user menu displays real names, falling back to account names; switching
-  users clears the password. The generic avatar deliberately avoids depending
-  on readable home directories or AccountsService image files.
+- Tab / Shift+Tab move only through sign-in and available power controls.
+  Escape clears the password when the password field has focus.
+- The saved account's real name appears above the password field, falling back
+  to its account name. The generic avatar deliberately avoids depending on
+  readable home directories or AccountsService image files.
 - Caps Lock is indicated below the field. Failed authentication clears the
   password, returns focus, and permits another attempt. While authentication is
-  pending, duplicate submissions, account/session changes, and power actions
-  are disabled. PAM information messages do not unlock the pending request.
+  pending, duplicate submissions and power actions are disabled. PAM information
+  messages do not unlock the pending request.
 - Sleep/restart/shutdown are only offered when SDDM reports the capability.
   Keyboard layout and authentication policy remain the host's responsibility;
   this is a standard SDDM password UI, not a custom MFA/password-change dialog.
@@ -43,6 +43,8 @@ shows an explanation and disables sign-in.
 `theme.conf` accepts Qt `clockFormat` and `dateFormat` patterns. For example,
 `clockFormat=h:mm AP` selects a 12-hour clock. Day/month names use Qt's locale.
 The composition adapts to small screens and Qt's normal high-DPI scaling.
+`sessionFile` selects the exact session desktop-file path; this host must keep
+`/usr/share/wayland-sessions/hyprland-uwsm.desktop` to start Hyprland through uwsm.
 
 ## Safe smoke test
 
