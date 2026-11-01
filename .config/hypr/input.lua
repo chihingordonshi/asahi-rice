@@ -46,15 +46,15 @@ hl.gesture({
     end,
 })
 
-hl.gesture({
-    fingers   = 3,
-    direction = "pinch",
-    action    = function()
-        hl.dispatch(hl.dsp.exec_cmd(
-            "pgrep -x rofi >/dev/null && pkill -x rofi || rofi -show drun"
-        ))
-    end,
-})
+-- hl.gesture({
+--     fingers   = 3,
+--     direction = "pinch",
+--     action    = function()
+--         hl.dispatch(hl.dsp.exec_cmd(
+--             "pgrep -x rofi >/dev/null && pkill -x rofi || rofi -show drun"
+--         ))
+--     end,
+-- })
 
 -- mpv does not consume Wayland pointer-pinch events itself. Hyprland does, so
 -- forward a throttled, continuous two-finger pinch to mpv's local IPC socket.

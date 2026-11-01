@@ -137,7 +137,7 @@ Rectangle {
             textFormat: Text.PlainText
             color: "#ffffff"
             font.family: root.uiFont
-            font.pixelSize: 12 * root.uiScale
+            font.pixelSize: 11 * root.uiScale
             elide: Text.ElideRight
             width: Math.min(implicitWidth, 220 * root.uiScale)
         }
@@ -154,18 +154,19 @@ Rectangle {
             textFormat: Text.PlainText
             color: "#eef2ff"
             font.family: root.uiFont
-            font.pixelSize: 23 * root.uiScale
+            font.pixelSize: 21 * root.uiScale
             font.weight: Font.Medium
         }
         Text {
+            objectName: "clock"
             anchors.horizontalCenter: parent.horizontalCenter
             text: Qt.formatTime(root.now, config.clockFormat || "hh:mm")
             textFormat: Text.PlainText
             color: "#f2f4ff"
             font.family: root.uiFont
-            font.pixelSize: 116 * root.uiScale
+            font.pixelSize: 100 * root.uiScale
             font.weight: Font.DemiBold
-            font.letterSpacing: -5 * root.uiScale
+            font.letterSpacing: -4 * root.uiScale
         }
     }
 
@@ -192,7 +193,7 @@ Rectangle {
             textFormat: Text.PlainText
             color: "#ffffff"
             font.family: root.uiFont
-            font.pixelSize: 23 * root.uiScale
+            font.pixelSize: 21 * root.uiScale
             font.weight: Font.DemiBold
             horizontalAlignment: Text.AlignHCenter
             elide: Text.ElideRight
@@ -219,7 +220,7 @@ Rectangle {
                 selectionColor: "#7999cf"
                 selectedTextColor: "#ffffff"
                 font.family: root.uiFont
-                font.pixelSize: 15 * root.uiScale
+                font.pixelSize: 14 * root.uiScale
                 echoMode: TextInput.Password
                 passwordCharacter: "•"
                 selectByMouse: true
@@ -304,7 +305,7 @@ Rectangle {
                 color: root.loginError ? "#ffdae1" : "#dce4ff"
                 opacity: root.statusMessage || !root.canSubmit ? 1 : 0.75
                 font.family: root.uiFont
-                font.pixelSize: 12 * root.uiScale
+                font.pixelSize: 11 * root.uiScale
                 horizontalAlignment: Text.AlignHCenter
                 wrapMode: Text.WordWrap
                 maximumLineCount: 3
@@ -318,7 +319,7 @@ Rectangle {
                 textFormat: Text.PlainText
                 color: "#fff0c7"
                 font.family: root.uiFont
-                font.pixelSize: 12 * root.uiScale
+                font.pixelSize: 11 * root.uiScale
                 horizontalAlignment: Text.AlignHCenter
             }
         }
@@ -337,7 +338,7 @@ Rectangle {
             text: qsTr("User")
             color: "#d2dbf8"
             font.family: root.uiFont
-            font.pixelSize: 11 * root.uiScale
+            font.pixelSize: 10 * root.uiScale
             leftPadding: 12 * root.uiScale
         }
         GlassSelector {
@@ -350,7 +351,7 @@ Rectangle {
             labelRole: "realName"
             displayText: count > 0 ? root.displayName : qsTr("No users available")
             font.family: root.uiFont
-            font.pixelSize: 12 * root.uiScale
+            font.pixelSize: 11 * root.uiScale
             enabled: !root.authenticating && count > 0
             Accessible.name: qsTr("User")
             Accessible.description: qsTr("Choose the account to sign in to")
@@ -376,7 +377,7 @@ Rectangle {
             iconSource: "assets/sleep.svg"
             text: qsTr("Sleep")
             font.family: root.uiFont
-            font.pixelSize: 12 * root.uiScale
+            font.pixelSize: 11 * root.uiScale
             visible: sddm.canSuspend
             enabled: !root.authenticating
             onClicked: sddm.suspend()
@@ -389,7 +390,7 @@ Rectangle {
             iconSource: "assets/restart.svg"
             text: qsTr("Restart")
             font.family: root.uiFont
-            font.pixelSize: 12 * root.uiScale
+            font.pixelSize: 11 * root.uiScale
             visible: sddm.canReboot
             enabled: !root.authenticating
             onClicked: sddm.reboot()
@@ -402,7 +403,7 @@ Rectangle {
             iconSource: "assets/shutdown.svg"
             text: qsTr("Shut Down")
             font.family: root.uiFont
-            font.pixelSize: 12 * root.uiScale
+            font.pixelSize: 11 * root.uiScale
             visible: sddm.canPowerOff
             enabled: !root.authenticating
             onClicked: sddm.powerOff()
@@ -422,7 +423,7 @@ Rectangle {
             text: strings.session
             color: "#d2dbf8"
             font.family: root.uiFont
-            font.pixelSize: 11 * root.uiScale
+            font.pixelSize: 10 * root.uiScale
             leftPadding: 12 * root.uiScale
         }
         GlassSelector {
@@ -433,7 +434,7 @@ Rectangle {
             textRole: "name"
             displayText: count > 0 ? currentText : qsTr("No sessions available")
             font.family: root.uiFont
-            font.pixelSize: 12 * root.uiScale
+            font.pixelSize: 11 * root.uiScale
             enabled: !root.authenticating && count > 0
             Accessible.name: strings.session
             Accessible.description: qsTr("Choose the desktop session")

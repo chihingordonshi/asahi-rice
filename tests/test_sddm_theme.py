@@ -137,6 +137,24 @@ class SddmThemeTest(unittest.TestCase):
         settings = QSettings(str(ROOT / "setup/sddm/themes/macos/theme.conf"), QSettings.IniFormat)
         self.assertEqual(settings.value("dateFormat"), "dddd, MMMM d")
 
+    def test_smaller_typography_keeps_control_dimensions_and_screen_scaling(self):
+        root = self.create_theme()
+        clock = root.findChild(QObject, "clock")
+        password = root.findChild(QObject, "password")
+        for width, height in ((1280, 800), (640, 480)):
+            with self.subTest(width=width, height=height):
+                root.setProperty("width", width)
+                root.setProperty("height", height)
+                self.app.processEvents()
+                scale = root.property("uiScale")
+                self.assertEqual(clock.property("font").pixelSize(), round(100 * scale))
+                self.assertEqual(password.property("font").pixelSize(), round(14 * scale))
+                for name in ("userSelector", "sessionSelector"):
+                    selector = root.findChild(QObject, name)
+                    self.assertEqual(selector.property("font").pixelSize(), round(11 * scale))
+                self.assertAlmostEqual(password.property("width"), 300 * scale)
+                self.assertAlmostEqual(password.property("height"), 44 * scale)
+
     def test_restores_account_and_session_without_autologin(self):
         root = self.create_theme()
         self.assertEqual(root.property("accountName"), "alice")
