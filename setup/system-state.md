@@ -14,6 +14,10 @@ sources. SDDM uses Weston in kiosk mode, not KWin or Plasma, for its Wayland gre
 `setup/sddm/weston.ini` is installed at `/etc/sddm/weston.ini`; it scales this
 MacBook's 2560×1600 `eDP-1` panel by 2 for a readable Retina login screen without
 changing Hyprland's separate 1.6 scale. Verify the output name before reuse.
+The same Weston file explicitly enables libinput devices, touchpad tap-to-click
+and tap-and-drag for the greeter. SDDM uses the installed Adwaita cursor theme at
+size 24, configured in `setup/sddm/10-macos.conf`. These input/cursor settings take
+effect on the next greeter launch; they do not alter Hyprland's input preferences.
 The original SVG background and icons do not need external downloads or Apple assets.
 
 On first deployment, `/var/lib/sddm/state.conf` preselects the current user and

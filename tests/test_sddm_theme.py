@@ -11,7 +11,7 @@ os.environ.pop("QT_QPA_PLATFORMTHEME", None)
 os.environ.pop("QT_IM_MODULE", None)
 
 try:
-    from PySide6.QtCore import QAbstractListModel, QModelIndex, QMetaObject, QObject, Property, QSettings, Qt, QUrl, Signal, Slot
+    from PySide6.QtCore import QAbstractListModel, QModelIndex, QMetaObject, QObject, QPointF, Property, QSettings, Qt, QUrl, Signal, Slot
     from PySide6.QtGui import QGuiApplication
     from PySide6.QtQml import QQmlComponent, QQmlEngine, QQmlPropertyMap
     from PySide6.QtQuick import QQuickWindow
@@ -184,6 +184,30 @@ class SddmThemeTest(unittest.TestCase):
                 self.assertFalse(selector.property("visible"))
                 self.assertFalse(selector.property("enabled"))
                 self.assertFalse(selector.property("activeFocusOnTab"))
+
+    def test_mouse_can_focus_password_and_submit_uwsm_login(self):
+        root = self.create_theme()
+        window = QQuickWindow()
+        root.setParentItem(window.contentItem())
+        window.resize(1280, 800)
+        window.show()
+        window.requestActivate()
+        self.app.processEvents()
+        password = root.findChild(QObject, "password")
+        submit = root.findChild(QObject, "submitButton")
+        try:
+            submit.forceActiveFocus()
+            for item in (password, submit):
+                position = item.mapToScene(QPointF(item.width() / 2, item.height() / 2)).toPoint()
+                QTest.mouseClick(window, Qt.LeftButton, Qt.NoModifier, position)
+                self.app.processEvents()
+                if item is password:
+                    self.assertEqual(window.activeFocusItem(), password)
+                    password.setProperty("text", "test-only-password")
+            self.assertEqual(self.manager.attempts, [("alice", "test-only-password", 1)])
+        finally:
+            window.close()
+            root.setParentItem(None)
 
     def test_keyboard_navigation_skips_hidden_selectors_and_unavailable_power_actions(self):
         root = self.create_theme()

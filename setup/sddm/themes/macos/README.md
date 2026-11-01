@@ -9,6 +9,8 @@ otherwise Sans Serif.
 
 - SDDM 0.21 with its Qt 6 greeter and `SddmComponents`.
 - Qt Quick, Qt Quick Controls 2 (Basic style), and Qt SVG.
+- The host SDDM configuration uses Adwaita cursors (`adwaita-cursor-theme`);
+  its Weston configuration enables libinput, tap-to-click, and tap-and-drag.
 - Copy this whole directory to the **root-owned**
   `/usr/local/share/sddm/themes/macos/`. Configure SDDM separately with
   `ThemeDir=/usr/local/share/sddm/themes` and `Current=macos` in `[Theme]`.
@@ -26,7 +28,8 @@ plain Hyprland.
 
 ## Interaction
 
-- Enter in the password field or the arrow submits through `sddm.login()`.
+- Enter in the password field or clicking/tapping the arrow submits through
+  `sddm.login()`.
 - Tab / Shift+Tab move only through sign-in and available power controls.
   Escape clears the password when the password field has focus.
 - The saved account's real name appears above the password field, falling back
