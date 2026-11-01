@@ -47,6 +47,8 @@ done
     "$repo_root/.local/bin/codex-touchbar-notify" \
     "$repo_root/.local/bin/codex-touchbar-daemon" || fail 'Codex Touch Bar Python syntax check failed'
 /usr/bin/python3 "$repo_root/tests/test_codex_touchbar.py" || fail 'Codex Touch Bar behavior tests failed'
+/usr/bin/python3 "$repo_root/tests/test_sddm_setup.py" || fail 'SDDM theme/deployment checks failed'
+/usr/bin/python3 "$repo_root/tests/test_sddm_theme.py" || fail 'SDDM QML behavior tests failed'
 if command -v bun >/dev/null 2>&1; then
     bun test "$repo_root/tests/pi-touchbar.test.ts" || fail 'Pi Touch Bar behavior tests failed'
 else

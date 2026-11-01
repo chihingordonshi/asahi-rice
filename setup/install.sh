@@ -41,6 +41,7 @@ if rpm -q --quiet ffmpeg-free; then
 fi
 mapfile -t packages < <(sed '/^\s*#/d; /^\s*$/d' "$repo_root/setup/dnf-packages.txt")
 sudo dnf install -y --allowerasing "${packages[@]}"
+"$repo_root/setup/install-sddm.sh"
 
 sudo /usr/bin/visudo -cf "$repo_root/setup/codex-touchbar.sudoers"
 sudo install -o root -g root -m 0440 \

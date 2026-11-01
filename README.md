@@ -30,7 +30,10 @@ SDDM session picker. Getting that wrong silently breaks portals, polkit, and the
 
 `setup/install.sh` is the idempotent bootstrap for an M1 running Fedora Asahi Remix.
 It enables the recorded repositories, installs the explicit RPM/Flatpak manifests,
-links every path in `setup/home-files.txt`, and enables the recorded user services.
+links every path in `setup/home-files.txt`, enables the recorded user services,
+and configures SDDM's macOS-inspired login screen for the next boot (without stopping
+the current session). See [`setup/system-state.md`](setup/system-state.md) for deployment
+and the one-time offline removal of KDE Plasma.
 Review the hardware-pinned settings and package list before running it on another M1.
 
 1. **Enable COPRs, then install packages.** (List verified against this machine's
@@ -170,10 +173,10 @@ live partition — see "Build history" below for what that involved).
 | `.config/fastfetch/` | System-info banner — the currently-used one (see "neofetch" note below) |
 | `.config/neofetch/` | Superseded by fastfetch; kept as a leftover, not actively used |
 | `.config/wireplumber/` | Audio routing tweak (disables Bluetooth HFP) |
-| `.config/qt6ct/`, `.config/Kvantum/`, `.config/kdeglobals` | Qt/KDE theming, relevant if the KDE Plasma fallback is used instead of Hyprland |
+| `.config/qt6ct/`, `.config/Kvantum/`, `.config/kdeglobals` | Qt application theming under Hyprland; Plasma itself is no longer the fallback desktop |
 | `.config/pavucontrol.ini` | Audio mixer settings |
 | `.config/mpv/`, `.local/bin/mpv-gesture` | Minimal mpv controls plus native Hyprland two-finger pinch zoom and scroll panning |
-| `.config/gtk-{3,4}.0/`, selected KDE configs | Durable toolkit, display, shortcut, file association, and Plasma fallback settings |
+| `.config/gtk-{3,4}.0/`, selected KDE configs | Durable toolkit, display, shortcut and file association settings; legacy Plasma settings are retained |
 | `.config/gh/config.yml` | Non-secret GitHub CLI preferences; `hosts.yml` is ignored because it contains the token |
 | `.config/autostart/` | XDG autostart entries |
 | `.config/systemd/user/` | User systemd units — `hypridle`, `random-wallpaper`, `swaybg-wallpaper` are machine-generic; `asahi-rice-sync` is Chi Hin-specific, do not copy (see replication step 3) |

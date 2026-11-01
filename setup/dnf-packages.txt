@@ -40,8 +40,7 @@ fcitx5-gtk
 fcitx5-qt-qt5gui
 fcitx5-qt-qt6gui
 fd-find
-fedora-asahi-remix-release-identity-kde-desktop
-fedora-asahi-remix-release-kde-desktop
+fedora-asahi-remix-release-identity-basic
 fedora-asahi-remix-scripts
 ffmpeg
 figlet
@@ -74,6 +73,7 @@ hypridle
 hyprland
 hyprland-devel
 hyprland-guiutils
+hyprland-uwsm
 hyprlock
 hyprpolkitagent
 hyprsunset
@@ -162,6 +162,8 @@ rpmfusion-nonfree-release
 rsms-inter-fonts
 rubberband-devel
 rustup
+sddm
+sddm-wayland-generic
 sdl2-compat-devel
 shim-aa64
 sl

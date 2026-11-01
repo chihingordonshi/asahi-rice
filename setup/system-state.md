@@ -4,6 +4,38 @@ Home configuration is always deployed as file-by-file symlinks. System files are
 installed from the bootstrap script or documented here; `/etc` is deliberately not
 symlinked into a user-owned Git checkout.
 
+## SDDM login screen (no Plasma desktop)
+
+`setup/install-sddm.sh` installs the self-contained macOS-inspired Qt 6 theme from
+`setup/sddm/themes/macos/` into `/usr/local/share/sddm/themes/macos/`, and installs
+`setup/sddm/10-macos.conf` into `/etc/sddm.conf.d/10-macos.conf`. These are root-owned
+copies, not symlinks into this checkout. Run the script again after changing the
+sources. SDDM uses Weston in kiosk mode, not KWin or Plasma, for its Wayland greeter.
+`setup/sddm/weston.ini` is installed at `/etc/sddm/weston.ini`; it scales this
+MacBook's 2560×1600 `eDP-1` panel by 2 for a readable Retina login screen without
+changing Hyprland's separate 1.6 scale. Verify the output name before reuse.
+The original SVG background and icons do not need external downloads or Apple assets.
+
+On first deployment, `/var/lib/sddm/state.conf` preselects the current user and
+**Hyprland (uwsm-managed)**. Subsequent deployments preserve the remembered choice.
+Password authentication remains enabled; no autologin or PAM changes are made.
+The installer disables Plasma Login Manager and enables SDDM for the **next boot**,
+without stopping/restarting the running login manager or terminating a session.
+The generic Asahi release identity replaces the Plasma-specific identity; the
+Asahi kernel, audio, firmware, platform packages, standalone apps and shared Qt/KDE
+libraries remain installed. Legacy Plasma home settings are retained, not activated.
+
+KDE Plasma and the running Plasma Login Manager are removed in a reviewed DNF
+**offline** transaction, so their uninstall scripts cannot terminate the live session.
+Check a pending transaction with `sudo dnf5 offline status`. To apply it immediately
+when ready to end the session, use `sudo dnf5 offline reboot`. A transaction armed
+using `sudo env DNF_SYSTEM_UPGRADE_NO_REBOOT=1 dnf5 offline reboot` runs at the next
+normal reboot without rebooting at the time it is armed. Changing packages invalidates
+a pending transaction; rerun the removal command shown by `offline status` and arm it
+again before rebooting. This staging is a one-time migration step, not part of the
+bootstrap or theme installer. No broad autoremove or whole-environment removal is
+used, to preserve networking, firmware, fonts and apps.
+
 ## Power button opens a terminal
 
 `/etc/systemd/logind.conf.d/90-power-button.conf` is installed from

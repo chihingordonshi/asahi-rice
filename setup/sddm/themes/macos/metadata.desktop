@@ -1,0 +1,12 @@
+[SddmGreeterTheme]
+Name=macOS-inspired
+Description=A quiet, blue-hour login screen inspired by Sonoma and Sequoia
+Type=sddm-theme
+Author=asahi-rice contributors
+License=MIT
+Version=1.0
+MainScript=Main.qml
+ConfigFile=theme.conf
+Theme-Id=macos
+Theme-API=2.0
+QtVersion=6
