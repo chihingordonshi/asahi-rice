@@ -66,6 +66,107 @@ again before rebooting. This staging is a one-time migration step, not part of t
 bootstrap or theme installer. No broad autoremove or whole-environment removal is
 used, to preserve networking, firmware, fonts and apps.
 
+## Standalone iwd Wi-Fi and low-idle DNS
+
+Wi-Fi authentication, IPv4 DHCP, IPv6 and DHCP-provided DNS are managed by
+`iwd.service`, with `systemd-resolved.service` providing the existing DNS stub.
+NetworkManager, its dispatcher/wait-online units, and wpa_supplicant are stopped,
+disabled and masked to prevent competing managers. `systemd-networkd` stays
+disabled; iwd's built-in network configuration avoids another daemon.
+NetworkManager packages and original connection files are retained for rollback.
+WARP and Tailscale remain independently managed, not iwd profiles.
+
+Root-owned copies of these configuration sources are installed, not symlinks:
+
+- `setup/iwd-main.conf` → `/etc/iwd/main.conf`: built-in IP configuration,
+  systemd-resolved integration, per-network MAC randomization, IPv6 and a 30-second
+  initial disconnected scan interval (maximum 300 seconds). Automatic reconnection
+  and roaming remain enabled. The Broadcom default interface `wld0` is preserved.
+- `setup/resolved-low-power.conf` →
+  `/etc/systemd/resolved.conf.d/90-low-power.conf`: disables LLMNR and mDNS,
+  overriding the older `60-mdns-resolve-only.conf`, and keeps DNS caching enabled.
+  **Trade-off:** no multicast `.local`/LLMNR discovery. Normal DNS, DHCP search
+  domains and VPN split DNS continue to work. Apply resolver changes with
+  `sudo systemctl reload systemd-resolved`, preserving the current VPN DNS state.
+
+On 2026-11-02, matched 40-second samples before/after the resolver-only change
+showed CPU dropping from 3.15% of one core to 0.00% at the measurement resolution,
+and voluntary context switches dropping from 55.95/s to 0.57/s. The multicast
+sockets closed while DNS and WARP continued working. These are activity measures,
+not a measured wattage/battery-life claim. A final sample with iwd connected gave
+0.025% resolver CPU and 0.35 voluntary switches/s; iwd used 0.00% CPU at the same
+resolution. `iw dev wld0 get power_save` reports on.
+
+Eight saved station profiles (including a hidden phone network) were migrated to
+root-only `/var/lib/iwd` files, mode 0600 under a 0700 directory. The active SSID's
+MAC was preserved with its `AddressOverride`, retaining its DHCP identity.
+`ANDOVER11-test` had no available saved credential and was not converted. The two
+old NetworkManager hotspot profiles were retained but not converted. Never store
+these passwords, identity material or machine-specific profiles in Git.
+
+### Waybar network controls
+
+- **Left-click the network icon:** `~/.local/bin/impala` 0.8.1. `Tab` switches
+  panels, `s` scans, Enter connects/disconnects; in New Networks, `n` connects a
+  hidden SSID; in Known Networks, `t` toggles autoconnect and `d` forgets a network.
+- **Right-click:** the upstream `iwctl` interactive console, including connection
+  details, hidden networks, saved-network properties, adapters, WPS and hotspot
+  commands. Type `help` to list available commands. There is no middle-click action.
+- There is no custom networking application or wrapper. Both utilities run only
+  when opened, so they add no idle polling daemon. This is Wi-Fi management,
+  not a replacement UI for NetworkManager-specific VPN/wired
+  profiles. `nm-applet` is removed from Hyprland startup and suppressed via an
+  XDG autostart override; Waybar's network status itself uses netlink, not NM.
+
+Impala was built user-locally from the reviewed, pinned crates.io package using
+`cargo install impala --version 0.8.1 --locked --root "$HOME/.local"`.
+`iwctl` was already installed as part of iwd. The new XDG autostart override is
+listed in `setup/home-files.txt`; system network switching is intentionally not
+done automatically by the generic bootstrap installer.
+
+For full credential/static IP/DNS/IPv6/802.1X editing beyond the properties exposed
+by `iwctl`, use the existing `sudoedit` and Vim from a terminal (not a separate
+Waybar click action):
+
+```sh
+sudo ls /var/lib/iwd
+SUDO_EDITOR='vim -N -u NONE -U NONE -n -i NONE --cmd "set nomodeline nobackup nowritebackup noundofile"' \
+  sudoedit -- '/var/lib/iwd/SSID.psk'
+```
+
+Choose the actual `.psk`, `.open` or `.8021x` filename; non-simple SSIDs have
+hex-encoded filenames. Vim `:wq` saves and `:q!` cancels. This runs the editor as
+the caller, without plugins, modelines, swap, undo, viminfo or backup files.
+Reconnect to apply IP/DNS/security changes. See `man 5 iwd.network` for all keys.
+Impala/iwctl are Wi-Fi managers, not graphical full-profile form editors.
+
+### Verification and rollback
+
+Verify with `systemctl is-active iwd systemd-resolved`, `iwctl station wld0 show`,
+`resolvectl status`, `iw dev wld0 get power_save`, and an HTTPS request.
+WARP's `~.` DNS route is retained; Wi-Fi DHCP DNS and `bsn.net` search domain are
+also present. A transient timed rollback guarded the live handover and was
+cancelled only after reconnection, DNS and HTTPS checks succeeded.
+
+Original service/resolver state and root-only migration records are in
+`/var/lib/network-power-migration/`. Restore the original system networking with:
+
+```sh
+sudo bash /var/lib/network-power-migration/rollback.sh
+```
+
+That stops/disables iwd, unmasks/re-enables NetworkManager (and its original
+related units), removes only the two new system configuration copies, and reloads
+resolved to restore the previous multicast policy. Original NetworkManager
+profiles are untouched; migrated iwd profiles remain available but inactive.
+The home/Waybar utilities are separate: to restore the old tray UI, remove the
+`~/.config/autostart/nm-applet.desktop` override, restore the old Waybar click
+command and Hyprland `nm-applet` startup line, then run `nm-applet`.
+
+References: local `iwd.config(5)`, `iwd.network(5)`, `iwctl(1)`, `resolved.conf(5)`;
+[upstream iwd configuration](https://kernel.googlesource.com/pub/scm/network/wireless/iwd/+/master/src/iwd.config.rst),
+[Impala](https://github.com/pythops/impala).
+
 ## Waybar power profiles
 
 Fedora's `tuned` and `tuned-ppd` packages provide the power-profile backend;

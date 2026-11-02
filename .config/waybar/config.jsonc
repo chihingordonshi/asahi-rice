@@ -159,8 +159,9 @@
         "format-wifi": "󰖩  {essid}",
         "format-ethernet": "󰈀  {ifname}",
         "format-disconnected": "󰖪  disconnected",
-        "tooltip-format": "{ifname}: {ipaddr}",
-        "on-click": "kitty --class wifi-select --title wifi-select -o close_on_child_death=yes /home/chihin/.config/nmtui/launch connect"
+        "tooltip-format": "{ifname}: {ipaddr}\nLeft: Impala (connect, hidden SSIDs, autoconnect)\nRight: advanced iwctl console",
+        "on-click": "kitty --class wifi-select --title wifi-select -o close_on_child_death=yes /home/chihin/.local/bin/impala",
+        "on-click-right": "kitty --class wifi-select --title wifi-console -o close_on_child_death=yes iwctl"
     },
 
     "battery": {
