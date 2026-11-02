@@ -29,11 +29,11 @@ class IwdSetupTest(unittest.TestCase):
         self.assertEqual(config.getint('Scan', 'MaximumPeriodicScanInterval'), 300)
         self.assertEqual(config['DriverQuirks']['DefaultInterface'], 'brcmfmac')
 
-    def test_resolver_disables_multicast_but_keeps_cache_and_upstream_selection(self):
+    def test_resolver_preserves_local_mdns_without_responding_or_llmnr(self):
         config = configparser.ConfigParser()
         config.read(ROOT / 'setup/resolved-low-power.conf')
         self.assertFalse(config.getboolean('Resolve', 'LLMNR'))
-        self.assertFalse(config.getboolean('Resolve', 'MulticastDNS'))
+        self.assertEqual(config['Resolve']['MulticastDNS'], 'resolve')
         self.assertTrue(config.getboolean('Resolve', 'Cache'))
         self.assertNotIn('DNS', config['Resolve'])
         self.assertNotIn('Domains', config['Resolve'])

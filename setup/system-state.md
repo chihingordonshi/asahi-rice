@@ -83,19 +83,32 @@ Root-owned copies of these configuration sources are installed, not symlinks:
   initial disconnected scan interval (maximum 300 seconds). Automatic reconnection
   and roaming remain enabled. The Broadcom default interface `wld0` is preserved.
 - `setup/resolved-low-power.conf` →
-  `/etc/systemd/resolved.conf.d/90-low-power.conf`: disables LLMNR and mDNS,
-  overriding the older `60-mdns-resolve-only.conf`, and keeps DNS caching enabled.
-  **Trade-off:** no multicast `.local`/LLMNR discovery. Normal DNS, DHCP search
-  domains and VPN split DNS continue to work. Apply resolver changes with
+  `/etc/systemd/resolved.conf.d/90-low-power.conf`: disables LLMNR, keeps mDNS in
+  **resolver-only** mode (`MulticastDNS=resolve`) and keeps DNS caching enabled.
+  `.local` lookups remain available without advertising this host or responding
+  to other devices' mDNS questions. Normal DNS, DHCP search domains and VPN split
+  DNS continue to work. Apply resolver changes with
   `sudo systemctl reload systemd-resolved`, preserving the current VPN DNS state.
 
-On 2026-11-02, matched 40-second samples before/after the resolver-only change
-showed CPU dropping from 3.15% of one core to 0.00% at the measurement resolution,
-and voluntary context switches dropping from 55.95/s to 0.57/s. The multicast
-sockets closed while DNS and WARP continued working. These are activity measures,
-not a measured wattage/battery-life claim. A final sample with iwd connected gave
-0.025% resolver CPU and 0.35 voluntary switches/s; iwd used 0.00% CPU at the same
-resolution. `iw dev wld0 get power_save` reports on.
+The initial experiment on 2026-11-02 disabled both LLMNR and mDNS. Matched
+40-second samples showed CPU dropping from 3.15% of one core to 0.00% at the
+measurement resolution, and voluntary context switches from 55.95/s to 0.57/s.
+A later sample with iwd connected gave 0.025% resolver CPU and 0.35 voluntary
+switches/s; iwd used 0.00% CPU. **Those results apply only to the rejected
+mDNS-disabled configuration**, which broke required `.local` lookups. mDNS was
+subsequently restored to resolver-only mode; the near-zero activity must not be
+claimed for the current configuration. These are activity measurements, not
+measured wattage/battery life. A subsequent 40-second sample with resolver-only
+mDNS restored (including one service-discovery verification) measured 1.35%
+resolver CPU and 37.40 voluntary switches/s; results depend on LAN traffic.
+`iw dev wld0 get power_save` reports on.
+
+Resolver-only mode disables responding, not reception: lookup replies must still
+come in, and mDNS replies normally use multicast. Unrelated queries and unsolicited
+announcements still reach the multicast socket. A blanket inbound UDP/5353 block
+would break `.local`; ordinary established-connection rules do not reliably match
+multicast replies. No such firewall block is installed. See
+[RFC 6762 sections 5–6](https://www.rfc-editor.org/rfc/rfc6762.html).
 
 Eight saved station profiles (including a hidden phone network) were migrated to
 root-only `/var/lib/iwd` files, mode 0600 under a 0700 directory. The active SSID's
@@ -144,6 +157,10 @@ Impala/iwctl are Wi-Fi managers, not graphical full-profile form editors.
 
 Verify with `systemctl is-active iwd systemd-resolved`, `iwctl station wld0 show`,
 `resolvectl status`, `iw dev wld0 get power_save`, and an HTTPS request.
+After restoring resolver-only mDNS, `resolvectl --protocol=mdns --interface=wld0
+query chsrv.local` returned an IPv4 answer from the network, and
+`curl --noproxy '*' http://chsrv.local/` reached the user's server (HTTP 302,
+redirect). Ordinary DNS and WARP connectivity were also verified.
 WARP's `~.` DNS route is retained; Wi-Fi DHCP DNS and `bsn.net` search domain are
 also present. A transient timed rollback guarded the live handover and was
 cancelled only after reconnection, DNS and HTTPS checks succeeded.
