@@ -5,9 +5,8 @@
 
 -- See https://wiki.hypr.land/Configuring/Basics/Autostart/
 
--- Start on config load too, so reloading applies auto-hide immediately.  The
--- script holds a singleton lock, so this is safe when a controller is running.
-hl.exec_cmd(os.getenv("HOME") .. "/.config/hypr/scripts/waybar-autohide")
+-- waybar.lua owns auto-hide through a native Hyprland timer on each config
+-- load. Do not also start the legacy shell controller here.
 
 hl.on("hyprland.start", function()
     hl.exec_cmd("dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY XDG_CURRENT_DESKTOP HYPRLAND_INSTANCE_SIGNATURE")

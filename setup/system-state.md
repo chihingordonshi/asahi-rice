@@ -73,7 +73,11 @@ Wi-Fi authentication, IPv4 DHCP, IPv6 and DHCP-provided DNS are managed by
 NetworkManager, its dispatcher/wait-online units, and wpa_supplicant are stopped,
 disabled and masked to prevent competing managers. `systemd-networkd` stays
 disabled; iwd's built-in network configuration avoids another daemon.
-NetworkManager packages and original connection files are retained for rollback.
+The NetworkManager daemon, plugins, TUI, applet and editor were subsequently
+removed (10 packages, about 13 MiB installed size) without unrelated autoremove.
+`NetworkManager-libnm` and `libnma` remain because removing them would also remove
+Blueman and firewall-config; these are libraries, not idle daemons. Original
+connection files and a root-only configuration archive remain for rollback.
 WARP and Tailscale remain independently managed, not iwd profiles.
 
 Root-owned copies of these configuration sources are installed, not symlinks:
@@ -103,11 +107,13 @@ mDNS restored (including one service-discovery verification) measured 1.35%
 resolver CPU and 37.40 voluntary switches/s; results depend on LAN traffic.
 `iw dev wld0 get power_save` reports on.
 
-Resolver-only mode disables responding, not reception: lookup replies must still
-come in, and mDNS replies normally use multicast. Unrelated queries and unsolicited
-announcements still reach the multicast socket. A blanket inbound UDP/5353 block
+Resolver-only mode alone disables responding, not reception: lookup replies must
+still come in, and mDNS replies normally use multicast. Without the client-only
+filter below, unrelated queries and unsolicited announcements still reach the
+multicast socket. A blanket inbound UDP/5353 block
 would break `.local`; ordinary established-connection rules do not reliably match
-multicast replies. No such firewall block is installed. See
+multicast replies. The client-only filter below instead drops multicast
+**questions only**, retaining all incoming answers. See
 [RFC 6762 sections 5–6](https://www.rfc-editor.org/rfc/rfc6762.html).
 
 Eight saved station profiles (including a hidden phone network) were migrated to
@@ -166,11 +172,18 @@ also present. A transient timed rollback guarded the live handover and was
 cancelled only after reconnection, DNS and HTTPS checks succeeded.
 
 Original service/resolver state and root-only migration records are in
-`/var/lib/network-power-migration/`. Restore the original system networking with:
+`/var/lib/network-power-migration/`, including
+`networkmanager-config-before-removal.tar.gz` and the original RPM package list.
+Since NetworkManager was removed, reinstall it **while iwd still provides Wi-Fi**
+before restoring the original system networking:
 
 ```sh
+sudo dnf5 install NetworkManager NetworkManager-wifi
 sudo bash /var/lib/network-power-migration/rollback.sh
 ```
+
+The rollback script now refuses before changing networking if NetworkManager is
+not installed, and disables the client-only mDNS filter when restoring NM.
 
 That stops/disables iwd, unmasks/re-enables NetworkManager (and its original
 related units), removes only the two new system configuration copies, and reloads
@@ -183,6 +196,91 @@ command and Hyprland `nm-applet` startup line, then run `nm-applet`.
 References: local `iwd.config(5)`, `iwd.network(5)`, `iwctl(1)`, `resolved.conf(5)`;
 [upstream iwd configuration](https://kernel.googlesource.com/pub/scm/network/wireless/iwd/+/master/src/iwd.config.rst),
 [Impala](https://github.com/pythops/impala).
+
+## Additional idle CPU and RAM reductions
+
+The major CPU problem was the legacy shell Waybar auto-hide controller, not the
+Wi-Fi daemon: its 10 Hz loop repeatedly spawned `pgrep`, `date`, three `hyprctl`
+clients, two `jq` processes and `sleep`. `.config/hypr/waybar.lua` now uses the
+installed Hyprland 0.57 native Lua timer/query API. It checks cursor state in-process
+at 100 ms, spawning only on actual visibility transitions. Super+B, empty-workspace
+visibility, 200 ms top-edge reveal, 72 px hover, startup grace and config-reload
+state are preserved. The legacy shell file remains for compatibility but is no
+longer started. Existing user-disabled clock/quickmenu startup lines were preserved.
+
+Waybar uses native `cpu` (5 s) and `memory` (15 s) modules instead of recurring shell
+pipelines. Memory process details are available on demand by clicking it for btop.
+The minute-resolution clock now updates each minute; its tooltip no longer claims
+live seconds. Fcitx polls every 3 s, and power-profile status every 30 s (clicks
+still refresh immediately and retain the existing wallpaper side effect).
+Brightness/volume fallback polling is 10/5 s; existing helper/hotkey changes still
+refresh immediately through signals, preserving perceptual brightness and OSDs.
+
+A 30-second before sample and a subsequent 60-second sample gave:
+
+| CPU, percent of one core | Before | After desktop changes |
+| --- | ---: | ---: |
+| Hyprland service group, including spawned descendants | 35.82% | 2.16% |
+| Waybar service group, including helpers | 3.53% | 1.01% |
+
+These are live-desktop activity samples, not isolated whole-system idle-power
+measurements. The before/after windows differ, and LAN traffic varies. Agent and
+terminal activity is outside these service groups. No wattage or battery-life
+saving is claimed.
+
+With no cellular modems detected, `ModemManager.service` is stopped, disabled and
+masked against D-Bus activation. Automatic ABRT journal/core/oops/Xorg collectors
+(`abrtd`, `abrt-journal-core`, `abrt-oops`, `abrt-xorg`) are stopped and disabled.
+Their combined prior proportional resident footprint was about **86 MiB PSS**;
+this is not a guaranteed physical-memory delta. Normal systemd coredumps,
+journald, auditd, SELinux enforcement, firewalld, Bluetooth, VPNs and speaker
+protection remain enabled. No generic x86 power knobs or aggressive PCIe changes
+were applied; Apple CPU idle, `schedutil` and Wi-Fi power save remain in use.
+Service state before changes is recorded root-only in
+`/var/lib/network-power-migration/idle-services-before.json`.
+
+Restore those optional services with:
+
+```sh
+sudo systemctl unmask ModemManager.service
+sudo systemctl enable --now ModemManager.service abrtd.service \
+  abrt-journal-core.service abrt-oops.service abrt-xorg.service
+```
+
+### Client-only multicast DNS filter
+
+`setup/mdns-client-only.nft` is installed as `/etc/nftables/mdns-client-only.nft`,
+with `setup/mdns-client-only.service` installed under `/etc/systemd/system/` and
+enabled. The service is **oneshot**, not a polling daemon. It owns only the
+`inet mdns_client_only` nftables table and does not flush firewalld/VPN rules.
+
+On physical Wi-Fi `wld0`, it drops only incoming UDP/5353 packets addressed to
+IPv4/IPv6 mDNS multicast groups with DNS QR=0 (questions). DNS QR=1 answers,
+including unsolicited announcements, outgoing queries, unicast packets and normal
+DNS are unchanged. This avoids waking userspace to parse other devices' questions.
+It does not prevent Wi-Fi hardware/kernel reception or eliminate response traffic.
+**Trade-off:** no mDNS responder on this machine can hear those multicast queries;
+disable the filter if this host must advertise/respond to local services.
+
+A 60-second trial reduced resolved from 1.60% CPU / 34.20 voluntary switches/s to
+1.30% / 13.65 switches/s, while dropping about 3,600 incoming questions. This is
+traffic-dependent, not a guarantee of proportional power savings. Fresh uncached
+`chsrv.local` resolution, general DNS-SD responses, local HTTP 302, public HTTPS
+200, WARP, nft syntax, service reload and stop/start rollback were verified.
+The IPv6 rule was syntax/QR-logic checked; no IPv6-only test host was provided.
+
+Inspect or reversibly disable the filter with:
+
+```sh
+sudo nft list table inet mdns_client_only
+sudo systemctl disable --now mdns-client-only.service
+```
+
+Re-enable with `sudo systemctl enable --now mdns-client-only.service`. Stopping it
+removes only its own table. Resolver-only `.local` support remains enabled either
+way. No host addresses were pinned, and incoming answers are not restricted to
+one test server. The generic bootstrap does not automatically install this
+machine-specific firewall policy or switch networking.
 
 ## Waybar power profiles
 

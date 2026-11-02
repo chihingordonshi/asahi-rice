@@ -1,0 +1,15 @@
+[Unit]
+Description=Client-only mDNS multicast query filter
+Documentation=https://www.rfc-editor.org/rfc/rfc6762.html
+Wants=firewalld.service
+After=firewalld.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/sbin/nft --file /etc/nftables/mdns-client-only.nft
+ExecReload=/usr/sbin/nft --file /etc/nftables/mdns-client-only.nft
+ExecStop=-/usr/sbin/nft delete table inet mdns_client_only
+
+[Install]
+WantedBy=multi-user.target

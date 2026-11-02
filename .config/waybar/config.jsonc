@@ -4,7 +4,7 @@
     "height": 36,
     "reload_style_on_change": true,
 
-    "modules-left": ["custom/suspend", "custom/kill", "custom/cpu", "custom/memory", "custom/fcitx5", "custom/terminal-art", "custom/power-profile", "hyprland/workspaces"],
+    "modules-left": ["custom/suspend", "custom/kill", "cpu", "memory", "custom/fcitx5", "custom/terminal-art", "custom/power-profile", "hyprland/workspaces"],
     "modules-center": ["clock"],
     "modules-right": ["tray", "custom/random-wallpaper", "custom/wallpaper-backend", "custom/bluetooth", "custom/brightness", "custom/volume", "network", "battery"],
 
@@ -80,7 +80,7 @@
 
     "custom/power-profile": {
         "exec": "~/.local/bin/waybar-power-profile.sh",
-        "interval": 3,
+        "interval": 30,
         "return-type": "json",
         "format": "{}",
         "on-click": "~/.local/bin/waybar-power-profile-cycle.sh",
@@ -104,7 +104,7 @@
 
     "custom/fcitx5": {
         "exec": "~/.local/bin/waybar-fcitx5.sh",
-        "interval": 1,
+        "interval": 3,
         "return-type": "json",
         "format": "󰌌  {}",
         "on-click": "fcitx5-remote -t",
@@ -112,31 +112,28 @@
     },
 
     "clock": {
-        "interval": 1,
+        "interval": 60,
         "format": "󰥔  {:%a %d %b %H:%M}",
-        "tooltip-format": "{:%a %d %b %Y %H:%M:%S}"
+        "tooltip-format": "{:%a %d %b %Y %H:%M}"
     },
 
-    "custom/cpu": {
-        "exec": "~/.local/bin/waybar-cpu.sh",
-        "interval": 3,
-        "return-type": "json",
-        "format": "{}",
-        "tooltip": true
-    },
-
-    "custom/memory": {
-        "exec": "~/.local/bin/waybar-memory.sh",
+    "cpu": {
         "interval": 5,
-        "return-type": "json",
-        "format": "{}",
-        "tooltip": true
+        "format": "󰘚  {usage}%",
+        "tooltip-format": "Per-core usage:\n0: {usage0}%  1: {usage1}%  2: {usage2}%  3: {usage3}%\n4: {usage4}%  5: {usage5}%  6: {usage6}%  7: {usage7}%"
+    },
+
+    "memory": {
+        "interval": 15,
+        "format": "󰍛  {percentage}%",
+        "tooltip-format": "Memory: {used:.1f} / {total:.1f} GiB ({percentage}%)\nAvailable: {avail:.1f} GiB\nClick: process details in btop",
+        "on-click": "kitty --class btop --title btop btop"
     },
 
     "custom/brightness": {
         "exec": "~/.local/bin/waybar-level brightness status",
         "return-type": "json",
-        "interval": 2,
+        "interval": 10,
         "signal": 11,
         "on-scroll-up": "~/.local/bin/waybar-level brightness up",
         "on-scroll-down": "~/.local/bin/waybar-level brightness down",
@@ -146,7 +143,7 @@
     "custom/volume": {
         "exec": "~/.local/bin/waybar-level volume status",
         "return-type": "json",
-        "interval": 2,
+        "interval": 5,
         "signal": 10,
         "on-click": "pavucontrol",
         "on-click-right": "~/.local/bin/waybar-level volume toggle",

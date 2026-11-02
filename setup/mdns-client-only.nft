@@ -1,0 +1,14 @@
+# This host is an mDNS CLIENT, not a multicast service responder.
+# Keep all outgoing queries and incoming answers, including unsolicited answers.
+# Drop only incoming multicast questions before they wake userspace listeners.
+# Disable this filter if this host must answer other devices' mDNS questions.
+# DNS QR is bit 80 from the UDP header; require UDP + full DNS header (8 + 12).
+# Own table only: never flush firewalld, WARP, or Tailscale rules.
+destroy table inet mdns_client_only
+table inet mdns_client_only {
+    chain input {
+        type filter hook input priority -10; policy accept;
+        iifname "wld0" ip daddr 224.0.0.251 udp dport 5353 udp length >= 20 @th,80,16 & 0x8000 == 0 counter drop
+        iifname "wld0" ip6 daddr ff02::fb udp dport 5353 udp length >= 20 @th,80,16 & 0x8000 == 0 counter drop
+    }
+}

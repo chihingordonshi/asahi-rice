@@ -1,7 +1,5 @@
 # Explicitly installed RPMs plus codec/runtime requirements. Dependencies are resolved by DNF.
 2048-cli
-NetworkManager-tui
-NetworkManager-wifi
 SDL2_image-devel
 aajohan-comfortaa-fonts
 alsa-lib-devel
@@ -131,7 +129,7 @@ navi
 ncdu
 ncmpcpp
 nethack
-network-manager-applet
+nftables
 ninja-build
 nsnake
 nudoku
