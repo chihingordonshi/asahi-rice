@@ -9,10 +9,6 @@
 .config/agents/fedora-asahi-setup.md
 .config/autostart/blueman.desktop
 .config/autostart/imsettings-start.desktop
-.config/autostart/nm-applet.desktop
-.config/autostart/org.fcitx.Fcitx5.desktop
-.config/autostart/org.kde.kalendarac.desktop
-.config/autostart/org.kde.kdeconnect.daemon.desktop
 .config/autostart/org.kde.xwaylandvideobridge.desktop
 .config/autostart/sealertauto.desktop
 .config/btop/btop.conf

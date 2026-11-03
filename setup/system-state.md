@@ -149,14 +149,13 @@ these passwords, identity material or machine-specific profiles in Git.
 - There is no custom networking application or wrapper. Both utilities run only
   when opened, so they add no idle polling daemon. This is Wi-Fi management,
   not a replacement UI for NetworkManager-specific VPN/wired
-  profiles. `nm-applet` is removed from Hyprland startup and suppressed via an
-  XDG autostart override; Waybar's network status itself uses netlink, not NM.
+  profiles. NetworkManager and its applet are uninstalled, and `nm-applet` is
+  removed from Hyprland startup. Waybar's network status uses netlink, not NM.
 
 Impala was built user-locally from the reviewed, pinned crates.io package using
 `cargo install impala --version 0.8.1 --locked --root "$HOME/.local"`.
-`iwctl` was already installed as part of iwd. The new XDG autostart override is
-listed in `setup/home-files.txt`; system network switching is intentionally not
-done automatically by the generic bootstrap installer.
+`iwctl` was already installed as part of iwd. System network switching is
+intentionally not done automatically by the generic bootstrap installer.
 
 For full credential/static IP/DNS/IPv6/802.1X editing beyond the properties exposed
 by `iwctl`, use the existing `sudoedit` and Vim from a terminal (not a separate
@@ -217,9 +216,9 @@ It then stops/disables iwd, unmasks/re-enables NetworkManager (and its original
 related units), removes only the two new system configuration copies, and reloads
 resolved to restore the previous multicast policy. Original NetworkManager
 profiles are untouched; migrated iwd profiles remain available but inactive.
-The home/Waybar utilities are separate: to restore the old tray UI, remove the
-`~/.config/autostart/nm-applet.desktop` override, restore the old Waybar click
-command and Hyprland `nm-applet` startup line, then run `nm-applet`.
+The home/Waybar utilities are separate: after reinstalling the applet, restore
+the old Waybar click command and Hyprland `nm-applet` startup line, then run
+`nm-applet`.
 
 References: local `iwd.config(5)`, `iwd.network(5)`, `iwctl(1)`, `resolved.conf(5)`;
 [upstream iwd configuration](https://kernel.googlesource.com/pub/scm/network/wireless/iwd/+/master/src/iwd.config.rst),
@@ -239,6 +238,20 @@ old tray applet; its current user unit is stopped. BlueZ remains running, the
 existing radio power/rfkill state is preserved, and no devices were re-paired.
 To return to the old tray, disable this override and run `blueman-applet`.
 DNS/WARP and power-profile/wallpaper behavior are unchanged.
+
+## XDG autostart cleanup
+
+UWSM/systemd processes XDG autostart independently of Hyprland's Lua startup.
+The four remaining `.config/autostart` files are minimal `Hidden=true` overrides
+for system entries: Blueman, imsettings, Xwayland Video Bridge and the SELinux
+troubleshooter tray. Removing these files would allow the distro entries to start.
+The SELinux tray now uses `Hidden=true` rather than the GNOME-only disable flag;
+SELinux enforcement and system logging are unchanged.
+
+Removed the duplicate Fcitx desktop launcher (Hyprland's `autostart.lua` already
+starts Fcitx) and obsolete NetworkManager, Kalendar and KDE Connect overrides
+whose system autostart entries are absent. The corresponding home symlinks and
+manifest entries are removed too. The running Fcitx process is left alone.
 
 ## Additional idle CPU and RAM reductions
 

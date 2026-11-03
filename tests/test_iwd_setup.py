@@ -51,11 +51,9 @@ class IwdSetupTest(unittest.TestCase):
 
     def test_no_legacy_nm_applet_autostart(self):
         self.assertNotIn('nm-applet', (ROOT / '.config/hypr/autostart.lua').read_text())
-        config = configparser.ConfigParser()
-        config.read(ROOT / '.config/autostart/nm-applet.desktop')
-        self.assertTrue(config.getboolean('Desktop Entry', 'Hidden'))
+        self.assertFalse((ROOT / '.config/autostart/nm-applet.desktop').exists())
         manifest = (ROOT / 'setup/home-files.txt').read_text().splitlines()
-        self.assertIn('.config/autostart/nm-applet.desktop', manifest)
+        self.assertNotIn('.config/autostart/nm-applet.desktop', manifest)
         self.assertNotIn('.local/bin/wifi-menu', manifest)
 
 
