@@ -147,7 +147,7 @@ class WaybarPowerProfileTest(unittest.TestCase):
         self.assertEqual(result.stderr, "")
         self.assertEqual(len(calls), 1)
 
-    def test_cycle_and_power_saver_wallpaper(self):
+    def test_cycle_does_not_change_wallpaper(self):
         for current, expected in (
             ("performance", "balanced"),
             ("balanced", "power-saver"),
@@ -161,10 +161,7 @@ class WaybarPowerProfileTest(unittest.TestCase):
                 self.assertEqual(calls[1][:3], ["busctl", "--system", "set-property"])
                 self.assertEqual(calls[1][-2:], ["s", expected])
                 wallpaper_calls = [call for call in calls if call[0] == "waypaper-set-backend.sh"]
-                self.assertEqual(
-                    wallpaper_calls,
-                    [["waypaper-set-backend.sh", "sway"]] if expected == "power-saver" else [],
-                )
+                self.assertEqual(wallpaper_calls, [])
 
     def test_cycle_without_service_does_not_write(self):
         result, state, calls = self.run_script(CYCLE, available=False)

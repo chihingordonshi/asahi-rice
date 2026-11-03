@@ -212,7 +212,7 @@ Waybar uses native `cpu` (5 s) and `memory` (15 s) modules instead of recurring 
 pipelines. Memory process details are available on demand by clicking it for btop.
 The minute-resolution clock now updates each minute; its tooltip no longer claims
 live seconds. Fcitx polls every 3 s, and power-profile status every 30 s (clicks
-still refresh immediately and retain the existing wallpaper side effect).
+still refresh immediately).
 Brightness/volume fallback polling is 10/5 s; existing helper/hotkey changes still
 refresh immediately through signals, preserving perceptual brightness and OSDs.
 
@@ -298,7 +298,8 @@ use the former to read and cycle performance / balanced / power-saver; their
 rocket / scale / leaf symbols are monochrome Nerd Font glyphs, not color emoji.
 There are no per-profile color overrides. The active profile remains a runtime
 choice, not a setting pinned by the bootstrap. On this machine all three profiles
-are advertised by the backend.
+are advertised by the backend. Changing profiles no longer switches the wallpaper
+to swaybg; the selected wallpaper backend stays unchanged in every profile.
 
 ## Power button opens a terminal
 
