@@ -1,78 +1,60 @@
-"""Validate fail-closed WARP DNS and narrow, daemon-free profile actions."""
+"""Keep network/VPN DNS automatic, without static pins or power-profile hooks."""
 
 import configparser
 from pathlib import Path
-import shlex
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 SETUP = ROOT / "setup"
-UNITS = [
-    "systemd-resolved.service",
-    "systemd-resolved-varlink.socket",
-    "systemd-resolved-monitor.socket",
-]
+RETIRED_UNITS = (
+    "resolved-power-saver.service",
+    "resolved-performance.service",
+    "resolved-power-saver-at-boot.service",
+)
 
 
-class WarpDnsTest(unittest.TestCase):
-    def test_no_lan_or_public_dns_fallback(self):
+class AutomaticDnsTest(unittest.TestCase):
+    def test_iwd_publishes_network_dns(self):
+        config = configparser.ConfigParser()
+        config.read(SETUP / "iwd-main.conf")
+        self.assertEqual(config["Network"]["NameResolvingService"], "systemd")
+        self.assertTrue(config.getboolean("General", "EnableNetworkConfiguration"))
+
+    def test_no_static_dns_or_domain_pins(self):
+        for name in ("resolved-low-power.conf", "resolved-warp-dns.conf"):
+            with self.subTest(file=name):
+                config = configparser.ConfigParser()
+                config.read(SETUP / name)
+                for option in ("DNS", "FallbackDNS", "Domains"):
+                    self.assertNotIn(option, config["Resolve"])
         lines = (SETUP / "warp-resolv.conf").read_text().splitlines()
-        self.assertEqual(
-            [line.split()[1] for line in lines if line.startswith("nameserver ")],
-            ["127.0.2.2", "127.0.2.3"],
-        )
-        config = configparser.ConfigParser()
-        config.read(SETUP / "resolved-warp-dns.conf")
-        self.assertEqual(config["Resolve"]["DNS"].split(), ["127.0.2.2", "127.0.2.3"])
-        self.assertEqual(config["Resolve"]["FallbackDNS"], "")
-        self.assertEqual(config["Resolve"]["Domains"], "~.")
+        self.assertTrue(all(not line.strip() or line.lstrip().startswith("#") for line in lines))
+        self.assertIn("RETIRED", lines[0])
 
-    def test_power_saver_blocks_service_and_socket_reactivation(self):
-        text = (SETUP / "resolved-power-saver.service").read_text()
-        config = configparser.ConfigParser()
-        config.read_string(text)
-        self.assertEqual(config["Service"]["Type"], "oneshot")
-        self.assertNotIn("RemainAfterExit", config["Service"])
-        self.assertEqual(
-            shlex.split(config["Service"]["ExecStartPre"]),
-            ["/usr/bin/grep", "-Fxq", "nameserver 127.0.2.2", "/etc/resolv.conf"],
-        )
-        self.assertEqual(
-            shlex.split(config["Service"]["ExecStart"]),
-            ["/usr/bin/systemctl", "mask", "--runtime", "--now", *UNITS],
-        )
+    def test_retired_units_cannot_stop_or_mask_resolved(self):
+        for unit in RETIRED_UNITS:
+            with self.subTest(unit=unit):
+                config = configparser.ConfigParser()
+                config.read(SETUP / unit)
+                self.assertTrue(config.getboolean("Unit", "RefuseManualStart"))
+                self.assertEqual(dict(config["Service"]),
+                                 {"type": "oneshot", "execstart": "/usr/bin/true"})
+                self.assertNotIn("Install", config)
 
-    def test_performance_only_removes_runtime_masks_then_starts_resolved(self):
-        lines = (SETUP / "resolved-performance.service").read_text().splitlines()
-        self.assertIn("Type=oneshot", lines)
-        self.assertEqual(
-            [shlex.split(line.partition("=")[2]) for line in lines if line.startswith("ExecStart=")],
-            [
-                ["/usr/bin/systemctl", "unmask", "--runtime", *UNITS],
-                ["/usr/bin/systemctl", "start", "systemd-resolved.service"],
-            ],
-        )
-        self.assertFalse(any(line.startswith("RemainAfterExit=") for line in lines))
-
-    def test_boot_oneshot_only_applies_power_saver_after_profile_service(self):
-        config = configparser.ConfigParser()
-        config.read(SETUP / "resolved-power-saver-at-boot.service")
-        self.assertEqual(config["Unit"]["Wants"], "tuned-ppd.service")
-        self.assertEqual(config["Unit"]["After"], "tuned-ppd.service")
-        self.assertEqual(config["Service"]["Type"], "oneshot")
-        self.assertEqual(config["Service"]["ExecStart"],
-                         "/usr/bin/systemctl start resolved-power-saver.service")
-        self.assertIn("/usr/bin/grep -Fq power-saver", config["Service"]["ExecCondition"])
-        self.assertIn("-o pipefail", config["Service"]["ExecCondition"])
-        self.assertEqual(config["Install"]["WantedBy"], "multi-user.target")
-
-    def test_sudo_grant_allows_only_the_two_root_owned_actions(self):
+    def test_profile_changes_have_no_dns_or_wallpaper_side_effect(self):
+        script = (ROOT / ".local/bin/waybar-power-profile-cycle.sh").read_text()
+        self.assertNotIn("sudo", script)
+        self.assertNotIn("systemctl", script)
+        self.assertNotIn("resolvectl", script)
+        self.assertNotIn("waypaper", script)
         lines = (SETUP / "power-profile-resolver.sudoers").read_text().splitlines()
-        grants = [line for line in lines if line and not line.startswith("#")]
-        self.assertEqual(grants, [
-            "chihin ALL=(root) NOPASSWD: /usr/bin/systemctl start resolved-power-saver.service, "
-            "/usr/bin/systemctl start resolved-performance.service"
-        ])
+        self.assertTrue(all(not line.strip() or line.lstrip().startswith("#") for line in lines))
+
+    def test_bootstrap_does_not_reinstall_the_retired_dns_policy(self):
+        script = (SETUP / "install.sh").read_text()
+        for name in (*RETIRED_UNITS, "resolved-warp-dns.conf", "warp-resolv.conf",
+                     "power-profile-resolver.sudoers"):
+            self.assertNotIn(name, script)
 
 
 if __name__ == "__main__":

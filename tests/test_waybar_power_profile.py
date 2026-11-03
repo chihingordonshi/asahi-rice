@@ -29,7 +29,7 @@ if name == "waypaper-set-backend.sh":
 path = Path(os.environ["MOCK_STATE"])
 state = json.loads(path.read_text())
 if name == "sudo":
-    sys.exit(1 if state.get("fail_resolver") else 0)
+    sys.exit(0)
 if not state.get("available", True):
     print("The name is not activatable", file=sys.stderr)
     sys.exit(1)
@@ -93,8 +93,8 @@ class WaybarPowerProfileTest(unittest.TestCase):
                 payload = json.loads(result.stdout)
                 self.assertEqual(payload["text"], icon)
                 self.assertIn(f"Power profile: {profile}", payload["tooltip"])
-                self.assertIn("DNS: WARP", payload["tooltip"])
-                self.assertIn("Power-saver stops .local; performance restores it", payload["tooltip"])
+                self.assertNotIn("DNS: WARP", payload["tooltip"])
+                self.assertNotIn("stops .local", payload["tooltip"])
                 self.assertEqual(result.stderr, "")
                 self.assertEqual(state["profile"], profile)
                 self.assertEqual(len(calls), 1)
@@ -152,7 +152,7 @@ class WaybarPowerProfileTest(unittest.TestCase):
         self.assertEqual(result.stderr, "")
         self.assertEqual(len(calls), 1)
 
-    def test_cycle_does_not_change_wallpaper(self):
+    def test_cycle_changes_only_power_profile(self):
         for current, expected in (
             ("performance", "balanced"),
             ("balanced", "power-saver"),
@@ -168,11 +168,8 @@ class WaybarPowerProfileTest(unittest.TestCase):
                 wallpaper_calls = [call for call in calls if call[0] == "waypaper-set-backend.sh"]
                 self.assertEqual(wallpaper_calls, [])
                 resolver_calls = [call for call in calls if call[0] == "sudo"]
-                self.assertEqual(
-                    resolver_calls,
-                    [["sudo", "-n", "/usr/bin/systemctl", "start", f"resolved-{expected}.service"]]
-                    if expected in ("power-saver", "performance") else [],
-                )
+                self.assertEqual(resolver_calls, [])
+                self.assertEqual(len(calls), 2)
 
     def test_cycle_without_service_does_not_write(self):
         result, state, calls = self.run_script(CYCLE, available=False)
@@ -199,18 +196,7 @@ class WaybarPowerProfileTest(unittest.TestCase):
                     child.communicate()
         self.assertEqual(json.loads(self.state.read_text())["profile"], "performance")
         calls = [json.loads(line) for line in self.log.read_text().splitlines()]
-        self.assertEqual(len(calls), 8)  # Three profile reads/writes and two resolver actions.
-
-    def test_failed_resolver_action_reports_partial_change(self):
-        for current, expected in (("balanced", "power-saver"), ("power-saver", "performance")):
-            with self.subTest(profile=current):
-                result, state, calls = self.run_script(CYCLE, current, fail_resolver=True)
-                self.assertEqual(result.returncode, 1)
-                self.assertEqual(state["profile"], expected)
-                self.assertIn(f"Power profile changed to {expected}", result.stderr)
-                self.assertIn("resolver action failed", result.stderr)
-                self.assertEqual(calls[-1][0], "sudo")
-                self.assertEqual(len(calls), 3)
+        self.assertEqual(len(calls), 6)  # Three profile reads/writes, no resolver actions.
 
     def test_failed_profile_change_does_not_touch_resolver(self):
         result, state, calls = self.run_script(CYCLE, fail_set=True)

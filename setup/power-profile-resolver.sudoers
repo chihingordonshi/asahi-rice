@@ -1,2 +1,2 @@
-# Root-owned oneshot units; no arbitrary service, unit-file or command access.
-chihin ALL=(root) NOPASSWD: /usr/bin/systemctl start resolved-power-saver.service, /usr/bin/systemctl start resolved-performance.service
+# RETIRED: power-profile changes no longer control the DNS resolver.
+# No extra sudo privileges are required or granted.

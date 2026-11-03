@@ -1,8 +1,8 @@
+# RETIRED: not installed. Power-saver must not stop ordinary DNS fallback.
 [Unit]
-Description=Stop resolved and prevent lookup-triggered activation in power-saver
+Description=Retired resolver power-saver helper
+RefuseManualStart=yes
 
 [Service]
 Type=oneshot
-# Never stop the resolver while resolv.conf still points at its DNS stub.
-ExecStartPre=/usr/bin/grep -Fxq "nameserver 127.0.2.2" /etc/resolv.conf
-ExecStart=/usr/bin/systemctl mask --runtime --now systemd-resolved.service systemd-resolved-varlink.socket systemd-resolved-monitor.socket
+ExecStart=/usr/bin/true

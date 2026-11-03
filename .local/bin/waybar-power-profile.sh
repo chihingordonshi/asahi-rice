@@ -16,4 +16,4 @@ case "$profile" in
     *)           icon="󰐥" ;;
 esac
 
-printf '{"text":"%s","tooltip":"Power profile: %s\\nClick to cycle\\nDNS: WARP\\nPower-saver stops .local; performance restores it\\nBalanced keeps the resolver state"}\n' "$icon" "$profile"
+printf '{"text":"%s","tooltip":"Power profile: %s\\nClick to cycle"}\n' "$icon" "$profile"
