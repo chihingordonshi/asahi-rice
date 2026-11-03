@@ -74,6 +74,14 @@ hl.window_rule({
     opaque = true,
 })
 
+hl.window_rule({
+    name   = "bluetooth-select",
+    match  = { class = "^bluetooth-select$" },
+    float  = true,
+    size   = { 800, 500 },
+    opaque = true,
+})
+
 -- Keep GTK file chooser dialogs comfortably sized and centered.
 hl.window_rule({
     name  = "gtk-file-chooser",

@@ -225,6 +225,21 @@ References: local `iwd.config(5)`, `iwd.network(5)`, `iwctl(1)`, `resolved.conf(
 [upstream iwd configuration](https://kernel.googlesource.com/pub/scm/network/wireless/iwd/+/master/src/iwd.config.rst),
 [Impala](https://github.com/pythops/impala).
 
+## On-demand Bluetooth controls
+
+Use the already-installed **bluetuith 0.2.7**, not a newly built replacement.
+Waybar's native `bluetooth` module sits beside Wi-Fi and uses D-Bus status events,
+not shell polling. Left-click opens `~/.local/bin/bluetuith`; right-click opens
+`bluetoothctl`; there is no middle-click action. Both use floating 800×500 Kitty
+windows, matching Wi-Fi. No wrapper script, new package or custom TUI config is
+needed. Install bluetuith separately before using these bindings on a new machine.
+
+The `Hidden=true` override in `.config/autostart/blueman.desktop` suppresses the
+old tray applet; its current user unit is stopped. BlueZ remains running, the
+existing radio power/rfkill state is preserved, and no devices were re-paired.
+To return to the old tray, disable this override and run `blueman-applet`.
+DNS/WARP and power-profile/wallpaper behavior are unchanged.
+
 ## Additional idle CPU and RAM reductions
 
 The major CPU problem was the legacy shell Waybar auto-hide controller, not the

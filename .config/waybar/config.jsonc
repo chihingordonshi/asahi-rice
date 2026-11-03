@@ -6,7 +6,7 @@
 
     "modules-left": ["custom/suspend", "custom/kill", "cpu", "memory", "custom/fcitx5", "custom/terminal-art", "custom/power-profile", "hyprland/workspaces"],
     "modules-center": ["clock"],
-    "modules-right": ["tray", "custom/random-wallpaper", "custom/wallpaper-backend", "custom/bluetooth", "custom/brightness", "custom/volume", "network", "battery"],
+    "modules-right": ["tray", "custom/random-wallpaper", "custom/wallpaper-backend", "custom/brightness", "custom/volume", "bluetooth", "network", "battery"],
 
     "hyprland/workspaces": {
         "format": "{icon} {windows}",
@@ -150,6 +150,16 @@
         "on-scroll-up": "~/.local/bin/waybar-level volume up",
         "on-scroll-down": "~/.local/bin/waybar-level volume down",
         "tooltip": true
+    },
+
+    "bluetooth": {
+        "format": "󰂯",
+        "format-disabled": "󰂲",
+        "format-off": "󰂲",
+        "format-no-controller": "󰂲",
+        "tooltip-format": "Bluetooth: {status}\nConnected devices: {num_connections}\nLeft: bluetuith (pair, connect, trust)\nRight: advanced bluetoothctl console",
+        "on-click": "kitty --class bluetooth-select --title bluetooth-select -o close_on_child_death=yes /home/chihin/.local/bin/bluetuith",
+        "on-click-right": "kitty --class bluetooth-select --title bluetooth-console -o close_on_child_death=yes bluetoothctl"
     },
 
     "network": {

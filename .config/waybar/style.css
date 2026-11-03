@@ -27,9 +27,13 @@ window#waybar {
     padding: 0 8px;
 }
 
-#network {
+#network, #bluetooth {
     color: #b7c5ff;
     padding: 0 8px;
+}
+
+#bluetooth {
+    font-family: "JetBrainsMono Nerd Font", sans-serif;
 }
 
 #custom-fcitx5 {

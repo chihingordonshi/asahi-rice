@@ -7,6 +7,7 @@
 .config/Kvantum/Gradient-Dark-Kvantum/Gradient-Dark-Kvantum.svg
 .config/Kvantum/kvantum.kvconfig
 .config/agents/fedora-asahi-setup.md
+.config/autostart/blueman.desktop
 .config/autostart/imsettings-start.desktop
 .config/autostart/nm-applet.desktop
 .config/autostart/org.fcitx.Fcitx5.desktop
