@@ -1,0 +1,2 @@
+# Root-owned oneshot units; no arbitrary service, unit-file or command access.
+chihin ALL=(root) NOPASSWD: /usr/bin/systemctl start resolved-power-saver.service, /usr/bin/systemctl start resolved-performance.service

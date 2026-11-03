@@ -1,0 +1,7 @@
+[Unit]
+Description=Restore resolved for local multicast lookups in performance mode
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/systemctl unmask --runtime systemd-resolved.service systemd-resolved-varlink.socket systemd-resolved-monitor.socket
+ExecStart=/usr/bin/systemctl start systemd-resolved.service

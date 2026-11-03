@@ -68,8 +68,11 @@ used, to preserve networking, firmware, fonts and apps.
 
 ## Standalone iwd Wi-Fi and low-idle DNS
 
-Wi-Fi authentication, IPv4 DHCP, IPv6 and DHCP-provided DNS are managed by
-`iwd.service`, with `systemd-resolved.service` providing the existing DNS stub.
+Wi-Fi authentication, IPv4 DHCP and IPv6 are managed by `iwd.service`.
+**System DNS always uses WARP's local proxies** (`127.0.2.2`, `127.0.2.3`), not
+DHCP-provided LAN DNS. `systemd-resolved` is now optional: performance starts it
+for `.local`/mDNS; power-saver stops and runtime-masks it and its activation sockets.
+Balanced leaves its state unchanged. See the power-profile policy below.
 NetworkManager, its dispatcher/wait-online units, and wpa_supplicant are stopped,
 disabled and masked to prevent competing managers. `systemd-networkd` stays
 disabled; iwd's built-in network configuration avoids another daemon.
@@ -83,25 +86,37 @@ WARP and Tailscale remain independently managed, not iwd profiles.
 Root-owned copies of these configuration sources are installed, not symlinks:
 
 - `setup/iwd-main.conf` → `/etc/iwd/main.conf`: built-in IP configuration,
-  systemd-resolved integration, per-network MAC randomization, IPv6 and a 30-second
-  initial disconnected scan interval (maximum 300 seconds). Automatic reconnection
-  and roaming remain enabled. The Broadcom default interface `wld0` is preserved.
+  `NameResolvingService=none`, per-network MAC randomization, IPv6 and a 30-second
+  initial disconnected scan interval (maximum 300 seconds). DHCP DNS/search domains
+  are deliberately ignored. Automatic reconnection and roaming remain enabled.
+  The Broadcom default interface `wld0` is preserved.
 - `setup/resolved-low-power.conf` →
   `/etc/systemd/resolved.conf.d/90-low-power.conf`: disables LLMNR, keeps mDNS in
   **resolver-only** mode (`MulticastDNS=resolve`) and keeps DNS caching enabled.
-  `.local` lookups remain available without advertising this host or responding
-  to other devices' mDNS questions. Normal DNS, DHCP search domains and VPN split
-  DNS continue to work. Apply resolver changes with
-  `sudo systemctl reload systemd-resolved`, preserving the current VPN DNS state.
+  With resolved running, `.local` works without advertising or answering questions.
+- `setup/resolved-warp-dns.conf` →
+  `/etc/systemd/resolved.conf.d/95-warp-dns.conf`: resolved's own ordinary DNS
+  upstreams are also only WARP, with an empty fallback list and `~.` routing.
+- `setup/warp-resolv.conf` supplies the initial **regular** `/etc/resolv.conf`, not
+  the old `127.0.0.53` stub symlink. WARP may rewrite its header; the nameservers
+  remain only `127.0.2.2` and `127.0.2.3`. DNS works while resolved is stopped.
+  WARP must be running/connected; there is no automatic LAN/public-DNS fallback.
+
+NSS remains authselect-managed and unchanged. When resolved is running, NSS
+clients using it still forward ordinary DNS through WARP. When it is masked,
+NSS falls through to `dns` and uses WARP directly. Application-specific DoH or
+explicitly selected DNS servers are not controlled by this resolver policy.
 
 The initial experiment on 2026-11-02 disabled both LLMNR and mDNS. Matched
 40-second samples showed CPU dropping from 3.15% of one core to 0.00% at the
 measurement resolution, and voluntary context switches from 55.95/s to 0.57/s.
 A later sample with iwd connected gave 0.025% resolver CPU and 0.35 voluntary
-switches/s; iwd used 0.00% CPU. **Those results apply only to the rejected
-mDNS-disabled configuration**, which broke required `.local` lookups. mDNS was
-subsequently restored to resolver-only mode; the near-zero activity must not be
-claimed for the current configuration. These are activity measurements, not
+switches/s; iwd used 0.00% CPU. **Those are historical results for the initially
+rejected mDNS-disabled configuration**, which broke required `.local` lookups.
+mDNS was subsequently restored to resolver-only mode; the near-zero sample is
+not a measurement of current performance mode. The newer, explicitly requested
+power-saver policy stops the daemon entirely and intentionally gives up `.local`
+until performance mode restores it. These are activity measurements, not
 measured wattage/battery life. A subsequent 40-second sample with resolver-only
 mDNS restored (including one service-discovery verification) measured 1.35%
 resolver CPU and 37.40 voluntary switches/s; results depend on LAN traffic.
@@ -161,15 +176,21 @@ Impala/iwctl are Wi-Fi managers, not graphical full-profile form editors.
 
 ### Verification and rollback
 
-Verify with `systemctl is-active iwd systemd-resolved`, `iwctl station wld0 show`,
-`resolvectl status`, `iw dev wld0 get power_save`, and an HTTPS request.
-After restoring resolver-only mDNS, `resolvectl --protocol=mdns --interface=wld0
-query chsrv.local` returned an IPv4 answer from the network, and
-`curl --noproxy '*' http://chsrv.local/` reached the user's server (HTTP 302,
-redirect). Ordinary DNS and WARP connectivity were also verified.
-WARP's `~.` DNS route is retained; Wi-Fi DHCP DNS and `bsn.net` search domain are
-also present. A transient timed rollback guarded the live handover and was
-cancelled only after reconnection, DNS and HTTPS checks succeeded.
+Verify iwd, `iw dev wld0 get power_save`, `warp-cli status`, `dig example.com`
+(server should be `127.0.2.2` or `127.0.2.3`), `getent ahostsv4 example.com`,
+and an HTTPS request. In performance mode, also inspect `resolvectl status` and
+query `resolvectl --cache=no --protocol=mdns --interface=wld0 query chsrv.local`.
+The uncached answer came from the network and local HTTP returned 302. Resolved's
+global DNS servers were only WARP; `wld0` had mDNS but no unicast DNS servers.
+The old campus DHCP DNS/search domain is no longer installed.
+
+All three Waybar transitions were exercised live: performance starts resolved,
+balanced preserves its PID, and power-saver leaves the service and both sockets
+inactive/runtime-masked. A D-Bus query could not reactivate it; NSS, raw DNS and
+public HTTPS (200) still worked. WARP remained healthy after the iwd reload and
+rewrote only the expected resolv.conf header. Wallpaper configuration was unchanged.
+A five-minute automatic rollback guarded this change and was cancelled after
+these checks. A physical reboot was not performed.
 
 Original service/resolver state and root-only migration records are in
 `/var/lib/network-power-migration/`, including
@@ -183,9 +204,10 @@ sudo bash /var/lib/network-power-migration/rollback.sh
 ```
 
 The rollback script now refuses before changing networking if NetworkManager is
-not installed, and disables the client-only mDNS filter when restoring NM.
+not installed. When proceeding, it first undoes the WARP-only DNS/profile policy
+below and disables the client-only mDNS filter.
 
-That stops/disables iwd, unmasks/re-enables NetworkManager (and its original
+It then stops/disables iwd, unmasks/re-enables NetworkManager (and its original
 related units), removes only the two new system configuration copies, and reloads
 resolved to restore the previous multicast policy. Original NetworkManager
 profiles are untouched; migrated iwd profiles remain available but inactive.
@@ -277,9 +299,9 @@ sudo systemctl disable --now mdns-client-only.service
 ```
 
 Re-enable with `sudo systemctl enable --now mdns-client-only.service`. Stopping it
-removes only its own table. Resolver-only `.local` support remains enabled either
-way. No host addresses were pinned, and incoming answers are not restricted to
-one test server. The generic bootstrap does not automatically install this
+removes only its own table. With resolved running, resolver-only `.local` support
+remains enabled either way. No host addresses were pinned, and incoming answers
+are not restricted to one test server. The generic bootstrap does not automatically install this
 machine-specific firewall policy or switch networking.
 
 ## Waybar power profiles
@@ -300,6 +322,61 @@ There are no per-profile color overrides. The active profile remains a runtime
 choice, not a setting pinned by the bootstrap. On this machine all three profiles
 are advertised by the backend. Changing profiles no longer switches the wallpaper
 to swaybg; the selected wallpaper backend stays unchanged in every profile.
+
+### WARP-only DNS and resolver power switching
+
+The Waybar cycle action now applies these resolver actions **after** changing the
+power profile successfully. Rapid clicks are serialized with a runtime flock.
+
+| Entered profile | Resolved action | Fresh `.local` lookups |
+| --- | --- | --- |
+| power-saver | Stop and runtime-mask service and both activation sockets | Unavailable |
+| performance | Remove only runtime masks and start resolved | Available |
+| balanced | Leave existing state unchanged | Depends on previous state |
+
+Ordinary DNS uses WARP in every row. A plain service stop is insufficient: NSS,
+D-Bus, or socket clients could otherwise restart it. These root-owned units have
+`Type=oneshot` without `RemainAfterExit`, so repeated actions really execute again
+and no extra daemon stays resident:
+
+- `setup/resolved-power-saver.service` → `/etc/systemd/system/`: checks that
+  resolv.conf contains the WARP nameserver before masking/stopping resolved.
+- `setup/resolved-performance.service` → `/etc/systemd/system/`: sequentially
+  unmasks the three runtime units and starts resolved (which starts its sockets).
+- `setup/power-profile-resolver.sudoers` → `/etc/sudoers.d/power-profile-resolver`,
+  root:root `0440`, validated with `visudo -cf`: permits `chihin` only the exact two
+  `systemctl start resolved-{power-saver,performance}.service` commands.
+- `setup/resolved-power-saver-at-boot.service` → `/etc/systemd/system/`, enabled:
+  a boot-only oneshot waits for tuned-ppd and reapplies the stop policy if the
+  saved profile is power-saver, because runtime masks disappear at reboot.
+
+The service files are root:root `0644`; apply unit changes with
+`sudo systemctl daemon-reload`. Enable the boot helper with
+`sudo systemctl enable --now resolved-power-saver-at-boot.service` after installing
+the WARP DNS files above and the other units. The ordinary generic bootstrap does
+not automatically opt a fresh machine into WARP-only DNS before registration.
+These are Waybar-click and boot hooks, not a background listener for other apps'
+power-profile changes. If a resolver action fails, the button reports that the
+CPU profile changed but the resolver action failed, rather than claiming success.
+
+To override just the resolver manually (without changing the CPU power profile):
+
+```sh
+sudo systemctl start resolved-performance.service   # Restore .local
+sudo systemctl start resolved-power-saver.service   # Stop it again
+```
+
+Root-only pre-change copies and a guarded restore script are under
+`/var/lib/network-power-migration/warp-dns-before/`. Restore the previous resolved
+stub, DHCP DNS integration, unit state and remove this system policy with:
+
+```sh
+sudo bash /var/lib/network-power-migration/warp-dns-before/rollback.sh
+```
+
+The home Waybar cycle hook is separate; undo its resolver-action case too if
+permanently retiring this feature. Full NetworkManager rollback invokes this
+restore first, but still refuses to stop iwd until NM has been reinstalled.
 
 ## Power button opens a terminal
 

@@ -28,6 +28,8 @@ if name == "waypaper-set-backend.sh":
 
 path = Path(os.environ["MOCK_STATE"])
 state = json.loads(path.read_text())
+if name == "sudo":
+    sys.exit(1 if state.get("fail_resolver") else 0)
 if not state.get("available", True):
     print("The name is not activatable", file=sys.stderr)
     sys.exit(1)
@@ -57,12 +59,13 @@ class WaybarPowerProfileTest(unittest.TestCase):
         home = self.directory / "home"
         wallpaper = home / ".local/bin/waypaper-set-backend.sh"
         wallpaper.parent.mkdir(parents=True)
-        for path in (bin_dir / "busctl", wallpaper):
+        for path in (bin_dir / "busctl", bin_dir / "sudo", wallpaper):
             path.write_text(f"#!{sys.executable}\n{MOCK}")
             path.chmod(0o755)
         self.env = {
             **os.environ,
             "HOME": str(home),
+            "XDG_RUNTIME_DIR": str(self.directory),
             "PATH": f"{bin_dir}:{os.environ['PATH']}",
             "MOCK_STATE": str(self.state),
             "MOCK_CALLS": str(self.log),
@@ -90,6 +93,8 @@ class WaybarPowerProfileTest(unittest.TestCase):
                 payload = json.loads(result.stdout)
                 self.assertEqual(payload["text"], icon)
                 self.assertIn(f"Power profile: {profile}", payload["tooltip"])
+                self.assertIn("DNS: WARP", payload["tooltip"])
+                self.assertIn("Power-saver stops .local; performance restores it", payload["tooltip"])
                 self.assertEqual(result.stderr, "")
                 self.assertEqual(state["profile"], profile)
                 self.assertEqual(len(calls), 1)
@@ -162,6 +167,12 @@ class WaybarPowerProfileTest(unittest.TestCase):
                 self.assertEqual(calls[1][-2:], ["s", expected])
                 wallpaper_calls = [call for call in calls if call[0] == "waypaper-set-backend.sh"]
                 self.assertEqual(wallpaper_calls, [])
+                resolver_calls = [call for call in calls if call[0] == "sudo"]
+                self.assertEqual(
+                    resolver_calls,
+                    [["sudo", "-n", "/usr/bin/systemctl", "start", f"resolved-{expected}.service"]]
+                    if expected in ("power-saver", "performance") else [],
+                )
 
     def test_cycle_without_service_does_not_write(self):
         result, state, calls = self.run_script(CYCLE, available=False)
@@ -171,7 +182,37 @@ class WaybarPowerProfileTest(unittest.TestCase):
         self.assertEqual(state["profile"], "balanced")
         self.assertEqual(len(calls), 1)
 
-    def test_failed_profile_change_does_not_switch_wallpaper(self):
+    def test_rapid_clicks_are_serialized(self):
+        self.state.write_text(json.dumps({"profile": "performance"}))
+        self.log.write_text("")
+        children = [subprocess.Popen([str(CYCLE)], env=self.env, text=True,
+                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    for _ in range(3)]
+        try:
+            for child in children:
+                _, error = child.communicate(timeout=5)
+                self.assertEqual(child.returncode, 0, error)
+        finally:
+            for child in children:
+                if child.poll() is None:
+                    child.kill()
+                    child.communicate()
+        self.assertEqual(json.loads(self.state.read_text())["profile"], "performance")
+        calls = [json.loads(line) for line in self.log.read_text().splitlines()]
+        self.assertEqual(len(calls), 8)  # Three profile reads/writes and two resolver actions.
+
+    def test_failed_resolver_action_reports_partial_change(self):
+        for current, expected in (("balanced", "power-saver"), ("power-saver", "performance")):
+            with self.subTest(profile=current):
+                result, state, calls = self.run_script(CYCLE, current, fail_resolver=True)
+                self.assertEqual(result.returncode, 1)
+                self.assertEqual(state["profile"], expected)
+                self.assertIn(f"Power profile changed to {expected}", result.stderr)
+                self.assertIn("resolver action failed", result.stderr)
+                self.assertEqual(calls[-1][0], "sudo")
+                self.assertEqual(len(calls), 3)
+
+    def test_failed_profile_change_does_not_touch_resolver(self):
         result, state, calls = self.run_script(CYCLE, fail_set=True)
         self.assertEqual(result.returncode, 1)
         self.assertEqual(state["profile"], "balanced")

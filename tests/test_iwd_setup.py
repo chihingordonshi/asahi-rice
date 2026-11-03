@@ -16,12 +16,12 @@ def waybar_network():
 
 
 class IwdSetupTest(unittest.TestCase):
-    def test_iwd_provides_ip_and_dns_without_disabling_roaming_or_reconnection(self):
+    def test_iwd_provides_ip_without_overriding_warp_dns_or_disabling_roaming(self):
         config = configparser.ConfigParser()
         config.read(ROOT / 'setup/iwd-main.conf')
         self.assertTrue(config.getboolean('General', 'EnableNetworkConfiguration'))
         self.assertEqual(config['General']['AddressRandomization'], 'network')
-        self.assertEqual(config['Network']['NameResolvingService'], 'systemd')
+        self.assertEqual(config['Network']['NameResolvingService'], 'none')
         self.assertTrue(config.getboolean('Network', 'EnableIPv6'))
         self.assertFalse(config.getboolean('Scan', 'DisablePeriodicScan', fallback=False))
         self.assertFalse(config.getboolean('Scan', 'DisableRoamingScan', fallback=False))

@@ -1,0 +1,14 @@
+[Unit]
+Description=Apply resolver power saving if booting into power-saver
+Wants=tuned-ppd.service
+After=tuned-ppd.service
+
+[Service]
+Type=oneshot
+# Resolved is normally enabled at boot; runtime masks do not survive reboot.
+# At other profiles leave that normal startup state alone.
+ExecCondition=/usr/bin/bash -o pipefail -c '/usr/bin/busctl --system get-property net.hadess.PowerProfiles /net/hadess/PowerProfiles net.hadess.PowerProfiles ActiveProfile | /usr/bin/grep -Fq power-saver'
+ExecStart=/usr/bin/systemctl start resolved-power-saver.service
+
+[Install]
+WantedBy=multi-user.target
