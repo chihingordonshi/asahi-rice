@@ -354,8 +354,8 @@ use the former to read and cycle performance / balanced / power-saver; their
 rocket / scale / leaf symbols are monochrome Nerd Font glyphs, not color emoji.
 There are no per-profile color overrides. The active profile remains a runtime
 choice, not a setting pinned by the bootstrap. On this machine all three profiles
-are advertised by the backend. Changing profiles no longer switches the wallpaper
-to swaybg; the selected wallpaper backend stays unchanged in every profile.
+are advertised by the backend. Changing profiles does not affect wallpaper
+rotation; swaybg is the only wallpaper renderer.
 
 ### DNS is independent of power profiles
 
@@ -402,10 +402,28 @@ before reuse:
 
     UUID=6A79-D0DA /home/chihin/share exfat uid=1000,gid=1000,umask=022,nofail 0 0
 
+## Static wallpaper rotation
+
+Only swaybg is used. Hyprland starts `swaybg-wallpaper.service` and
+`random-wallpaper.timer`; the renderer stays supervised for the graphical session.
+Every 10 minutes (or on Waybar shuffle), `random-wallpaper.service` requests a
+restart of the renderer through `.local/bin/random-wallpaper`, with a short
+click cooldown. `.local/bin/random-wallpaper.sh` recursively selects an image in
+`~/Pictures/Wallpapers` and replaces itself with swaybg. When alternatives exist,
+the previous image is excluded using a session-local state file.
+
+The old graphical picker, video renderer, backend-switch buttons and video
+transcoding autostart have been removed from the live setup and install manifests.
+The ordinary mpv video player and existing wallpaper media libraries are unaffected.
+After updating the units, apply with:
+
+```sh
+systemctl --user daemon-reload
+systemctl --user restart swaybg-wallpaper.service random-wallpaper.timer
+```
+
 ## System-installed local software
 
-- `mpvpaper` and `mpvpaper-holder` are built from the pinned source revision by
-  `setup/install-external.sh` and installed below `/usr/local/bin`.
 - Cloudflare WARP is installed from the official repo created by `setup/install.sh`.
   Registration and device identity stay outside Git.
 - `lazygit` v0.64.0 is installed from its pinned upstream ARM64 release by

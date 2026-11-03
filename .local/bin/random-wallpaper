@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Waypaper updates its config and replaces the active wallpaper process. Ignore
-# repeated clicks while that work is in progress, then allow the backend a
-# moment to settle before accepting another request.
-runtime_dir="${XDG_RUNTIME_DIR:-/tmp}"
+# Serialize rotation requests and ignore rapid repeated clicks. The long-lived
+# swaybg process belongs to its own service, never this oneshot's cgroup.
+runtime_dir="${XDG_RUNTIME_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}}"
+mkdir -p -- "$runtime_dir"
 lock_file="$runtime_dir/random-wallpaper-${UID:-$(id -u)}.lock"
 stamp_file="$runtime_dir/random-wallpaper-${UID:-$(id -u)}.stamp"
 cooldown_ms=1500
@@ -22,5 +22,6 @@ if [[ "$last_ms" =~ ^[0-9]+$ ]] && (( now_ms - last_ms < cooldown_ms )); then
     exit 0
 fi
 
+systemctl --user restart swaybg-wallpaper.service
+# Failed restarts must remain retryable immediately.
 printf '%s\n' "$now_ms" > "$stamp_file"
-exec /usr/bin/waypaper --random

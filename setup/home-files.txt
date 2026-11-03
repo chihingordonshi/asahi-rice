@@ -141,7 +141,6 @@
 .config/systemd/user/timers.target.wants/random-wallpaper.timer
 .config/waybar/config.jsonc
 .config/waybar/style.css
-.config/waypaper/config.ini
 .config/wireplumber/wireplumber.conf.d/51-bluetooth-no-hfp.conf
 .config/xsettingsd/xsettingsd.conf
 .gitconfig
@@ -167,10 +166,10 @@
 .local/bin/pokemon-colorscripts
 .local/bin/pudb
 .local/bin/pygmentize
+.local/bin/random-wallpaper
 .local/bin/random-wallpaper.sh
 .local/bin/touchbar
 .local/bin/unimatrix
-.local/bin/wallpaper-auto-downscale
 .local/bin/waybar-bluetooth.sh
 .local/bin/waybar-cpu.sh
 .local/bin/waybar-fcitx5.sh
@@ -179,9 +178,6 @@
 .local/bin/waybar-level
 .local/bin/waybar-power-profile-cycle.sh
 .local/bin/waybar-power-profile.sh
-.local/bin/waybar-wallpaper-backend-cycle.sh
-.local/bin/waybar-wallpaper-backend.sh
-.local/bin/waypaper-set-backend.sh
 .local/share/applications/brave-icloud-photos-pwa.desktop
 .local/share/applications/brave-zoom-pwa.desktop
 .local/share/applications/chrome-mnnncmnfcndlghkomlbaadoonfnjcadg-Profile_1.desktop

@@ -1,16 +1,41 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-WALLPAPER_DIR="$HOME/Pictures/Wallpapers"
+wallpaper_dir="$HOME/Pictures/Wallpapers"
+runtime_dir="${XDG_RUNTIME_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}}"
+state_file="$runtime_dir/swaybg-wallpaper.current"
 
-mapfile -t wallpapers < <(find "$WALLPAPER_DIR" -maxdepth 1 -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' \))
-[[ ${#wallpapers[@]} -gt 0 ]] || exit 0
+if [[ ! -d "$wallpaper_dir" ]]; then
+    printf 'Wallpaper directory does not exist: %s\n' "$wallpaper_dir" >&2
+    exit 1
+fi
 
-pick="${wallpapers[RANDOM % ${#wallpapers[@]}]}"
+# Recurse into collections; NUL delimiters preserve spaces and newlines in paths.
+# Follow a symlinked library root, but not arbitrary symlinked subdirectories.
+mapfile -d '' -t wallpapers < <(find -H "$wallpaper_dir" -type f \( \
+    -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o \
+    -iname '*.webp' -o -iname '*.bmp' -o -iname '*.gif' -o \
+    -iname '*.tif' -o -iname '*.tiff' \) -print0)
+if (( ${#wallpapers[@]} == 0 )); then
+    printf 'No supported wallpaper images found in %s\n' "$wallpaper_dir" >&2
+    exit 1
+fi
 
-# Runs as the foreground process of swaybg-wallpaper.service (Restart=always),
-# so systemd tracks swaybg's own PID directly and respawns it -- with a fresh
-# random pick -- any time it dies, including when the compositor destroys its
-# output out from under it (observed once after a hypridle restart glitch,
-# not just at boot or on a rotation timer tick).
+previous=
+if [[ -r "$state_file" ]]; then
+    IFS= read -r -d '' previous < "$state_file" || true
+fi
+candidates=()
+for image in "${wallpapers[@]}"; do
+    [[ "$image" == "$previous" ]] || candidates+=("$image")
+done
+# A one-image library can still be restarted after output/session changes.
+if (( ${#candidates[@]} == 0 )); then
+    candidates=("${wallpapers[@]}")
+fi
+IFS= read -r -d '' pick < <(printf '%s\0' "${candidates[@]}" | shuf -z -n 1)
+mkdir -p -- "$runtime_dir"
+printf '%s\0' "$pick" > "$state_file"
+
+# Keep swaybg in the foreground so systemd supervises and cleans it up normally.
 exec swaybg -i "$pick" -m fill

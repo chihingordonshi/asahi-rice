@@ -186,7 +186,6 @@ vulkan-loader-devel
 waybar
 wayland-devel
 wayland-protocols-devel
-waypaper
 wev
 wiremix
 yt-dlp

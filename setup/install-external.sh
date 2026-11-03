@@ -24,16 +24,6 @@ clone_pinned https://github.com/romkatv/powerlevel10k.git \
     "$HOME/.local/share/powerlevel10k" 9253fb1c5034410c43a0c681ff8294181c54016c
 clone_pinned https://github.com/marlonrichert/zsh-autocomplete.git \
     "$HOME/.local/share/zsh-autocomplete" 027cdab14451e98c9d36d72b1f79d9488ac88e46
-clone_pinned https://github.com/GhostNaN/mpvpaper.git \
-    "$HOME/Projects/mpvpaper" 8f375262cf542fd6c696f97837e2f28ac9440262
-
-if [[ -d "$HOME/Projects/mpvpaper/build" ]]; then
-    meson setup --reconfigure "$HOME/Projects/mpvpaper/build" "$HOME/Projects/mpvpaper" --prefix=/usr/local
-else
-    meson setup "$HOME/Projects/mpvpaper/build" "$HOME/Projects/mpvpaper" --prefix=/usr/local
-fi
-ninja -C "$HOME/Projects/mpvpaper/build"
-sudo ninja -C "$HOME/Projects/mpvpaper/build" install
 
 lazy_work_dir=$(mktemp -d)
 curl --fail --location --silent --show-error \

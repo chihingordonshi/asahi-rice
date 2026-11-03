@@ -39,7 +39,7 @@ Review the hardware-pinned settings and package list before running it on anothe
 1. **Enable COPRs, then install packages.** (List verified against this machine's
    actual `rpm -q` / `dnf repoquery --installed` output, not reconstructed from memory.)
    - `lionheartp/Hyprland` COPR → `hyprland`, `hyprland-uwsm`, `hypridle`, `hyprlock`,
-     `hyprpolkitagent`, `hyprsunset`, `kitty`, `qt6ct`, `waypaper`,
+     `hyprpolkitagent`, `hyprsunset`, `kitty`, `qt6ct`,
      `xdg-desktop-portal-hyprland` (plus their own deps — `hyprutils`, `hyprlang`,
      `hyprcursor`, `hyprgraphics`, `aquamarine`, etc. — `dnf` pulls those in
      automatically). The `technochip/Hyprland-aarch64` COPR named in
@@ -55,13 +55,9 @@ Review the hardware-pinned settings and package list before running it on anothe
    - `.config/neofetch/` exists in this repo but `neofetch` itself isn't installed here
      — `fastfetch` (`.config/fastfetch/`) is what's actually live; the neofetch config
      is a leftover from before the switch. Skip installing `neofetch` unless you want it.
-   - `mpvpaper` — used by `waypaper` as the video-wallpaper backend (see
-     `.config/waypaper/config.ini`, `waybar-wallpaper-backend*.sh`) — isn't packaged for
-     Fedora and is installed to `/usr/local/bin/mpvpaper` from the pinned revision by
-     `setup/install-external.sh` (see [`mpvpaper`](https://github.com/GhostNaN/mpvpaper)
-     upstream). Only needed if
-     you want video wallpapers from `~/Videos/Wallpapers`; static-image wallpapers via
-     `swaybg` work without it.
+   - Wallpapers use only `swaybg`, with static images from
+     `~/Pictures/Wallpapers` (including subfolders); no video-wallpaper backend or
+     graphical wallpaper picker is required.
    - `dolphin` (file manager) and `firefox` (browser) — swap for your own picks if you
      want different ones; `programs.lua` (see below) needs to match whatever you choose.
    - Optional: the caelestia-widget replacements need `bluedevil` (for `kcmshell6
@@ -81,10 +77,9 @@ Review the hardware-pinned settings and package list before running it on anothe
    - `.local/bin/` specifically is a grab-bag, not all of it Hyprland config — the
      scripts actually referenced by the Hypr/waybar config are `hypr-quickmenu`,
      `hypr-overview`, `hypr-workspace-watch`, `mac-screenshot`,
-     `wallpaper-auto-downscale`, `waypaper-set-backend.sh`, and the `waybar-*.sh`
-    helpers (`waybar-cpu.sh`, `waybar-memory.sh`, `waybar-bluetooth.sh`,
-    `waybar-fcitx5.sh`, `waybar-kitty-art.sh`, `waybar-power-profile*.sh`,
-    `waybar-wallpaper-backend*.sh`).
+     `random-wallpaper`, `random-wallpaper.sh`, and the `waybar-*.sh`
+     helpers (`waybar-cpu.sh`, `waybar-memory.sh`, `waybar-bluetooth.sh`,
+     `waybar-fcitx5.sh`, `waybar-kitty-art.sh`, `waybar-power-profile*.sh`).
      Everything else in there is unrelated CLI tooling retained from the old
      copy-based sync setup — copy it too if you want it, skip
      it if you're only after the rice.
@@ -160,7 +155,6 @@ live partition — see "Build history" below for what that involved).
 | `.config/hypr/scheme/`, `.config/hypr/hyprtoolkit.conf` | Color scheme + Hyprland toolkit config, copied from `dot-files` unchanged |
 | `.config/hypr-quickmenu/` | Config for the hand-rolled HUD launcher (`.local/bin/hypr-quickmenu`), autostarted |
 | `.config/waybar/` | Status bar — clock, cpu/mem, network, battery, keyboard layout, plus the caelestia-widget replacement buttons (see "Key decisions") |
-| `.config/waypaper/` | Wallpaper backend/folder picker, used by `random-wallpaper.service` and waybar's wallpaper-backend menu |
 | `.config/mako/` | Notification daemon |
 | `.config/rofi/` | App launcher, bound to SUPER+D |
 | `.config/fuzzel/` | App launcher, alternate to rofi |
@@ -207,7 +201,7 @@ live partition — see "Build history" below for what that involved).
 ## Key decisions and gotchas
 
 **Package sources.** The Hyprland stack (`hyprland`, `hyprland-uwsm`, `hypridle`,
-`hyprlock`, `hyprpolkitagent`, `hyprsunset`, `kitty`, `qt6ct`, `waypaper`,
+`hyprlock`, `hyprpolkitagent`, `hyprsunset`, `kitty`, `qt6ct`,
 `xdg-desktop-portal-hyprland`) comes from the `lionheartp/Hyprland` COPR, not
 `technochip/Hyprland-aarch64` (deprecated by its own maintainer). The panel is
 **waybar** — ironbar was the first pick (via a separate COPR) but was fully replaced
@@ -233,11 +227,15 @@ build's `hyprctl dispatch` parses its argument as a Lua expression, so DPMS call
 generic hypridle docs. Autolock is 10 minutes, no manual lock keybind — hypridle's
 timeout is the sole way this machine locks.
 
-**Wallpaper rotation and systemd.** `random-wallpaper.service` is `Type=oneshot`, which
-kills its whole cgroup on exit — backgrounding `swaybg` with `setsid ... & disown`
-inside the script doesn't survive that. Fixed by spawning it as an independent
-transient unit: `systemd-run --user --collect --unit=swaybg-wallpaper -- swaybg -i
-"$pick" -m fill`.
+**Wallpaper rotation and systemd.** `random-wallpaper.service` is a short oneshot
+that restarts `swaybg-wallpaper.service`. The latter runs `swaybg` in the foreground,
+restarts it if it dies, and stops with the graphical session; no escaping child
+processes or transient units are needed. Hyprland starts the renderer at login.
+The timer rotates every 10 minutes; Waybar's shuffle button and the `wallpaper`
+shell function also rotate manually. Images are selected recursively from
+`~/Pictures/Wallpapers`, preserving unusual filenames and avoiding the previous
+image when alternatives exist. Rapid button clicks are coalesced. Run regression
+checks with `python3 tests/test_random_wallpaper.py`.
 
 **fcitx5.** `TriggerKeys` is a list-type option — a flat `key=value` line in
 `~/.config/fcitx5/config` silently parses as empty and disables the trigger. Don't
@@ -297,7 +295,7 @@ proxy state, key material, cookies, histories, databases, and caches are exclude
 |---|---|
 | Kill unresponsive window | Waybar `custom/kill` → `hyprctl kill` on mouse release (avoids cancelling the picker with the initiating click); select a window to force-close, Esc cancels (unsaved work may be lost) |
 | Bluetooth | `kcmshell6 kcm_bluetooth` (bluedevil) |
-| Wallpaper picker | `waypaper` |
+| Random wallpaper | Waybar shuffle button → `random-wallpaper.service` → supervised `swaybg` |
 | Proxy client | `/opt/clash-party/mihomo-party` |
 | Power profile | Custom D-Bus scripts backed by `tuned-ppd`; rocket / scale / leaf for performance / balanced / power-saver |
 | Wifi settings | network module's `on-click` → `nm-connection-editor` |

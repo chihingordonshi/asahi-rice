@@ -23,7 +23,7 @@ name = Path(sys.argv[0]).name
 args = sys.argv[1:]
 with open(os.environ["MOCK_CALLS"], "a") as log:
     log.write(json.dumps([name, *args]) + "\n")
-if name == "waypaper-set-backend.sh":
+if name == "systemctl":
     sys.exit(0)
 
 path = Path(os.environ["MOCK_STATE"])
@@ -57,9 +57,8 @@ class WaybarPowerProfileTest(unittest.TestCase):
         bin_dir = self.directory / "bin"
         bin_dir.mkdir()
         home = self.directory / "home"
-        wallpaper = home / ".local/bin/waypaper-set-backend.sh"
-        wallpaper.parent.mkdir(parents=True)
-        for path in (bin_dir / "busctl", bin_dir / "sudo", wallpaper):
+        home.mkdir()
+        for path in (bin_dir / "busctl", bin_dir / "sudo", bin_dir / "systemctl"):
             path.write_text(f"#!{sys.executable}\n{MOCK}")
             path.chmod(0o755)
         self.env = {
@@ -165,7 +164,7 @@ class WaybarPowerProfileTest(unittest.TestCase):
                 self.assertEqual(state["profile"], expected)
                 self.assertEqual(calls[1][:3], ["busctl", "--system", "set-property"])
                 self.assertEqual(calls[1][-2:], ["s", expected])
-                wallpaper_calls = [call for call in calls if call[0] == "waypaper-set-backend.sh"]
+                wallpaper_calls = [call for call in calls if call[0] == "systemctl"]
                 self.assertEqual(wallpaper_calls, [])
                 resolver_calls = [call for call in calls if call[0] == "sudo"]
                 self.assertEqual(resolver_calls, [])
