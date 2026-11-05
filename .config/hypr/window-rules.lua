@@ -121,19 +121,13 @@ hl.window_rule({
     no_shadow   = true,
 })
 
+-- WeChat's maximum-size hint can prevent tiling even with an explicit tile
+-- rule. Ignore that hint for its main window and dialogs alike.
 hl.window_rule({
-    name  = "wechat-tile",
-    match = { class = "[Ww]e[Cc]hat" },
-    tile  = true,
-})
-
-hl.window_rule({
-    name = "wechat-open-dialog-float",
-    match = {
-        class = "^[Ww]e[Cc]hat$",
-        title = "^Open$",
-    },
-    float = false,
+    name        = "wechat-tile",
+    match       = { class = "^[Ww]e[Cc]hat$" },
+    tile        = true,
+    no_max_size = true,
 })
 
 hl.window_rule({
