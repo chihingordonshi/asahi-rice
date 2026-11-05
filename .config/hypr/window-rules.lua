@@ -121,12 +121,15 @@ hl.window_rule({
     no_shadow   = true,
 })
 
--- WeChat's maximum-size hint can prevent tiling even with an explicit tile
--- rule. Ignore that hint for its main window and dialogs alike.
+-- Allow the main window to resize normally without forcing any WeChat window
+-- tiled or floating. Meme pickers, dialogs and other subwindows keep their hints.
+-- The RPM desktop launcher uses XWayland to keep rendering and input in sync.
 hl.window_rule({
-    name        = "wechat-tile",
-    match       = { class = "^[Ww]e[Cc]hat$" },
-    tile        = true,
+    name = "wechat-main-size-hint",
+    match = {
+        class = "^[Ww]e[Cc]hat$",
+        title = "^(Weixin|WeChat|微信)$",
+    },
     no_max_size = true,
 })
 

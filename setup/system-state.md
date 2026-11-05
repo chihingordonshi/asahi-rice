@@ -429,6 +429,30 @@ systemctl --user restart swaybg-wallpaper.service random-wallpaper.timer
 - `lazygit` v0.64.0 is installed from its pinned upstream ARM64 release by
   `setup/install-external.sh`.
 
+## WeChat tiled input and LibreWolf repository removal
+
+WeChat uses the user-installed official `wechat-4.1.13.26-1.aarch64` RPM, not the
+old Flatpak. `.local/share/applications/wechat.desktop` starts `/usr/bin/wechat`
+with `QT_QPA_PLATFORM=xcb`, so Qt uses XWayland. On this machine the native Wayland
+window retained old click coordinates when forced beyond its maximum-size hint.
+No WeChat rule forces tiling or floating. Only main-window titles (`Weixin`,
+`WeChat`, `微信`) ignore the maximum-size hint to allow normal resizing; meme
+pickers and other subwindows retain their own size/floating hints. Changing size
+policy alone is not enough to verify correct input. No global Qt/display
+environment changes are made.
+
+The `.local/share/applications/com.tencent.WeChat.desktop` `Hidden=true` override
+hides the duplicate Flatpak entry. The stale Flatpak process was stopped, but its
+installation and chat data are preserved. The bootstrap no longer installs it.
+Install the official ARM64 RPM separately before using the native launcher on a
+new host. Remove the two home launcher symlinks to restore the package launchers.
+
+The LibreWolf Software Repository was removed from active DNF configuration by
+renaming `/etc/yum.repos.d/librewolf.repo` to `librewolf.repo.disabled`. DNF reads
+only `*.repo`; the disabled copy is a reversible system backup, not a Git source.
+LibreWolf itself and its profile are untouched. To restore the repository, rename
+that file back to `librewolf.repo` with sudo. Verify with `dnf -C repo list --all`.
+
 ## Codex Touch Bar privilege boundary
 
 `/etc/sudoers.d/codex-touchbar` is installed from `setup/codex-touchbar.sudoers`
