@@ -7,6 +7,35 @@ nnoremap <leader>w :w<CR>
 nnoremap <leader>qa :qa<CR>
 nnoremap <leader>so :so<CR>
 
+" Save, rebuild, and run the current standalone C++ file.
+function! s:RunCpp() abort
+    if &buftype !=# '' || empty(expand('%'))
+        echoerr 'Run: open a C++ file first.'
+        return
+    endif
+    if &filetype !=# 'cpp' && index(['cpp', 'cc', 'cxx', 'c++', 'C'], expand('%:e')) < 0
+        echoerr 'Run: the current file is not C++.'
+        return
+    endif
+    let l:compiler = executable('g++') ? 'g++' : executable('clang++') ? 'clang++' : ''
+    if empty(l:compiler)
+        echoerr 'Run: install g++ or clang++ first.'
+        return
+    endif
+    update
+    let l:binary = tempname()
+    try
+        execute '!' . l:compiler . ' -std=c++17 -Wall -Wextra '
+            \ . shellescape(expand('%:p'), 1) . ' -o ' . shellescape(l:binary, 1)
+            \ . ' && ' . shellescape(l:binary, 1)
+    finally
+        call delete(l:binary)
+    endtry
+endfunction
+
+command! Run call <SID>RunCpp()
+" Vim user commands must start uppercase; expand only the exact :run command.
+cnoreabbrev <expr> run getcmdtype() ==# ':' && getcmdline() ==# 'run' ? 'Run' : 'run'
 
 set number
 set mouse=a
