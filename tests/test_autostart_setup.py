@@ -32,9 +32,12 @@ class AutostartSetupTest(unittest.TestCase):
                    if line.startswith(".config/autostart/")}
         self.assertEqual(entries, EXPECTED)
 
-    def test_fcitx_is_started_by_hyprland_instead(self):
+    def test_ibus_is_started_by_hyprland_instead(self):
         startup = (ROOT / ".config/hypr/autostart.lua").read_text()
-        self.assertIn('hl.exec_cmd("fcitx5 ', startup)
+        self.assertIn('ibus-daemon --daemonize --replace --xim', startup)
+        self.assertIn("--enable-wayland-im", startup)
+        self.assertIn("--emoji-extension=disable", startup)
+        self.assertNotIn('hl.exec_cmd("fcitx5 ', startup)
         self.assertFalse((ROOT / ".config/autostart/org.fcitx.Fcitx5.desktop").exists())
 
 

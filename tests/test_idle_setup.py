@@ -51,7 +51,7 @@ class IdleSetupTest(unittest.TestCase):
         c = config()
         self.assertEqual(c['clock']['interval'], 60)
         self.assertNotIn('%S', c['clock']['tooltip-format'])
-        self.assertEqual(c['custom/fcitx5']['interval'], 3)
+        self.assertEqual(c['custom/ibus']['interval'], 3)
         self.assertEqual(c['custom/power-profile']['interval'], 30)
         self.assertTrue(c['custom/power-profile'].get('exec-on-event', True))
         self.assertIn('waybar-power-profile-cycle.sh', c['custom/power-profile']['on-click'])

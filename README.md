@@ -47,7 +47,7 @@ Review the hardware-pinned settings and package list before running it on anothe
      `lionheartp/Hyprland` instead.
    - Fedora's main repos → `waybar`, `cava`, `btop`, `fastfetch`, `kvantum`,
      `kvantum-qt5`, `mako`, `rofi`, `swaybg`, `network-manager-applet`, `wl-clipboard`,
-     `brightnessctl`, `grim`, `slurp`, `playerctl`, `fcitx5`, `fcitx5-chinese-addons`,
+     `brightnessctl`, `grim`, `slurp`, `playerctl`, `ibus`, `ibus-rime`, `librime-lua`,
      `exfatprogs`, `gtk4-layer-shell`, `python3-gobject`, `python3-cairo` (the last
      three are for `hypr-quickmenu` and the Cairo clock in `autostart.lua` — both are
      Python/GTK4, and silently no-op at startup if these are missing), plus
@@ -77,9 +77,9 @@ Review the hardware-pinned settings and package list before running it on anothe
    - `.local/bin/` specifically is a grab-bag, not all of it Hyprland config — the
      scripts actually referenced by the Hypr/waybar config are `hypr-quickmenu`,
      `hypr-overview`, `hypr-workspace-watch`, `mac-screenshot`,
-     `random-wallpaper`, `random-wallpaper.sh`, and the `waybar-*.sh`
+     `random-wallpaper`, `random-wallpaper.sh`, `ibus-language`, and the `waybar-*.sh`
      helpers (`waybar-cpu.sh`, `waybar-memory.sh`, `waybar-bluetooth.sh`,
-     `waybar-fcitx5.sh`, `waybar-kitty-art.sh`, `waybar-power-profile*.sh`).
+     `waybar-kitty-art.sh`, `waybar-power-profile*.sh`).
      Everything else in there is unrelated CLI tooling retained from the old
      copy-based sync setup — copy it too if you want it, skip
      it if you're only after the rice.
@@ -101,10 +101,13 @@ Review the hardware-pinned settings and package list before running it on anothe
    `localectl status`, not guessed. Re-run those two commands on your own machine and
    adjust if anything differs (e.g. a non-US keyboard, or a different M1 panel
    variant).
-5. **fcitx5 needs a first run before Pinyin actually works.** Installing the packages
-   and having `~/.config/fcitx5/profile` in place isn't enough — fcitx5 has to
-   actually launch once to generate its real profile state. See "Key decisions and
-   gotchas" below if Ctrl+Space doesn't switch input methods afterward.
+5. **IBus uses English and Rime Ice, switched globally with Super+R.** Run
+   `setup/configure-ibus.sh` in your user session (also run by the installer).
+   Supply your Rime Ice dictionaries/Lua and learned data separately; they are not
+   stored in Git. Before linking the custom patches, an existing `~/rime` directory
+   can be linked as `~/.config/ibus/rime`. Stop Fcitx before sharing its Rime data
+   with IBus, and never run both frontends against the same learned database.
+   Log out/in after switching input-method frameworks.
 6. **Use "Hyprland (uwsm-managed)", not plain "Hyprland."**
    The SDDM theme pins `/usr/share/wayland-sessions/hyprland-uwsm.desktop` without
    showing a session picker. This is not optional — see "Critical finding" below
@@ -160,7 +163,7 @@ live partition — see "Build history" below for what that involved).
 | `.config/mako/` | Notification daemon |
 | `.config/rofi/` | App launcher, bound to SUPER+D |
 | `.config/fuzzel/` | App launcher, alternate to rofi |
-| `.config/fcitx5/` | Chinese Pinyin input method — needs a first real launch to generate `profile`, see replication step 5 |
+| `.config/ibus/rime/*.custom.yaml`, `.local/bin/ibus-language` | Minimal Rime Ice profile and global English/Chinese switch; old Fcitx configs remain only for rollback |
 | `.config/kitty/` | Terminal |
 | `.config/fish/` | Alternate shell config (`.zshrc` is the default) |
 | `.config/nvim/` | Neovim config |
@@ -239,11 +242,23 @@ shell function also rotate manually. Images are selected recursively from
 image when alternatives exist. Rapid button clicks are coalesced. Run regression
 checks with `python3 tests/test_random_wallpaper.py`.
 
-**fcitx5.** `TriggerKeys` is a list-type option — a flat `key=value` line in
-`~/.config/fcitx5/config` silently parses as empty and disables the trigger. Don't
-hand-edit it; the compiled default (which already includes Ctrl+Space) is correct. Only
-`~/.config/fcitx5/profile` (enabling `keyboard-us` + `pinyin`) needs to exist, and only
-after fcitx5 has actually been launched once — see replication step 5.
+**IBus + Rime.** Hyprland starts one IBus daemon with its GTK candidate panel's
+native Wayland input-method-v2 bridge enabled. Leave `GTK_IM_MODULE` and
+`QT_IM_MODULE` unset for native Wayland; `XMODIFIERS=@im=ibus` covers XWayland.
+Super+R and the Waybar EN/CN button both call `ibus-language toggle`, selecting only
+`xkb:us::eng` or `rime`. `use-global-engine=true` shares that selection across apps.
+Competing IBus/emoji shortcuts, the extra tray icon and property toolbar are disabled;
+the horizontal candidate popup remains. Rime's profile lists only `rime_ice`, shows
+8 candidates, and disables Shift language switching so it cannot silently diverge
+from the global engine. F4 still opens Rime's advanced options.
+
+This machine's `~/.config/ibus/rime` points to the existing `~/rime`, preserving its
+Rime Ice dictionaries, Lua and learned user database. Only the three `*.custom.yaml`
+patches are linked from this repository; generated builds and learned words stay
+local. Do not run Fcitx and IBus against that directory concurrently. The old Fcitx
+packages/configs are retained for rollback but are no longer started. Run regression
+checks with `python3 tests/test_ibus_language.py`; test candidate placement and
+Super+R in native Wayland and XWayland applications after logging out/in.
 
 **Icon theme.** `Papirus-Dark` isn't installed on this machine; bar configs use
 `Adwaita` instead, which does have the specific symbolic icons the default module

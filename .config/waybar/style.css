@@ -36,7 +36,7 @@ window#waybar {
     font-family: "JetBrainsMono Nerd Font", sans-serif;
 }
 
-#custom-fcitx5 {
+#custom-ibus {
     color: #f5b2e0;
     padding: 0 8px;
 }
@@ -113,7 +113,7 @@ window#waybar {
 
 #custom-kill:hover, #custom-bluetooth:hover,
 #custom-proxy:hover, #custom-power-profile:hover,
-#custom-fcitx5:hover, #custom-suspend:hover,
+#custom-ibus:hover, #custom-suspend:hover,
 #custom-random-wallpaper:hover,
 #custom-terminal-art:hover {
     background-color: #201f23;

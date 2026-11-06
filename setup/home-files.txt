@@ -26,16 +26,6 @@
 .config/cmus/rose-pine-moon.theme
 .config/dolphinrc
 .config/fastfetch/config.jsonc
-.config/fcitx5/addon/notificationitem.conf
-.config/fcitx5/conf/cached_layouts
-.config/fcitx5/conf/chttrans.conf
-.config/fcitx5/conf/cloudpinyin.conf
-.config/fcitx5/conf/notifications.conf
-.config/fcitx5/conf/pinyin.conf
-.config/fcitx5/conf/punctuation.conf
-.config/fcitx5/conf/quickphrase.conf
-.config/fcitx5/config
-.config/fcitx5/profile
 .config/filetypesrc
 .config/fish/config.fish
 .config/fish/fish_variables
@@ -97,6 +87,9 @@
 .config/hypr/window-rules.lua
 .config/hypr/workspace-rules.lua
 .config/hypr/workspaces.lua
+.config/ibus/rime/default.custom.yaml
+.config/ibus/rime/ibus_rime.custom.yaml
+.config/ibus/rime/rime_ice.custom.yaml
 .config/input-remapper-2/config.json
 .config/input-remapper-2/xmodmap.json
 .config/kcminputrc
@@ -158,6 +151,7 @@
 .local/bin/hypr-overview
 .local/bin/hypr-quickmenu
 .local/bin/hypr-workspace-watch
+.local/bin/ibus-language
 .local/bin/iphone-last-photos.sh
 .local/bin/mac-screenshot
 .local/bin/mpv-gesture
@@ -172,7 +166,6 @@
 .local/bin/unimatrix
 .local/bin/waybar-bluetooth.sh
 .local/bin/waybar-cpu.sh
-.local/bin/waybar-fcitx5.sh
 .local/bin/waybar-memory.sh
 .local/bin/waybar-kitty-art.sh
 .local/bin/waybar-level

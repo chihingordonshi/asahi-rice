@@ -1,0 +1,7 @@
+# Keep only the existing full-pinyin schema; English is a separate IBus engine.
+patch:
+  schema_list:
+    - schema: rime_ice
+  menu/page_size: 8
+  ascii_composer/switch_key/Shift_L: noop
+  ascii_composer/switch_key/Shift_R: noop

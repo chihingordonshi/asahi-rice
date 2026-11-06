@@ -32,11 +32,6 @@ du-dust
 duf
 eza
 fastfetch
-fcitx5
-fcitx5-chinese-addons
-fcitx5-gtk
-fcitx5-qt-qt5gui
-fcitx5-qt-qt6gui
 fd-find
 fedora-asahi-remix-release-identity-basic
 fedora-asahi-remix-scripts
@@ -75,9 +70,15 @@ hyprland-uwsm
 hyprlock
 hyprpolkitagent
 hyprsunset
+ibus
+ibus-gtk2
+ibus-gtk3
+ibus-gtk4
+ibus-rime
 ifuse
 ironbar
 iwd
+jq
 json-c-devel
 kdenlive
 kernel-16k
@@ -109,6 +110,7 @@ libglvnd-devel
 libimobiledevice-utils
 libjpeg-turbo-devel
 libplacebo-devel
+librime-lua
 libva-devel
 libvdpau-devel
 libxkbcommon-devel

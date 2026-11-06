@@ -66,6 +66,7 @@ while read -r scope app _ || [[ -n "${scope:-}" ]]; do
 done < "$repo_root/setup/flatpak-apps.txt"
 
 "$repo_root/setup/link-home.sh"
+"$repo_root/setup/configure-ibus.sh"
 systemctl --user daemon-reload
 while IFS= read -r unit || [[ -n "$unit" ]]; do
     [[ -z "$unit" || "$unit" == \#* ]] && continue

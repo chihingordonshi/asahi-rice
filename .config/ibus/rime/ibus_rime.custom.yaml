@@ -1,0 +1,4 @@
+# Compact horizontal candidates, with composition outside the application field.
+patch:
+  style/horizontal: true
+  style/inline_preedit: false

@@ -1,0 +1,3 @@
+# Selecting Rime must enter Chinese, not a remembered per-context ASCII mode.
+patch:
+  switches/@0/reset: 0

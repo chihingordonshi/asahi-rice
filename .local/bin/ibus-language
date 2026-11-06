@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# One global English/Rime switch, shared by Hyprland and Waybar.
+set -euo pipefail
+
+case "${1:-toggle}" in
+    toggle)
+        # Serialize rapid key presses/clicks, without keeping a separate state file.
+        exec 9>"${XDG_RUNTIME_DIR:?}/ibus-language.lock"
+        flock 9
+        if ! engine=$(ibus engine 2>/dev/null); then
+            printf 'IBus is not running.\n' >&2
+            exit 1
+        fi
+        if [[ "$engine" == rime ]]; then
+            ibus engine xkb:us::eng
+        else
+            ibus engine rime
+        fi
+        ;;
+    status)
+        if ! engine=$(ibus engine 2>/dev/null); then
+            jq -cn '{text:"--", class:"unavailable", tooltip:"IBus unavailable"}'
+            exit 0
+        fi
+        case "$engine" in
+            rime) text=CN ;;
+            xkb:us::eng) text=EN ;;
+            *) text="$engine" ;;
+        esac
+        jq -cn --arg text "$text" --arg engine "$engine" \
+            '{text:$text, tooltip:("Input method: " + $engine + " (Super+R or click to switch; global)")}'
+        ;;
+    *)
+        printf 'Usage: ibus-language [toggle|status]\n' >&2
+        exit 2
+        ;;
+esac

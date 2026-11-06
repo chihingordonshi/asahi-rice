@@ -4,7 +4,7 @@
     "height": 36,
     "reload_style_on_change": true,
 
-    "modules-left": ["custom/suspend", "custom/kill", "cpu", "memory", "custom/fcitx5", "custom/terminal-art", "custom/power-profile", "hyprland/workspaces"],
+    "modules-left": ["custom/suspend", "custom/kill", "cpu", "memory", "custom/ibus", "custom/terminal-art", "custom/power-profile", "hyprland/workspaces"],
     "modules-center": ["clock"],
     "modules-right": ["tray", "custom/random-wallpaper", "custom/brightness", "custom/volume", "bluetooth", "network", "battery"],
 
@@ -93,12 +93,12 @@
         "tooltip-format": "Switch to a random wallpaper (including subfolders)"
     },
 
-    "custom/fcitx5": {
-        "exec": "~/.local/bin/waybar-fcitx5.sh",
+    "custom/ibus": {
+        "exec": "~/.local/bin/ibus-language status",
         "interval": 3,
         "return-type": "json",
         "format": "󰌌  {}",
-        "on-click": "fcitx5-remote -t",
+        "on-click": "~/.local/bin/ibus-language toggle",
         "tooltip": true
     },
 

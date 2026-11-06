@@ -5,8 +5,8 @@
 
 local mainMod = "SUPER" -- Sets "Windows" key as main modifier
 
--- Toggle English/Rime globally; Fcitx5 shares input state across windows.
-hl.bind(mainMod .. " + R", hl.dsp.exec_cmd("fcitx5-remote -t"))
+-- Toggle English/Rime globally; IBus shares the selected engine across windows.
+hl.bind(mainMod .. " + R", hl.dsp.exec_cmd(os.getenv("HOME") .. "/.local/bin/ibus-language toggle"))
 
 hl.bind(mainMod .. " + Q", hl.dsp.exec_cmd(terminal .. " --class terminal"))
 -- logind must ignore this key; see setup/logind-power-button.conf.
