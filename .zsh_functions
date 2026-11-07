@@ -21,6 +21,7 @@ rmrf() {
             command ls -ld -- "$target" || return 1
         fi
     done
+    command du -sh -- "$@" || return 1
 
     if ! read -r 'reply?Are you sure? [y/N] '; then
         print '\nCancelled.'
