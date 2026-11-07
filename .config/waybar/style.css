@@ -6,8 +6,8 @@
 }
 
 /* Keep icon-only buttons on the patched font rather than the UI font. */
-#custom-suspend, #custom-kill, #custom-terminal-art, #custom-power-profile,
-#custom-bluetooth, #custom-random-wallpaper {
+#custom-suspend, #custom-kill, #custom-power-profile,
+#custom-random-wallpaper {
     font-family: "JetBrainsMono Nerd Font", sans-serif;
 }
 
@@ -77,8 +77,7 @@ window#waybar {
     border-radius: 6px;
 }
 
-#custom-kill, #custom-bluetooth, #custom-proxy,
-#custom-power-profile {
+#custom-kill, #custom-power-profile {
     color: #c6c4e0;
     padding: 0 8px;
     margin: 0 2px;
@@ -88,13 +87,6 @@ window#waybar {
 /* Neutral action icons; profile shape, not color, distinguishes power modes. */
 #custom-kill, #custom-power-profile {
     color: #e5e1e7;
-}
-
-#custom-terminal-art {
-    color: #c4a7e7;
-    padding: 0 10px;
-    margin: 0 2px;
-    border-radius: 6px;
 }
 
 #custom-random-wallpaper {
@@ -111,10 +103,8 @@ window#waybar {
     border-radius: 6px;
 }
 
-#custom-kill:hover, #custom-bluetooth:hover,
-#custom-proxy:hover, #custom-power-profile:hover,
+#custom-kill:hover, #custom-power-profile:hover,
 #custom-ibus:hover, #custom-suspend:hover,
-#custom-random-wallpaper:hover,
-#custom-terminal-art:hover {
+#custom-random-wallpaper:hover {
     background-color: #201f23;
 }

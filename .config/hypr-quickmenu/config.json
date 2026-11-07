@@ -3,7 +3,7 @@
     "menuWidth": 340,
     "barHeight": 70,
     "barGap": 6,
-    "skewAngle": 4,
+    "skewAngle": 2,
     "extendDistance": 50,
     "textHoverShift": 16,
     "iconSize": 36,
@@ -11,7 +11,7 @@
     "leftPadding": 18,
     "cornerNotchEnabled": true,
 
-    "fontFamily": "Sans Serif",
+    "fontFamily": "Noto Sans",
     "numberFontSize": 28,
     "titleFontSize": 16,
     "subtitleFontSize": 10,

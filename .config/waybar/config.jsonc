@@ -4,9 +4,9 @@
     "height": 36,
     "reload_style_on_change": true,
 
-    "modules-left": ["custom/suspend", "custom/kill", "cpu", "memory", "custom/ibus", "custom/terminal-art", "custom/power-profile", "hyprland/workspaces"],
+    "modules-left": ["custom/suspend", "custom/kill", "cpu", "memory", "custom/ibus", "custom/power-profile", "hyprland/workspaces"],
     "modules-center": ["clock"],
-    "modules-right": ["tray", "custom/random-wallpaper", "custom/brightness", "custom/volume", "bluetooth", "network", "battery"],
+    "modules-right": ["tray", "custom/random-wallpaper",  "custom/brightness", "custom/volume", "bluetooth", "network", "battery"],
 
     "hyprland/workspaces": {
         "format": "{icon} {windows}",
@@ -28,7 +28,6 @@
         "window-rewrite": {
             "kitty": "󰆍",
             "class<terminal>": "󰆍",
-            "class<org.mozilla.firefox>": "󰈹",
             "class<[Gg]oogle-[Cc]hrome.*>": "󰊯",
             "class<^[Bb]rave.*> title<^Zoom$>": "󰖠",
             "brave-browser": "󰊯",
@@ -60,22 +59,6 @@
     "tray": {
         "icon-size": 18,
         "spacing": 10
-    },
-
-    "custom/terminal-art": {
-        "format": "󰆍",
-        "on-click": "~/.local/bin/waybar-kitty-art.sh spawn",
-        "on-click-right": "~/.local/bin/waybar-kitty-art.sh close",
-        "tooltip-format": "Terminal composition\nLeft: create on an empty workspace\n1–7 tiled windows: do nothing\n8+ tiled windows: close them all\nRight: close the composition"
-    },
-
-    "custom/bluetooth": {
-        "exec": "~/.local/bin/waybar-bluetooth.sh",
-        "interval": 5,
-        "return-type": "json",
-        "format": "{}",
-        "on-click": "kcmshell6 kcm_bluetooth",
-        "tooltip": true
     },
 
     "custom/power-profile": {

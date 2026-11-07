@@ -30,21 +30,21 @@ hl.gesture({
     action    = "workspace",
 })
 
-hl.gesture({
-    fingers   = 3,
-    direction = "up",
-    action    = function()
-        hl.dispatch(hl.dsp.exec_cmd(os.getenv("HOME") .. "/.local/bin/hypr-overview"))
-    end,
-})
-
-hl.gesture({
-    fingers   = 3,
-    direction = "down",
-    action    = function()
-        hl.dispatch(hl.dsp.exec_cmd(os.getenv("HOME") .. "/.local/bin/hypr-overview --dismiss"))
-    end,
-})
+-- hl.gesture({
+--     fingers   = 3,
+--     direction = "up",
+--     action    = function()
+--         hl.dispatch(hl.dsp.exec_cmd(os.getenv("HOME") .. "/.local/bin/hypr-overview"))
+--     end,
+-- })
+-- 
+-- hl.gesture({
+--     fingers   = 3,
+--     direction = "down",
+--     action    = function()
+--         hl.dispatch(hl.dsp.exec_cmd(os.getenv("HOME") .. "/.local/bin/hypr-overview --dismiss"))
+--     end,
+-- })
 
 -- hl.gesture({
 --     fingers   = 3,

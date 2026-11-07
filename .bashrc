@@ -23,3 +23,5 @@ if [ -d ~/.bashrc.d ]; then
     done
 fi
 unset rc
+
+[ ! -f "$HOME/.x-cmd.root/X" ] || . "$HOME/.x-cmd.root/X" # boot up x-cmd.

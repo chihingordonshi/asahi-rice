@@ -28,7 +28,6 @@ alias grep='rg'
 alias find='fd'
 alias du='dust'
 alias df='duf'
-alias ps='procs'
 alias ..='cd ..'
 alias ~='cd ~'
 alias so='source .zshrc'
@@ -102,3 +101,5 @@ eval "$(zoxide init zsh --cmd cd)"
 export PATH=/home/chihin/.opencode/bin:$PATH
 
 if [ -e /home/chihin/.nix-profile/etc/profile.d/nix.sh ]; then . /home/chihin/.nix-profile/etc/profile.d/nix.sh; fi # added by Nix installer
+
+[ ! -f "$HOME/.x-cmd.root/X" ] || . "$HOME/.x-cmd.root/X" # boot up x-cmd.
