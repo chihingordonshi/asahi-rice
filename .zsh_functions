@@ -741,6 +741,12 @@ reboot-macos() {
         sudo systemctl reboot
 }
 
+reboot-void() {
+    # Boot the future Void volume once, leaving Fedora as the default.
+    doas asahi-bless --next --set-boot "Void" --yes &&
+        doas systemctl reboot
+}
+
 srv-forward() {
     emulate -L zsh
     local port=3000
