@@ -735,6 +735,12 @@ zzz() {
     systemctl suspend
 }
 
+reboot-macos() {
+    # Boot macOS once, leaving Fedora as the default.
+    sudo asahi-bless --next --set-boot-macos --yes &&
+        sudo systemctl reboot
+}
+
 srv-forward() {
     emulate -L zsh
     local port=3000
