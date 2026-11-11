@@ -1,4 +1,5 @@
 -- SPDX-License-Identifier: GPL-2.0-or-later
+-- Historical experiment only: NOT a macOS 27 profile; disabled by default.
 -- Approximate the measured macOS Sequoia 15.3.2 default mouse curve.
 -- Data: INRIA/libpointing, commit 46b0e706ec4aa24334d0a91cf728ac751688e6cc,
 -- pointing-echomouse/darwin-24/{config.dict,f4.dat}, GPL-2.0-or-later.

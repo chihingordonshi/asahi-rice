@@ -1,4 +1,4 @@
-"""Validate the macOS-derived curve without opening input devices or changing settings."""
+"""Keep the historical curve disabled; validate its data without input-device access."""
 
 import ctypes
 import ctypes.util
@@ -33,21 +33,16 @@ print(device.accel_profile)
 
 INTEGRATION = r'''
 package.path = arg[2] .. "/?.lua;" .. package.path
-local globals, devices, gestures, listeners = {}, {}, {}, {}
 hl = {
-    config = function(config) globals[#globals + 1] = config end,
-    device = function(config) devices[#devices + 1] = config end,
-    gesture = function(config) gestures[#gestures + 1] = config end,
-    on = function(event) listeners[#listeners + 1] = event end,
+    config = function() end,
+    device = function() end,
+    gesture = function() end,
+    on = function() end,
     get_active_window = function() return nil end,
 }
 dofile(arg[1])
-assert(#globals == 1, "preserve the existing global input block")
-assert(globals[1].input.touchpad.natural_scroll == true)
-assert(#devices == 1 and devices[1].name == "usb-gaming-mouse-1")
-assert(devices[1].accel_profile:match("^custom "))
-assert(#gestures == 1 and gestures[1].fingers == 3)
-assert(#listeners == 1 and listeners[1] == "window.active")
+assert(package.loaded["mouse-acceleration"] == nil,
+    "the historical curve must not load by default")
 '''
 
 
@@ -75,8 +70,10 @@ class MouseAccelerationTest(unittest.TestCase):
             raise AssertionError(result.stderr or result.stdout)
         return result
 
-    def test_only_the_external_mouse_is_configured(self):
+    def test_historical_experiment_only_targets_the_external_mouse(self):
         self.assertEqual(self.device, "usb-gaming-mouse-1")
+
+    def test_historical_experiment_is_not_loaded_by_default(self):
         self.run_lua(INTEGRATION, INPUT)
 
     def test_deployment_manifest_includes_the_required_module(self):
