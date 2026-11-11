@@ -33,6 +33,202 @@ rmrf() {
     esac
 }
 
+which-one() {
+    emulate -L zsh
+    if (( $# == 1 )) && [[ "$1" == -h || "$1" == --help ]]; then
+        print 'Usage: which-one <command-or-package>'
+        return 0
+    fi
+    if (( $# != 1 )) || [[ -z "$1" || "$1" == -* ]]; then
+        print -u2 'Usage: which-one <command-or-package>'
+        return 2
+    fi
+    if ! (( $+commands[python3] )); then
+        print -u2 'which-one: python3 is required.'
+        return 1
+    fi
+
+    # Shell resolution is separate from installed packages; never run the target.
+    whence -v -- "$1" || true
+    local -aU wo_paths
+    wo_paths=("${(@f)$(whence -pa -- "$1")}")
+    command python3 - "$1" "${wo_paths[@]}" <<'PY'
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+
+query = sys.argv[1]
+paths = list(dict.fromkeys(os.path.abspath(p) for p in sys.argv[2:] if p))
+resolved = {p: os.path.realpath(p) for p in paths}
+env = dict(os.environ, LC_ALL="C", HOMEBREW_NO_AUTO_UPDATE="1",
+           HOMEBREW_NO_ANALYTICS="1")
+
+
+def run(*args):
+    try:
+        return subprocess.run(args, capture_output=True, text=True, errors="replace",
+                              env=env, timeout=20)
+    except (OSError, subprocess.TimeoutExpired) as error:
+        return subprocess.CompletedProcess(args, 1, "", str(error))
+
+
+def inventory(label, *args):
+    result = run(*args)
+    if result.returncode:
+        detail = (result.stderr or result.stdout).strip().splitlines()
+        print(f"  {label}: query failed" + (f" ({detail[0]})" if detail else ""))
+        return None
+    return result.stdout
+
+
+def name_matches(name):
+    return name == query or re.fullmatch(re.escape(query) + r"-\d.*", name)
+
+
+def under(target, directory):
+    return target.startswith(os.path.realpath(directory).rstrip("/") + "/")
+
+
+rpm_packages = set()
+rpm_query_failed = False
+nix_roots = set()
+print("\nExecutables (PATH order; shell aliases/functions may take precedence):")
+if not paths:
+    print("  No external executable on PATH.")
+for number, executable in enumerate(paths, 1):
+    target = resolved[executable]
+    print(f"  {number}. {executable}")
+    if target != executable:
+        print(f"     -> {target}")
+    if shutil.which("rpm"):
+        owners = set()
+        failed = False
+        for candidate in dict.fromkeys((executable, target)):
+            result = run("rpm", "-qf", "--qf", "%{NAME}\n", "--", candidate)
+            if not result.returncode:
+                owners.update(result.stdout.splitlines())
+            elif result.stderr.strip():
+                failed = rpm_query_failed = True
+        rpm_packages.update(owners)
+        fallback = "unknown (query failed)" if failed else "none found"
+        print("     RPM owner: " + (", ".join(sorted(owners)) or fallback))
+    if target.startswith("/nix/store/"):
+        store = "/".join(target.split("/")[:4])
+        nix_roots.add(store)
+        print(f"     Nix store: {store}")
+
+print("\nInstalled package matches (not necessarily the active executable):")
+if shutil.which("rpm"):
+    result = run("rpm", "-q", "--qf", "%{NAME}\n", "--", query)
+    if not result.returncode:
+        rpm_packages.update(result.stdout.splitlines())
+    elif result.stderr.strip():
+        rpm_query_failed = True
+    if not rpm_packages:
+        print("  DNF/RPM: " + ("query failed" if rpm_query_failed else "no match"))
+    for package in sorted(rpm_packages):
+        repo = "unknown (no recorded repository available)"
+        if shutil.which("dnf"):
+            info = run("dnf", "--cacheonly", "info", "--installed", "--", package)
+            match = re.search(r"^From repo(?:sitory)?\s*:\s*(.+)$", info.stdout, re.M)
+            if not info.returncode and match:
+                repo = match[1].strip()
+            elif info.returncode:
+                repo = "unknown (cached DNF query failed)"
+        label = "DNF/COPR" if "copr" in repo.lower() else "DNF/RPM"
+        print(f"  {label}: {package} — repository: {repo}")
+else:
+    print("  DNF/RPM: rpm not available")
+
+if shutil.which("brew"):
+    brew_found = False
+    for kind, root_flag in (("formula", "--cellar"), ("cask", "--caskroom")):
+        root = run("brew", root_flag)
+        directory = root.stdout.strip() if not root.returncode else ""
+        listing = inventory(f"Homebrew {kind}", "brew", "list", f"--{kind}", "--versions")
+        if listing is None:
+            continue
+        for line in listing.splitlines():
+            if not line.strip():
+                continue
+            token = line.split()[0]
+            short = token.rsplit("/", 1)[-1]
+            owns = directory and any(under(p, f"{directory}/{short}") for p in resolved.values())
+            if query in (token, short) or owns:
+                note = "; executable path matches" if owns else "; name match"
+                print(f"  Homebrew {kind}: {line}{note}")
+                brew_found = True
+    if not brew_found:
+        print("  Homebrew: no matching record found")
+else:
+    print("  Homebrew: not available")
+
+if shutil.which("flatpak"):
+    listing = inventory("Flatpak", "flatpak", "list", "--app",
+                        "--columns=application,name,origin,installation")
+    flatpak_found = False
+    for line in (listing or "").splitlines():
+        fields = line.split("\t")
+        if len(fields) != 4:
+            continue
+        app, name, origin, installation = fields
+        exact = query.casefold() in (app.casefold(), name.casefold())
+        candidate = query.casefold() == app.rsplit(".", 1)[-1].casefold()
+        if exact or candidate:
+            note = "name/ID match" if exact else "ID-suffix candidate"
+            print(f"  Flatpak: {app} ({name}) — {origin}, {installation}; {note}")
+            flatpak_found = True
+    if listing is not None and not flatpak_found:
+        print("  Flatpak: no match")
+else:
+    print("  Flatpak: not available")
+
+# Nix store paths above are authoritative; these records cover only the default
+# profile, not every profile, development shell, or NixOS system generation.
+nix_entries = None
+if shutil.which("nix"):
+    result = run("nix", "--extra-experimental-features", "nix-command", "profile", "list", "--json")
+    if not result.returncode:
+        try:
+            elements = json.loads(result.stdout)["elements"]
+            items = elements.items() if isinstance(elements, dict) else enumerate(elements)
+            nix_entries = []
+            for key, element in items:
+                stores = element.get("storePaths", [])
+                attr = element.get("attrPath", "")
+                names = [str(key), attr.rsplit(".", 1)[-1]]
+                names += [p.rsplit("/", 1)[-1].partition("-")[2] for p in stores]
+                if any(name_matches(n) for n in names) or nix_roots.intersection(stores):
+                    source = element.get("originalUrl", "")
+                    nix_entries.append(f"{key}: {', '.join(stores)}" + (f" — {source}#{attr}" if source else ""))
+        except (ValueError, KeyError, TypeError, AttributeError):
+            nix_entries = None
+if nix_entries is None and shutil.which("nix-env"):
+    result = run("nix-env", "-q", "--out-path")
+    if not result.returncode:
+        nix_entries = []
+        for line in result.stdout.splitlines():
+            fields = line.split()
+            stores = re.findall(r"/nix/store/[^\s;]+", line)
+            if fields and (name_matches(fields[0]) or nix_roots.intersection(stores)):
+                nix_entries.append(line)
+if nix_entries is not None:
+    for entry in nix_entries:
+        print(f"  Nix default profile: {entry}")
+    if not nix_entries:
+        print("  Nix default profile: no match")
+elif shutil.which("nix") or shutil.which("nix-env"):
+    print("  Nix default profile: query failed (store-path attribution above still applies)")
+else:
+    print("  Nix: not available")
+
+print("\nNo ownership match does not prove a manual download; copied files and other installers may leave no record.")
+PY
+}
+
 wallpaper() {
     systemctl --user restart swaybg-wallpaper.service
 }
