@@ -132,7 +132,6 @@
 .config/systemd/user/swaybg-wallpaper.service
 .config/systemd/user/waybar.service.d/restart.conf
 .config/systemd/user/timers.target.wants/asahi-rice-sync.timer
-.config/systemd/user/timers.target.wants/random-wallpaper.timer
 .config/waybar/config.jsonc
 .config/waybar/style.css
 .config/wireplumber/wireplumber.conf.d/51-bluetooth-no-hfp.conf

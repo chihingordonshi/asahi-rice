@@ -55,9 +55,9 @@ Review the hardware-pinned settings and package list before running it on anothe
    - `.config/neofetch/` exists in this repo but `neofetch` itself isn't installed here
      — `fastfetch` (`.config/fastfetch/`) is what's actually live; the neofetch config
      is a leftover from before the switch. Skip installing `neofetch` unless you want it.
-   - Wallpapers use only `swaybg`, with static images from
-     `~/Pictures/Wallpapers` (including subfolders); no video-wallpaper backend or
-     graphical wallpaper picker is required.
+   - Wallpaper rendering and rotation are disabled by default. The optional
+     `swaybg` helpers remain available for static images from `~/Pictures/Wallpapers`
+     (including subfolders); no video-wallpaper backend or graphical picker is required.
    - `dolphin` (file manager) and `firefox` (browser) — swap for your own picks if you
      want different ones; `programs.lua` (see below) needs to match whatever you choose.
    - Optional: the caelestia-widget replacements need `bluedevil` (for `kcmshell6
@@ -77,7 +77,7 @@ Review the hardware-pinned settings and package list before running it on anothe
    - `.local/bin/` specifically is a grab-bag, not all of it Hyprland config — the
      scripts actually referenced by the Hypr/waybar config are `hypr-quickmenu`,
      `hypr-overview`, `hypr-workspace-watch`, `mac-screenshot`,
-     `random-wallpaper`, `random-wallpaper.sh`, `ibus-language`, and the `waybar-*.sh`
+     `ibus-language`, and the `waybar-*.sh`
      helpers (`waybar-cpu.sh`, `waybar-memory.sh`, `waybar-bluetooth.sh`,
      `waybar-kitty-art.sh`, `waybar-power-profile*.sh`).
      Everything else in there is unrelated CLI tooling retained from the old
@@ -232,15 +232,15 @@ build's `hyprctl dispatch` parses its argument as a Lua expression, so DPMS call
 generic hypridle docs. Autolock is 10 minutes, no manual lock keybind — hypridle's
 timeout is the sole way this machine locks.
 
-**Wallpaper rotation and systemd.** `random-wallpaper.service` is a short oneshot
-that restarts `swaybg-wallpaper.service`. The latter runs `swaybg` in the foreground,
-restarts it if it dies, and stops with the graphical session; no escaping child
-processes or transient units are needed. Hyprland starts the renderer at login.
-The timer rotates every 10 minutes; Waybar's shuffle button and the `wallpaper`
-shell function also rotate manually. Images are selected recursively from
-`~/Pictures/Wallpapers`, preserving unusual filenames and avoiding the previous
-image when alternatives exist. Rapid button clicks are coalesced. Run regression
-checks with `python3 tests/test_random_wallpaper.py`.
+**Wallpaper rendering and rotation are disabled.** Hyprland no longer starts
+`swaybg-wallpaper.service` or `random-wallpaper.timer`, the timer is absent from
+setup's enablement lists, and Waybar's shuffle button is hidden. The service units,
+helper scripts, images, and manual `wallpaper` shell function are retained for
+optional use; nothing is uninstalled. To opt back in, first restore any missing
+unit links with `setup/link-home.sh`, then run
+`systemctl --user start swaybg-wallpaper.service` and optionally
+`systemctl --user enable --now random-wallpaper.timer` (10-minute rotation).
+Run regression checks with `python3 tests/test_random_wallpaper.py`.
 
 **IBus + Rime.** Hyprland starts one IBus daemon with its GTK candidate panel's
 native Wayland input-method-v2 bridge enabled. Leave `GTK_IM_MODULE` and
@@ -326,7 +326,7 @@ proxy state, key material, cookies, histories, databases, and caches are exclude
 |---|---|
 | Kill unresponsive window | Waybar `custom/kill` → `hyprctl kill` on mouse release (avoids cancelling the picker with the initiating click); select a window to force-close, Esc cancels (unsaved work may be lost) |
 | Bluetooth | `kcmshell6 kcm_bluetooth` (bluedevil) |
-| Random wallpaper | Waybar shuffle button → `random-wallpaper.service` → supervised `swaybg` |
+| Random wallpaper | Disabled; optional helpers and manual `wallpaper` command retained |
 | Proxy client | `/opt/clash-party/mihomo-party` |
 | Power profile | Custom D-Bus scripts backed by `tuned-ppd`; rocket / scale / leaf for performance / balanced / power-saver |
 | Wifi settings | network module's `on-click` → `nm-connection-editor` |

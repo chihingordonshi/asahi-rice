@@ -326,11 +326,25 @@ class WallpaperWiringTest(unittest.TestCase):
             shlex.split(unit["Service"]["ExecStart"]), ["%h/.local/bin/random-wallpaper.sh"]
         )
 
-    def test_startup_starts_swaybg_service_without_obsolete_helpers(self):
+    def test_startup_leaves_wallpaper_rendering_and_rotation_disabled(self):
         startup = (ROOT / ".config/hypr/autostart.lua").read_text()
-        self.assertIn("systemctl --user start swaybg-wallpaper.service", startup)
-        for obsolete in ("waypaper", "mpvpaper", "wallpaper-auto-downscale"):
-            self.assertNotIn(obsolete, startup)
+        for disabled in ("swaybg-wallpaper.service", "random-wallpaper.timer",
+                         "waypaper", "mpvpaper", "wallpaper-auto-downscale"):
+            self.assertNotIn(disabled, startup)
+
+    def test_setup_does_not_reenable_wallpaper_timer(self):
+        services = (ROOT / "setup/user-services.txt").read_text().splitlines()
+        self.assertNotIn("random-wallpaper.timer", services)
+        manifest = (ROOT / "setup/home-files.txt").read_text().splitlines()
+        self.assertNotIn(
+            ".config/systemd/user/timers.target.wants/random-wallpaper.timer", manifest
+        )
+
+    def test_waybar_does_not_offer_the_disabled_wallpaper_renderer(self):
+        config = (ROOT / ".config/waybar/config.jsonc").read_text()
+        modules_line = next(line for line in config.splitlines() if '"modules-right"' in line)
+        modules = json.loads(modules_line.split(":", 1)[1].rstrip().removesuffix(","))
+        self.assertNotIn("custom/random-wallpaper", modules)
 
     def test_setup_tracks_both_entry_points_and_removes_old_helpers(self):
         manifest = {

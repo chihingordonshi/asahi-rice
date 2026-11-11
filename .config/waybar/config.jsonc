@@ -6,7 +6,7 @@
 
     "modules-left": ["custom/suspend", "custom/kill", "cpu", "memory", "custom/ibus", "custom/power-profile", "hyprland/workspaces"],
     "modules-center": ["clock"],
-    "modules-right": ["tray", "custom/random-wallpaper",  "custom/brightness", "custom/volume", "bluetooth", "network", "battery"],
+    "modules-right": ["tray", "custom/brightness", "custom/volume", "bluetooth", "network", "battery"],
 
     "hyprland/workspaces": {
         "format": "{icon} {windows}",

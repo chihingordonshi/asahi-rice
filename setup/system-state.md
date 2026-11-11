@@ -402,24 +402,25 @@ before reuse:
 
     UUID=6A79-D0DA /home/chihin/share exfat uid=1000,gid=1000,umask=022,nofail 0 0
 
-## Static wallpaper rotation
+## Static wallpaper rendering and rotation (disabled)
 
-Only swaybg is used. Hyprland starts `swaybg-wallpaper.service` and
-`random-wallpaper.timer`; the renderer stays supervised for the graphical session.
-Every 10 minutes (or on Waybar shuffle), `random-wallpaper.service` requests a
-restart of the renderer through `.local/bin/random-wallpaper`, with a short
-click cooldown. `.local/bin/random-wallpaper.sh` recursively selects an image in
-`~/Pictures/Wallpapers` and replaces itself with swaybg. When alternatives exist,
-the previous image is excluded using a session-local state file.
+`swaybg-wallpaper.service` and `random-wallpaper.timer` are stopped; the timer is
+not enabled. Hyprland no longer starts either unit, Waybar's shuffle button is
+hidden, and setup does not enable the timer or recreate its `timers.target.wants`
+link. The historical enablement link is retained only in the repository, outside
+the active home-link manifest.
 
-The old graphical picker, video renderer, backend-switch buttons and video
-transcoding autostart have been removed from the live setup and install manifests.
-The ordinary mpv video player and existing wallpaper media libraries are unaffected.
-After updating the units, apply with:
+The service definitions, optional helper scripts, `wallpaper` shell function, and
+wallpaper library are retained. The renderer can still be started explicitly;
+its optional timer rotates static images every 10 minutes. No packages or images
+were removed, and ordinary mpv playback is unaffected.
+
+To opt back in (restore the renderer's home link with `setup/link-home.sh` if needed):
 
 ```sh
 systemctl --user daemon-reload
-systemctl --user restart swaybg-wallpaper.service random-wallpaper.timer
+systemctl --user start swaybg-wallpaper.service
+systemctl --user enable --now random-wallpaper.timer
 ```
 
 ## System-installed local software
