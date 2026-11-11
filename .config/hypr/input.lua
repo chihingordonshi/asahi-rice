@@ -24,6 +24,8 @@ hl.config({
     },
 })
 
+require("mouse-acceleration")
+
 hl.gesture({
     fingers   = 3,
     direction = "horizontal",
