@@ -289,6 +289,20 @@ policy by owner choice, while the feature-specific rule keeps replicas from need
 that broader policy. Codex clients must be restarted after adding or changing the
 top-level `notify` setting.
 
+`touchbar play` uses the locally rebuilt `.build/touchbar-mpv/mpv`, with the
+legacy `~/.local/src/mpv-touchbar/build/mpv` as a fallback when no rebuild exists.
+The custom player needs the narrow-panel stride fix saved in
+`tools/mpv-touchbar-padding.patch` (mpv 0.41.0, source revision `41f6a64`). After
+FFmpeg ABI upgrades, run `tools/build-touchbar-mpv.sh [patched-source-directory]`;
+it defaults to `~/.local/src/mpv-touchbar`, leaves that source unchanged, and never
+downloads code or installs system files. Existing Meson/Ninja, compiler, and
+FFmpeg/libplacebo/libass/libdrm/ALSA/PulseAudio development dependencies are needed.
+The helper checks that mpv starts before stopping services, discovers the connected
+60×2008 DSI panel instead of assuming a DRM card number, and requires current
+read/write access to its device (normally through the `video` group).
+`TOUCHBAR_MPV_BIN` can explicitly select another stride-patched build. Test the
+helper without hardware using `python3 tests/test_touchbar.py`.
+
 Pi uses `~/.pi/agent/extensions/touchbar-notify.ts`, linked by
 `setup/link-home.sh`. It listens for `agent_settled`, not individual model/tool
 turns or `agent_end`, so retries, compaction, and queued continuations finish before

@@ -1,0 +1,20 @@
+diff --git a/video/out/vo_drm.c b/video/out/vo_drm.c
+index 7a069b8..2d3f735 100644
+--- a/video/out/vo_drm.c
++++ b/video/out/vo_drm.c
+@@ -103,0 +104,9 @@ static struct framebuffer *setup_framebuffer(struct vo *vo)
++    // Pad the dumb buffer's allocated width to a 64px-aligned stride.
++    // Some DRM/KMS hardware (e.g. Apple Silicon's Touch Bar panel, via the
++    // adp driver) cannot scan out a non-64-byte-aligned stride correctly
++    // on narrow connectors, producing fractured/duplicated output even for
++    // a static frame. fb->width itself (used for SRC_W/CRTC_W and the real
++    // video content size) stays untouched, so this is a no-op for normal
++    // displays whose width is already 64-aligned.
++    uint32_t alloc_width = (fb->width + 63) & ~63u;
++
+@@ -106 +115 @@ static struct framebuffer *setup_framebuffer(struct vo *vo)
+-        .width = fb->width,
++        .width = alloc_width,
+@@ -149 +158 @@ static struct framebuffer *setup_framebuffer(struct vo *vo)
+-    int ret = drmModeAddFB2(fb->fd, fb->width, fb->height,
++    int ret = drmModeAddFB2(fb->fd, alloc_width, fb->height,

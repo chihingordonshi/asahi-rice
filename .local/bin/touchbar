@@ -5,10 +5,16 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")")"
+REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd -P)"
 ASSETS_DIR="$HOME/.local/share/touchbar-animations"
-MPV_BIN="$HOME/.local/src/mpv-touchbar/build/mpv"
+MPV_BIN="${TOUCHBAR_MPV_BIN:-$REPO_ROOT/.build/touchbar-mpv/mpv}"
+if [[ -z "${TOUCHBAR_MPV_BIN:-}" && ! -x "$MPV_BIN" ]]; then
+    MPV_BIN="$HOME/.local/src/mpv-touchbar/build/mpv"
+fi
+DRM_SYSFS_ROOT="${TOUCHBAR_DRM_SYSFS_ROOT:-/sys/class/drm}"
+DRM_DEVICE_ROOT="${TOUCHBAR_DRM_DEVICE_ROOT:-/dev/dri}"
 REGISTRY="$ASSETS_DIR/registry.tsv"
-CONNECTOR="DSI-1"
 ROTATE=90
 
 declare -A ANIMATIONS=(
@@ -59,6 +65,22 @@ usage() {
     exit 1
 }
 
+find_panel() {
+    local entry status name
+    for entry in "$DRM_SYSFS_ROOT"/card*-DSI-*; do
+        [[ -r "$entry/status" && -r "$entry/modes" ]] || continue
+        read -r status < "$entry/status"
+        [[ "$status" == connected ]] || continue
+        grep -qx '60x2008' "$entry/modes" || continue
+        name="${entry##*/}"
+        DRM_DEVICE="$DRM_DEVICE_ROOT/${name%%-*}"
+        CONNECTOR="${name#*-}"
+        return 0
+    done
+    echo "touchbar: no connected 60x2008 Touch Bar panel found" >&2
+    return 1
+}
+
 play() {
     # $1 = target (name or path), remaining args = flags
     local target="$1"; shift
@@ -80,20 +102,31 @@ play() {
         case "$1" in
             --audio) audio_flag=""; shift ;;
             --loop) loop_opt="--loop-file=inf"; shift ;;
-            --rotate) ROTATE="$2"; shift 2 ;;
+            --rotate)
+                [[ $# -ge 2 && "$2" =~ ^(0|90|180|270)$ ]] || {
+                    echo "touchbar: --rotate requires 0, 90, 180, or 270" >&2
+                    return 1
+                }
+                ROTATE="$2"; shift 2 ;;
             *) echo "touchbar: unknown option: $1" >&2; exit 1 ;;
         esac
     done
 
-    # The booth loop owns the display for much longer than Codex notifications.
-    # Pause their daemon for a direct `touchbar play linux-showcase --loop` too.
-    showcase_service_was_active=0
-    if [[ "$file" == "$ASSETS_DIR/linux-showcase.mkv" && "$loop_opt" == "--loop-file=inf" ]] && \
-       /usr/bin/systemctl --user is-active --quiet codex-touchbar.service; then
-        /usr/bin/systemctl --user stop codex-touchbar.service
-        showcase_service_was_active=1
+    [[ -f "$file" ]] || { echo "touchbar: no such file: $file" >&2; return 1; }
+    # Catch missing executables/shared libraries before taking away normal controls.
+    if ! "$MPV_BIN" --no-config --version >/dev/null; then
+        echo "touchbar: patched mpv cannot start; rebuild it with:" >&2
+        printf '  %q\n' "$REPO_ROOT/tools/build-touchbar-mpv.sh" >&2
+        return 1
+    fi
+    find_panel
+    if [[ ! -r "$DRM_DEVICE" || ! -w "$DRM_DEVICE" ]]; then
+        echo "touchbar: cannot access $DRM_DEVICE; log in again with video group membership" >&2
+        return 1
     fi
 
+    showcase_service_was_active=0
+    tiny_dfr_stopped=0
     cleanup() {
         local result=$?
         trap - EXIT INT TERM
@@ -101,7 +134,9 @@ play() {
             kill -TERM "$touchbar_player_pid" 2>/dev/null || true
             wait "$touchbar_player_pid" 2>/dev/null || true
         fi
-        /usr/bin/sudo -n /usr/bin/systemctl start tiny-dfr || true
+        if (( tiny_dfr_stopped )); then
+            /usr/bin/sudo -n /usr/bin/systemctl start tiny-dfr || true
+        fi
         if (( showcase_service_was_active )); then
             /usr/bin/systemctl --user start codex-touchbar.service || true
         fi
@@ -111,9 +146,22 @@ play() {
     trap 'exit 130' INT
     trap 'exit 143' TERM
 
+    # Install cleanup before either service is stopped.
+    if [[ "$file" == "$ASSETS_DIR/linux-showcase.mkv" && "$loop_opt" == "--loop-file=inf" ]] && \
+       /usr/bin/systemctl --user is-active --quiet codex-touchbar.service; then
+        showcase_service_was_active=1
+        /usr/bin/systemctl --user stop codex-touchbar.service
+    fi
+
+    tiny_dfr_stopped=1
     /usr/bin/sudo -n /usr/bin/systemctl stop tiny-dfr
     sleep 0.5
-    sg video -c "'$MPV_BIN' --vo=drm --drm-connector=$CONNECTOR --video-rotate=$ROTATE $loop_opt $audio_flag --really-quiet -- '$file'" &
+    local -a command=("$MPV_BIN" --no-config --vo=drm "--drm-device=$DRM_DEVICE"
+        "--drm-connector=$CONNECTOR" "--video-rotate=$ROTATE" "$loop_opt"
+        --input-terminal=no --really-quiet)
+    [[ -z "$audio_flag" ]] || command+=("$audio_flag")
+    # No intermediary shell: filenames are literal and cleanup owns the mpv PID.
+    "${command[@]}" -- "$file" &
     touchbar_player_pid=$!
     sleep 0.1
     if kill -0 "$touchbar_player_pid" 2>/dev/null && [[ -n "${TOUCHBAR_STARTED_FILE:-}" ]]; then
