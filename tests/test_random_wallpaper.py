@@ -326,7 +326,7 @@ class WallpaperWiringTest(unittest.TestCase):
             shlex.split(unit["Service"]["ExecStart"]), ["%h/.local/bin/random-wallpaper.sh"]
         )
 
-    def test_startup_leaves_wallpaper_rendering_and_rotation_disabled(self):
+    def test_startup_does_not_compete_with_noctalia_wallpaper(self):
         startup = (ROOT / ".config/hypr/autostart.lua").read_text()
         for disabled in ("swaybg-wallpaper.service", "random-wallpaper.timer",
                          "waypaper", "mpvpaper", "wallpaper-auto-downscale"):

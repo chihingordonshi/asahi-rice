@@ -50,6 +50,15 @@ done
 /usr/bin/python3 "$repo_root/tests/test_touchbar.py" || fail 'Touch Bar player behavior tests failed'
 /usr/bin/python3 "$repo_root/tests/test_sddm_setup.py" || fail 'SDDM theme/deployment checks failed'
 /usr/bin/python3 "$repo_root/tests/test_sddm_theme.py" || fail 'SDDM QML behavior tests failed'
+/usr/bin/python3 "$repo_root/tests/test_noctalia_setup.py" || fail 'Noctalia configuration/controller tests failed'
+/usr/bin/python3 "$repo_root/tests/test_noctalia_bar_apply.py" || fail 'Noctalia reservation IPC tests failed'
+if command -v noctalia >/dev/null 2>&1; then
+    validation=$(noctalia config validate 2>&1) || fail 'Noctalia configuration validation failed'
+    printf '%s\n' "$validation"
+    grep -Eiq '\b(warning|unknown)\b' <<< "$validation" && fail 'Noctalia validation reported warnings or unknown keys'
+else
+    fail 'Noctalia is not installed'
+fi
 if command -v bun >/dev/null 2>&1; then
     bun test "$repo_root/tests/pi-touchbar.test.ts" || fail 'Pi Touch Bar behavior tests failed'
 else

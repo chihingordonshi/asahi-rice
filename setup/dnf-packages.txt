@@ -133,6 +133,7 @@ ncmpcpp
 nethack
 nftables
 ninja-build
+noctalia
 nsnake
 nudoku
 nv-codec-headers

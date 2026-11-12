@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# Apply the latest bar state without racing rapid pin/unpin or workspace changes.
+set -euo pipefail
+
+runtime=${XDG_RUNTIME_DIR:-/tmp}
+exec 9>"$runtime/noctalia-bar.lock"
+flock -x 9
+read -r reserve visibility < "$runtime/noctalia-bar.desired"
+[[ $reserve == true || $reserve == false ]] || exit 2
+[[ $visibility == show || $visibility == hide ]] || exit 2
+
+# A persistent, idempotent setting survives shell/compositor reloads, unlike the
+# runtime reserve toggle. Never rewrite unrelated Noctalia settings.
+current=$(noctalia msg config-get bar.default.reserve_space)
+if [[ $current != "$reserve" ]]; then
+    noctalia msg config-set bar.default.reserve_space "$reserve" >/dev/null
+fi
+# config-set reloads the bar. Disable edge reveal before explicit visibility;
+# bar-hide with auto-hide enabled would still allow the pointer to reveal it.
+noctalia msg bar-auto-hide-set off default >/dev/null
+noctalia msg "bar-$visibility" default >/dev/null
+
+if [[ $visibility == show ]]; then
+    # Noctalia 5.4.1 can leave rebuilt workspace widgets blank until an IPC event.
+    # Re-announce the current name unchanged: renameworkspace refreshes its full
+    # workspace/window snapshot, without switching workspaces or moving focus.
+    # Remove this workaround when native initial population/refresh IPC is fixed.
+    reply=$(hyprctl eval '
+local workspace = hl.get_active_workspace()
+if workspace and type(workspace.name) == "string" and workspace.name ~= "" then
+    hl.dispatch(hl.dsp.workspace.rename({workspace = workspace, name = workspace.name}))
+end
+')
+    if [[ $reply != ok ]]; then
+        printf 'noctalia-bar-apply: workspace refresh failed: %s\n' "$reply" >&2
+        exit 1
+    fi
+fi

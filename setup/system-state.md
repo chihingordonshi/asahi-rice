@@ -464,3 +464,38 @@ daemon. `setup/install.sh` validates the source with `visudo` before installing 
 This machine also retains its older `%wheel ALL=(ALL) NOPASSWD: ALL` policy by owner
 choice, so the feature-specific entry is redundant here but remains the reproducible
 least-privilege default for other installations.
+
+## Native Noctalia shell (supersedes the earlier panel/wallpaper notes)
+
+Fedora's native `noctalia` 5.4.1 replaces Waybar at Hyprland session startup.
+The old Waybar service is disabled, not removed; its config and helpers remain.
+The 36px fixed dark/lavender bar uses native network, Bluetooth, and audio popups.
+Standalone iwd, tuned-ppd, Mako, hypridle, Rofi, and the existing media-key helpers
+are retained. The IBus bar widget is removed; Super+R still switches languages.
+
+`noctalia-shell.lua` handles workspace switches immediately and uses a
+compositor-native 200ms fallback timer to enable edge-reveal hiding only when the
+current workspace has a mapped, non-hidden tiled window. Shell animations are
+disabled globally and auto-hide delay is zero, so workspace switches hide instantly.
+Empty/floating-only workspaces stay visible; Super+B and Super+X both toggle pinned
+visibility and force fresh visibility/reservation IPC. Manual show stays pinned
+through window polls, workspace switches, and config reloads, reserving its 36px
+height. Unpinning releases the gap and immediately resamples current windows.
+The serialized `noctalia-bar-apply` helper
+applies only the latest requested reservation/mode. Outside manual refreshes, IPC
+runs only on changes or discovery of a new shell process. After showing, the helper
+re-announces the active workspace's unchanged name as an experimental snapshot
+refresh. The patch was restored at the user's request after failing user verification;
+the rendering delay remains unresolved. See the note in `noctalia.md`; existing
+pin/unpin behavior is unchanged.
+There is no dependency on the old generated `noctalia.lua` theme module.
+
+Noctalia now renders selected wallpapers and randomly rotates the recursive
+`~/Pictures/Wallpapers` collection every 15 minutes. The separate swaybg service
+and old random-wallpaper timer remain inactive. App-theme templates and duplicate
+notification, OSD, clipboard, locking, and dock services are disabled.
+
+The original settings and preservation/reconstruction artifacts are backed up in
+`~/.local/state/asahi-rice/backups/noctalia-20261111-125017/`. See
+[`noctalia.md`](noctalia.md) for configuration precedence, the template undo-hook
+caveat, reproducible checks, interactive verification, and reversible rollback.

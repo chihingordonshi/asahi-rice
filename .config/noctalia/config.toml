@@ -1,0 +1,196 @@
+# Noctalia 5.4+: a minimal replacement for the retained Waybar config.
+# https://docs.noctalia.dev/noctalia/configuration/
+[shell]
+font_family = "Inter"
+clipboard_enabled = false
+polkit_agent = false
+screen_time_enabled = false
+setup_wizard_enabled = false
+
+# No per-bar animation switch exists in v5.4; make shell transitions instant.
+[shell.animation]
+enabled = false
+
+[theme]
+source = "custom"
+custom_palette = "Waybar"
+mode = "dark"
+shell_mode = "dark"
+
+# Never rewrite the existing GTK/Qt, terminal, or compositor configuration.
+[theme.templates]
+enable_builtin_templates = false
+enable_community_templates = false
+builtin_ids = []
+community_ids = []
+
+[bar.default]
+position = "top"
+layer = "top"
+thickness = 36
+margin_ends = 0
+padding = 8
+widget_spacing = 8
+radius = 0
+radius_top_left = 0
+radius_top_right = 0
+radius_bottom_left = 0
+radius_bottom_right = 0
+concave_edge_corners = false
+background_opacity = 1.0
+compositor_blur = false
+shadow = false
+font_weight = 400
+color = "secondary"
+capsule = false
+capsule_radius = 6
+# noctalia-shell.lua explicitly shows/hides the bar; never reveal at screen edges.
+auto_hide = false
+auto_hide_delay_ms = 0
+smart_auto_hide = false
+# The controller reserves space only while Super+B pins the bar open.
+reserve_space = false
+show_on_workspace_switch = false
+start = ["suspend", "kill", "cpu", "memory", "power_profile", "workspaces"]
+center = ["clock"]
+end = ["tray", "brightness", "volume", "bluetooth", "network", "battery"]
+
+[widget.suspend]
+type = "custom_button"
+glyph = "moon"
+tooltip = "Suspend"
+[widget.suspend.actions]
+left = "exec systemctl suspend"
+
+[widget.kill]
+type = "custom_button"
+glyph = "x"
+color = "on_surface"
+tooltip = "Force-close a window: click, then select it. Esc cancels. Unsaved work may be lost."
+[widget.kill.actions]
+left = "exec hyprctl kill"
+
+[widget.cpu]
+type = "sysmon"
+stat = "cpu_usage"
+visualization = "none"
+highlight_color = "secondary"
+
+[widget.memory]
+type = "sysmon"
+stat = "ram_pct"
+visualization = "none"
+highlight_color = "secondary"
+[widget.memory.actions]
+left = "exec kitty --class btop --title btop btop"
+
+[widget.power_profile]
+type = "power_profile"
+color = "on_surface"
+
+[widget.workspaces]
+type = "workspaces"
+style = "regular"
+show_labels = true
+label_source = "id"
+max_label_chars = 2
+hide_when_empty = false
+active_pill_size = 1.0
+inactive_pill_size = 1.0
+capsule_radius = 6
+
+[widget.clock]
+type = "clock"
+format = "󰥔  {:%a %d %b %H:%M}"
+tooltip_format = "{:%a %d %b %Y %H:%M}"
+color = "primary"
+font_weight = 600
+
+[widget.tray]
+type = "tray"
+drawer = false
+capsule = true
+capsule_fill = "#7f7f7f"
+capsule_padding = 8
+
+# Keep the existing perceptual 5% controls; the native label is device percent.
+[widget.brightness]
+type = "brightness"
+show_label = true
+scroll_repeat = "steps"
+[widget.brightness.actions]
+scroll_up = "exec ~/.local/bin/waybar-level brightness up"
+scroll_down = "exec ~/.local/bin/waybar-level brightness down"
+
+[widget.volume]
+type = "volume"
+show_label = true
+scroll_repeat = "steps"
+[widget.volume.actions]
+right = "exec ~/.local/bin/waybar-level volume toggle"
+scroll_up = "exec ~/.local/bin/waybar-level volume up"
+scroll_down = "exec ~/.local/bin/waybar-level volume down"
+
+[widget.bluetooth]
+type = "bluetooth"
+show_label = false
+color = "#b7c5ff"
+
+[widget.network]
+type = "network"
+show_label = true
+color = "#b7c5ff"
+[widget.network.actions]
+left = "panel-toggle control-center network"
+
+[widget.battery]
+type = "battery"
+show_label = true
+label_content = "percent"
+color = "#c8e3ff"
+
+[system.monitor]
+cpu_poll_seconds = 5.0
+memory_poll_seconds = 15.0
+
+# Mako and the existing helpers own notifications/OSDs; hypridle owns locking.
+[notification]
+enable_daemon = false
+[osd]
+enabled = false
+[audio]
+enable_sounds = false
+enable_overdrive = false
+[lockscreen]
+enabled = false
+[idle.behavior.lock]
+enabled = false
+[idle.behavior.screen-off]
+enabled = false
+[idle.behavior.lock-and-suspend]
+enabled = false
+
+[dock]
+enabled = false
+[wallpaper]
+enabled = true
+directory = "/home/chihin/Pictures/Wallpapers"
+[wallpaper.automation]
+enabled = true
+interval_seconds = 900
+order = "random"
+recursive = true
+[backdrop]
+enabled = false
+[desktop_widgets]
+enabled = false
+[weather]
+enabled = false
+[nightlight]
+enabled = false
+
+# No downloaded widgets or background plugin updates are needed for this bar.
+[plugins]
+auto_update = "none"
+enabled = []
+source = []

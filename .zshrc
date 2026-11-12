@@ -33,7 +33,7 @@ alias ~='cd ~'
 alias so='source .zshrc'
 alias ff='fastfetch'
 
-alias srv="doas warp-cli disconnect && doas tailscale up && TERM=xterm-256color ssh -i .ssh/gentoo_server 'chihin@100.72.197.95'"
+alias srv="doas warp-cli disconnect && doas tailscale up && TERM=xterm-256color ssh chsrv"
 alias warp="doas tailscale down && doas warp-cli connect"
 
 

@@ -79,6 +79,7 @@
 .config/hypr/misc.lua
 .config/hypr/monitors.lua
 .config/hypr/mouse-acceleration.lua
+.config/hypr/noctalia-shell.lua
 .config/hypr/permissions.lua
 .config/hypr/programs.lua
 .config/hypr/scheme/current.lua
@@ -111,6 +112,8 @@
 .config/neofetch/config.conf
 .config/nmtui/launch
 .config/nmtui/rose-pine-moon.colors
+.config/noctalia/config.toml
+.config/noctalia/palettes/Waybar.json
 .config/nvim/init.lua
 .config/opencode/opencode.jsonc
 .config/pavucontrol.ini
@@ -152,6 +155,7 @@
 .local/bin/hypr-quickmenu
 .local/bin/hypr-workspace-watch
 .local/bin/ibus-language
+.local/bin/noctalia-bar-apply
 .local/bin/iphone-last-photos.sh
 .local/bin/mac-screenshot
 .local/bin/mpv-gesture

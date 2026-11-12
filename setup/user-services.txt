@@ -1,5 +1,4 @@
 # Repo-managed user units to enable.
 codex-touchbar.service
 hypridle.service
-waybar.service
 asahi-rice-sync.timer
