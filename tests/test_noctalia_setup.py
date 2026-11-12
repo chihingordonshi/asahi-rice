@@ -118,11 +118,27 @@ local special = nil
 local windows = { { workspace = workspace, mapped = true, hidden = false, floating = false } }
 local layers = { { pid = 123 } }
 local wallpaperLayers = {}
+local captureLayers = {}
+local cursorInvisible, failCaptureQuery = false, false
+local cursorChanges = {}
 local timers, subscriptions, commands, reservations = {}, {}, {}, {}
 hl = {
     layer_rule = function() end,
     window_rule = function() end,
+    config = function(config)
+        assert(type(config.cursor.invisible) == "boolean")
+        cursorInvisible = config.cursor.invisible
+        cursorChanges[#cursorChanges + 1] = cursorInvisible
+    end,
+    get_config = function(key)
+        assert(key == "cursor.invisible")
+        return cursorInvisible
+    end,
     get_layers = function(filter)
+        if filter.namespace == "noctalia-screenshot-region" then
+            if failCaptureQuery then error("capture query failed") end
+            return captureLayers
+        end
         if filter.namespace == "noctalia-bar-default" then return layers end
         assert(filter.namespace == "noctalia-wallpaper")
         return wallpaperLayers
@@ -157,7 +173,8 @@ hl = {
         return timer
     end,
     on = function(event, callback)
-        assert(event == "config.unload" or event == "workspace.active" or event == "workspace.special_active")
+        assert(event == "config.unload" or event == "workspace.active" or event == "workspace.special_active"
+            or event == "layer.opened" or event == "layer.closed")
         local subscription = { event = event, callback = callback, active = true }
         function subscription:remove() self.active = false end
         subscriptions[#subscriptions + 1] = subscription
@@ -374,6 +391,94 @@ class NoctaliaBarTest(unittest.TestCase):
             wallpaperLayers = {{pid=124}}
             tick(); visibility("hide"); count(5)
             windows = {}; event("workspace.active"); visibility("show"); count(6)
+        ''')
+
+    def test_capture_cursor_hides_only_while_selecting_and_restores_on_close(self):
+        self.run_lua('''
+            load()
+            event("layer.opened"); tick()
+            assert(cursorInvisible == false and #cursorChanges == 0)
+            captureLayers = {{mapped=false}}
+            event("layer.opened")
+            assert(cursorInvisible == false and #cursorChanges == 0)
+            captureLayers[1].mapped = true
+            event("layer.opened")
+            assert(cursorInvisible == true and #cursorChanges == 1)
+            for _ = 1, 20 do tick() end
+            event("layer.opened")
+            assert(#cursorChanges == 1, "must not resnapshot our own override")
+            -- Completed capture and Esc both unmap the same overlay.
+            captureLayers[1].mapped = false
+            event("layer.closed")
+            assert(cursorInvisible == false and #cursorChanges == 2)
+            tick(); assert(#cursorChanges == 2)
+        ''')
+
+    def test_capture_cursor_poll_covers_stale_close_events_and_disappearing_shell(self):
+        self.run_lua('''
+            layers = {}; wallpaperLayers = {}
+            captureLayers = {{mapped=true}}
+            load(); assert(cursorInvisible == true)
+            -- Hyprland's closed event can precede the mapped/query update.
+            event("layer.closed"); assert(cursorInvisible == true)
+            captureLayers = {}; tick()
+            assert(cursorInvisible == false and #cursorChanges == 2)
+            count(0)
+        ''')
+
+    def test_capture_cursor_waits_for_last_monitor_overlay(self):
+        self.run_lua('''
+            load()
+            captureLayers = {{mapped=true}, {mapped=true}}
+            event("layer.opened"); assert(cursorInvisible == true)
+            captureLayers[1].mapped = false
+            event("layer.closed"); assert(cursorInvisible == true)
+            assert(#cursorChanges == 1)
+            captureLayers[2].mapped = false
+            event("layer.closed"); assert(cursorInvisible == false)
+            assert(#cursorChanges == 2)
+        ''')
+
+    def test_capture_cursor_preserves_baseline_at_selection_start(self):
+        self.run_lua('''
+            load()
+            cursorInvisible = true -- External change after module initialization.
+            captureLayers = {{mapped=true}}
+            event("layer.opened"); assert(cursorInvisible == true)
+            assert(#cursorChanges == 0)
+            captureLayers = {}; event("layer.closed")
+            assert(cursorInvisible == true)
+            cursorInvisible = false
+            captureLayers = {{mapped=true}}
+            event("layer.opened"); assert(cursorInvisible == true)
+            captureLayers = {}; event("layer.closed")
+            assert(cursorInvisible == false)
+        ''')
+
+    def test_capture_cursor_unload_reload_and_duplicate_load_restore_ownership(self):
+        self.run_lua('''
+            captureLayers = {{mapped=true}}
+            load(); assert(cursorInvisible == true)
+            load(); assert(cursorInvisible == true and #cursorChanges == 3)
+            reload(); assert(cursorInvisible == true and #cursorChanges == 5)
+            event("config.unload"); assert(cursorInvisible == false)
+            assert(#cursorChanges == 6 and activeTimers() == 0)
+            NoctaliaBarController.stop()
+            tick(); event("layer.opened")
+            assert(cursorInvisible == false and #cursorChanges == 6)
+        ''')
+
+    def test_capture_cursor_reconciliation_error_releases_override(self):
+        self.run_lua('''
+            captureLayers = {{mapped=true}}
+            load(); assert(cursorInvisible == true)
+            failCaptureQuery = true
+            local ok, err = pcall(tick)
+            assert(not ok and tostring(err):find("capture query failed", 1, true))
+            assert(cursorInvisible == false and #cursorChanges == 2)
+            failCaptureQuery = false
+            tick(); assert(cursorInvisible == true)
+            NoctaliaBarController.stop(); assert(cursorInvisible == false)
         ''')
 
     def test_duplicate_load_unload_and_missing_workspace(self):

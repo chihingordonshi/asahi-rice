@@ -34,8 +34,40 @@ if NoctaliaBarController then NoctaliaBarController.stop() end
 local controller = { active = true, pinned = pinnedOnDisk() }
 NoctaliaBarController = controller
 
+-- show_cursor=false excludes the pointer from the image, not the live selector.
+-- Own this temporary compositor override only while a region overlay is mapped.
+local savedCursorInvisible
+local function restoreCaptureCursor()
+    if savedCursorInvisible == nil then return end
+    hl.config({ cursor = { invisible = savedCursorInvisible } })
+    savedCursorInvisible = nil
+end
+
+local function syncCaptureCursor()
+    if not controller.active then return end
+    local ok, err = pcall(function()
+        local selecting = false
+        for _, layer in ipairs(hl.get_layers({ namespace = "noctalia-screenshot-region" })) do
+            if layer.mapped then selecting = true; break end
+        end
+        if selecting and savedCursorInvisible == nil then
+            local previous = hl.get_config("cursor.invisible")
+            if type(previous) ~= "boolean" then return end
+            savedCursorInvisible = previous
+            if not previous then hl.config({ cursor = { invisible = true } }) end
+        elseif not selecting then
+            restoreCaptureCursor()
+        end
+    end)
+    if not ok then
+        restoreCaptureCursor()
+        error(err)
+    end
+end
+
 local function poll()
     if not controller.active then return end
+    syncCaptureCursor()
     -- A hard-hidden bar may have no layer, including after a compositor reload.
     -- The enabled wallpaper provides stable discovery while that bar is hidden.
     local layers = hl.get_layers({ namespace = "noctalia-bar-default" })
@@ -99,8 +131,13 @@ function controller.stop()
     if controller.unload then controller.unload:remove() end
     if controller.workspace_active then controller.workspace_active:remove() end
     if controller.special_active then controller.special_active:remove() end
+    if controller.capture_opened then controller.capture_opened:remove() end
+    if controller.capture_closed then controller.capture_closed:remove() end
+    restoreCaptureCursor()
 end
 
+controller.capture_opened = hl.on("layer.opened", syncCaptureCursor)
+controller.capture_closed = hl.on("layer.closed", syncCaptureCursor)
 controller.timer = hl.timer(poll, { timeout = 200, type = "repeat" })
 -- React immediately to workspace switches; the timer covers window/state changes.
 controller.workspace_active = hl.on("workspace.active", poll)
