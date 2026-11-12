@@ -8,7 +8,8 @@ No Quickshell, plugins, or system service changes are required.
 ## Configuration and startup
 
 - `.config/noctalia/config.toml`: minimal top bar, native network/Bluetooth/audio
-  popups, and wallpaper selection/rotation. IBus remains on Super+R, not the bar.
+  popups, launcher, native screen capture, and wallpaper selection/rotation.
+  IBus remains on Super+R, not the bar.
 - `.config/noctalia/palettes/Waybar.json`: fixed dark/lavender colors matching the
   previous bar. Both palette variants are required by the installed native loader;
   both deliberately use the same dark colors.
@@ -72,7 +73,8 @@ Mako still owns notifications, the existing level helpers retain perceptual
 brightness and 5% volume steps capped at **150%** (including media keys).
 Noctalia audio overdrive also permits 150% in its native controls. Notification
 text shows the boosted percentage while its progress hint stays within 0–100.
-Hypridle owns locking, Rofi owns launching, and tuned-ppd owns power profiles.
+Hypridle owns locking, Noctalia owns launching and screenshots, and tuned-ppd owns
+power profiles.
 Noctalia notification/OSD daemons,
 idle/lock actions, dock, clipboard history, plugins, weather, app-theme templates,
 and the optional blurred overview backdrop are disabled. NetworkManager is not
@@ -81,6 +83,29 @@ required: Noctalia also supports the existing standalone iwd backend.
 Deliberate visual differences: native workspace labels/glyphs and brightness's
 hardware-percentage label need not exactly match Waybar's rewritten labels and
 perceptual percentage. Scroll/key adjustments still use the original helpers.
+
+## Launcher and screen capture
+
+- **Super+D** toggles `noctalia msg panel-toggle launcher`.
+- **Super+A** starts `noctalia msg screenshot-region`; drag to capture, Esc cancels.
+- **Super+Shift+A** runs `noctalia msg screenshot-fullscreen all`, preserving the
+  previous all-output capture behavior rather than only the focused monitor.
+
+`[shell.screenshot]` saves PNGs in `/home/chihin/Pictures/Screenshots` and copies
+captures to the clipboard without an annotation/confirmation step or external
+command. Change this absolute path for another account. Filename patterns use
+strftime and omit the extension. For ad-hoc CLI overrides, put options **before**
+the positional `all` target.
+
+Live checks verified the launcher panel opens/closes, decoded a 2560×1600
+full-screen PNG, completed a region drag yielding a decoded 320×224 PNG, and
+verified the saved full-screen image was also copied as a readable clipboard PNG.
+Rofi was removed with DNF autoremove disabled; Fuzzel and Slurp were already absent.
+The obsolete Rofi/Fuzzel configuration and `mac-screenshot` helper were removed
+from source and deployment manifests; repository-owned home symlinks were backed
+up under `~/.local/state/asahi-rice/backups/noctalia-capture-20261112/`.
+**Grim must remain installed**: Fedora's `xdg-desktop-portal-hyprland` requires it,
+even though these Noctalia bindings no longer use it. `wl-clipboard` also remains.
 
 ## Deploy and validate
 

@@ -29,7 +29,6 @@
 .config/filetypesrc
 .config/fish/config.fish
 .config/fish/fish_variables
-.config/fuzzel/fuzzel.ini
 .config/gh/config.yml
 .config/gtk-3.0/assets/close-active.svg
 .config/gtk-3.0/assets/close-backdrop-active.svg
@@ -122,7 +121,6 @@
 .config/qt6ct/colors/CosmicDark.conf
 .config/qt6ct/colors/CosmicLight.conf
 .config/qt6ct/qt6ct.conf
-.config/rofi/config.rasi
 .config/systemd/user/asahi-rice-sync.service
 .config/systemd/user/asahi-rice-sync.timer
 .config/systemd/user/codex-touchbar.service
@@ -149,7 +147,6 @@
 .local/bin/ibus-language
 .local/bin/noctalia-bar-apply
 .local/bin/iphone-last-photos.sh
-.local/bin/mac-screenshot
 .local/bin/mpv-gesture
 .local/bin/markdown-it
 .local/bin/nmtui

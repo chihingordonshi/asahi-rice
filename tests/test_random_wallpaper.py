@@ -159,9 +159,9 @@ class WallpaperWiringTest(unittest.TestCase):
 
     def test_setup_keeps_native_shell_and_backends_not_replaced_frontends(self):
         packages = (ROOT / "setup/dnf-packages.txt").read_text().splitlines()
-        for obsolete in ("waybar", "ironbar", "swaybg", "waypaper", "impala", "bluetuith", "blueman", "pavucontrol", "wiremix", "wofi"):
+        for obsolete in ("waybar", "ironbar", "swaybg", "waypaper", "impala", "bluetuith", "blueman", "pavucontrol", "wiremix", "wofi", "rofi", "fuzzel", "slurp"):
             self.assertNotIn(obsolete, packages)
-        for retained in ("noctalia", "iwd", "mako", "rofi", "hypridle", "hyprlock", "tuned-ppd"):
+        for retained in ("noctalia", "iwd", "mako", "hypridle", "hyprlock", "tuned-ppd"):
             self.assertIn(retained, packages)
 
 

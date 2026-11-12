@@ -7,6 +7,18 @@ polkit_agent = false
 screen_time_enabled = false
 setup_wizard_enabled = false
 
+# Native capture replaces mac-screenshot: save a PNG and copy it to the clipboard.
+[shell.screenshot]
+directory = "/home/chihin/Pictures/Screenshots"
+filename_pattern = "Screenshot %Y-%m-%d at %H.%M.%S"
+format = "png"
+save_to_file = true
+copy_to_clipboard = true
+pipe_to_command = false
+annotate = false
+confirm_region = false
+show_cursor = false
+
 # No per-bar animation switch exists in v5.4; make shell transitions instant.
 [shell.animation]
 enabled = false

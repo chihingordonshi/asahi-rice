@@ -3,6 +3,7 @@
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import tempfile
@@ -53,6 +54,35 @@ class NoctaliaSetupTest(unittest.TestCase):
         self.assertFalse(CONFIG["theme"]["templates"]["enable_community_templates"])
         self.assertEqual(CONFIG["plugins"]["enabled"], [])
 
+    def test_native_launcher_and_capture_bindings(self):
+        binds = (ROOT / ".config/hypr/keybindings.lua").read_text()
+        for key, command in (
+            ("D", "panel-toggle launcher"),
+            ("A", "screenshot-region"),
+            ("SHIFT + A", "screenshot-fullscreen all"),
+        ):
+            self.assertRegex(
+                binds,
+                rf'hl\.bind\(mainMod \.\. " \+ {re.escape(key)}",\s*'
+                rf'hl\.dsp\.exec_cmd\("noctalia msg {command}"\)\)',
+            )
+        self.assertNotIn("rofi", binds)
+        self.assertNotIn("mac-screenshot", binds)
+
+    def test_native_capture_saves_and_copies_without_extra_tools(self):
+        capture = CONFIG["shell"]["screenshot"]
+        self.assertTrue(capture["directory"].endswith("/Pictures/Screenshots"))
+        self.assertEqual(capture["filename_pattern"], "Screenshot %Y-%m-%d at %H.%M.%S")
+        self.assertEqual(capture["format"], "png")
+        self.assertTrue(capture["save_to_file"])
+        self.assertTrue(capture["copy_to_clipboard"])
+        for option in ("pipe_to_command", "annotate", "confirm_region", "show_cursor"):
+            self.assertFalse(capture[option])
+        files = (ROOT / "setup/home-files.txt").read_text().splitlines()
+        for obsolete in (".config/rofi/config.rasi", ".config/fuzzel/fuzzel.ini", ".local/bin/mac-screenshot"):
+            self.assertNotIn(obsolete, files)
+            self.assertFalse((ROOT / obsolete).exists())
+
     def test_palette_has_both_required_variants(self):
         palette = json.loads((ROOT / ".config/noctalia/palettes/Waybar.json").read_text())
         for mode in ("dark", "light"):
@@ -73,8 +103,8 @@ class NoctaliaSetupTest(unittest.TestCase):
         self.assertEqual(startup.count('hl.exec_cmd("noctalia")'), 1)
         self.assertNotIn('start waybar.service', startup)
         self.assertNotIn('waybar.service', services)
-        for key in ("B", "X"):
-            self.assertIn(f'hl.bind(mainMod .. " + {key}", ToggleNoctaliaVisibility)', binds)
+        # The secondary bar shortcut is customizable independently of this setup.
+        self.assertIn('hl.bind(mainMod .. " + X", ToggleNoctaliaVisibility)', binds)
         self.assertIn('ibus-language toggle', binds)
         for path in (".config/noctalia/config.toml", ".config/noctalia/palettes/Waybar.json", ".config/hypr/noctalia-shell.lua", ".local/bin/noctalia-bar-apply"):
             self.assertIn(path, files)

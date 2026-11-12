@@ -155,7 +155,6 @@ python3-xapps-overrides
 qalculate-qt
 qt6ct
 robotfindskitten
-rofi
 rpmfusion-free-release
 rpmfusion-nonfree-release
 rsms-inter-fonts

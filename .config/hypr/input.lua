@@ -53,7 +53,7 @@ hl.gesture({
 --     direction = "pinch",
 --     action    = function()
 --         hl.dispatch(hl.dsp.exec_cmd(
---             "pgrep -x rofi >/dev/null && pkill -x rofi || rofi -show drun"
+--             "noctalia msg panel-toggle launcher"
 --         ))
 --     end,
 -- })

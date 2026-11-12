@@ -86,10 +86,9 @@ hl.bind("XF86AudioPause", hl.dsp.exec_cmd("playerctl play-pause"), { locked = tr
 hl.bind("XF86AudioPlay",  hl.dsp.exec_cmd("playerctl play-pause"), { locked = true })
 hl.bind("XF86AudioPrev",  hl.dsp.exec_cmd("playerctl previous"),   { locked = true })
 
--- Screenshot
-local macScreenshot = os.getenv("HOME") .. "/.local/bin/mac-screenshot"
-hl.bind(mainMod .. " + A",         hl.dsp.exec_cmd(macScreenshot .. " region"))
-hl.bind(mainMod .. " + SHIFT + A", hl.dsp.exec_cmd(macScreenshot .. " full"))
+-- Native Noctalia capture: save and copy, with all outputs for full-screen shots.
+hl.bind(mainMod .. " + A",         hl.dsp.exec_cmd("noctalia msg screenshot-region"))
+hl.bind(mainMod .. " + SHIFT + A", hl.dsp.exec_cmd("noctalia msg screenshot-fullscreen all"))
 
 -- Create spacer window with mainMod + N
 hl.bind(mainMod .. " + N", hl.dsp.exec_cmd("kitty --class spacer &"))
@@ -98,7 +97,7 @@ hl.bind(mainMod .. " + N", hl.dsp.exec_cmd("kitty --class spacer &"))
 hl.bind(mainMod .. " + W", hl.dsp.exec_cmd(browser))
 
 -- App launcher
-hl.bind(mainMod .. " + D", hl.dsp.exec_cmd("pgrep -x rofi >/dev/null && pkill -x rofi || rofi -show drun"))
+hl.bind(mainMod .. " + D", hl.dsp.exec_cmd("noctalia msg panel-toggle launcher"))
 
 -- Sticky
 hl.bind(mainMod .. " + V", hl.dsp.exec_cmd("kitty --class sticky -e vim \"$HOME/sticky/$(date '+%Y-%m-%d-%H:%M:%S').txt\""))

@@ -471,8 +471,9 @@ Fedora's native `noctalia` 5.4.1 replaces Waybar at Hyprland session startup.
 Waybar and its obsolete frontends are now uninstalled (see cleanup below);
 historical config/helpers remain in Git but are no longer deployed.
 The 36px fixed dark/lavender bar uses native network, Bluetooth, and audio popups.
-Standalone iwd, tuned-ppd, Mako, hypridle, Rofi, and the existing media-key helpers
-are retained. The IBus bar widget is removed; Super+R still switches languages.
+Standalone iwd, tuned-ppd, Mako, hypridle, and the existing media-key helpers
+are retained. Noctalia now also owns launching and screenshots (see below).
+The IBus bar widget is removed; Super+R still switches languages.
 
 `noctalia-shell.lua` handles workspace switches immediately and uses a
 compositor-native 200ms fallback timer to enable edge-reveal hiding only when the
@@ -522,3 +523,18 @@ swaybg unit must not be used with the new one-shot compatibility helper.
 Kept Noctalia, Mako, Rofi, standalone iwd, BlueZ, PipeWire/WirePlumber, hypridle,
 hyprlock, tuned-ppd, and `waybar-level` for native bar/media-key controls.
 Existing Noctalia runtime overrides and unrelated desktop settings were preserved.
+
+### Native launcher and screen capture (2026-11-12)
+
+`Super+D` now toggles Noctalia's launcher. `Super+A` selects a region and
+`Super+Shift+A` captures all outputs through native Noctalia IPC. Captures remain
+PNG files in `~/Pictures/Screenshots`, with a clipboard copy. Live validation
+confirmed launcher open/close and decoded full-screen and selected-region images.
+
+Removed Rofi's RPM with autoremove disabled after verification; Fuzzel and Slurp
+were already absent. Removed the obsolete Rofi/Fuzzel config and `mac-screenshot`
+helper from source/deployment manifests. Their verified home symlinks were retired
+into `~/.local/state/asahi-rice/backups/noctalia-capture-20261112/`.
+Grim was deliberately retained: a DNF preview showed its removal would also remove
+`xdg-desktop-portal-hyprland`. No portal, shared clipboard backend, or unrelated
+Noctalia runtime setting was removed or rewritten.
