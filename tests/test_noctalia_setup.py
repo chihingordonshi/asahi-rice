@@ -35,6 +35,7 @@ class NoctaliaSetupTest(unittest.TestCase):
         self.assertFalse(CONFIG["shell"]["animation"]["enabled"])
         for name in ("brightness", "volume"):
             self.assertIn("waybar-level", CONFIG["widget"][name]["actions"]["scroll_up"])
+        self.assertTrue(CONFIG["audio"]["enable_overdrive"])
 
     def test_wallpaper_rotation_and_minimal_services(self):
         button = CONFIG["widget"]["wallpaper"]

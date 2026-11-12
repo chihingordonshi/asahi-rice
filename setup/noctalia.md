@@ -69,8 +69,11 @@ and [#3254](https://github.com/noctalia-dev/noctalia/issues/3254) (missing persi
 workspaces after reload) are not exact matches for the reported delay.
 
 Mako still owns notifications, the existing level helpers retain perceptual
-brightness and capped volume/media-key behavior, hypridle owns locking, Rofi owns
-launching, and tuned-ppd owns power profiles. Noctalia notification/OSD daemons,
+brightness and 5% volume steps capped at **150%** (including media keys).
+Noctalia audio overdrive also permits 150% in its native controls. Notification
+text shows the boosted percentage while its progress hint stays within 0–100.
+Hypridle owns locking, Rofi owns launching, and tuned-ppd owns power profiles.
+Noctalia notification/OSD daemons,
 idle/lock actions, dock, clipboard history, plugins, weather, app-theme templates,
 and the optional blurred overview backdrop are disabled. NetworkManager is not
 required: Noctalia also supports the existing standalone iwd backend.

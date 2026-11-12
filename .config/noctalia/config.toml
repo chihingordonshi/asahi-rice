@@ -167,7 +167,7 @@ enable_daemon = false
 enabled = false
 [audio]
 enable_sounds = false
-enable_overdrive = false
+enable_overdrive = true
 [lockscreen]
 enabled = false
 [idle.behavior.lock]

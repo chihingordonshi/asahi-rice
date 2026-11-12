@@ -38,7 +38,8 @@ elif args[0] == "set-volume":
     delta = 0.05 if args[-1] == "5%+" else -0.05
     state["volume"] = max(0, state["volume"] + delta)
     if "-l" in args:
-        state["volume"] = min(1, state["volume"])
+        limit = float(args[args.index("-l") + 1])
+        state["volume"] = min(limit, state["volume"])
     path.write_text(json.dumps(state))
 elif args[0] == "set-mute":
     state["muted"] = not state["muted"]
@@ -86,7 +87,7 @@ class WaybarLevelTest(unittest.TestCase):
         return result, json.loads(self.state.read_text()), calls
 
     def test_outward_keys_at_limits_do_nothing(self):
-        for volume, action in ((0, "down"), (1, "up"), (1.2, "up")):
+        for volume, action in ((0, "down"), (1.5, "up"), (1.8, "up")):
             for muted in (False, True):
                 with self.subTest(volume=volume, action=action, muted=muted):
                     result, state, calls = self.run_volume(volume, action, muted)
@@ -101,7 +102,11 @@ class WaybarLevelTest(unittest.TestCase):
             (1, "down", 0.95),
             (0.6, "up", 0.65),
             (0.6, "down", 0.55),
-            (0.98, "up", 1),
+            (0.98, "up", 1.03),
+            (1, "up", 1.05),
+            (1.2, "up", 1.25),
+            (1.48, "up", 1.5),
+            (1.5, "down", 1.45),
             (0.02, "down", 0),
         )
         for volume, action, expected in cases:
@@ -110,14 +115,14 @@ class WaybarLevelTest(unittest.TestCase):
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertAlmostEqual(state["volume"], expected)
                 writes = [call for call in calls if call[:2] == ["wpctl", "set-volume"]]
-                args = ["-l", "1"] if action == "up" else []
+                args = ["-l", "1.5"] if action == "up" else []
                 step = "5%+" if action == "up" else "5%-"
                 self.assertEqual(writes, [["wpctl", "set-volume", *args, "@DEFAULT_AUDIO_SINK@", step]])
                 self.assertEqual(sum(call[0] == "notify-send" for call in calls), 1)
                 self.assertIn(["pkill", "-RTMIN+10", "-x", "waybar"], calls)
 
     def test_mute_toggle_still_works_at_limits(self):
-        for volume in (0, 1):
+        for volume in (0, 1, 1.5):
             result, state, calls = self.run_volume(volume, "toggle")
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(state, {"volume": volume, "muted": True})
@@ -129,6 +134,25 @@ class WaybarLevelTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(json.loads(result.stdout)["percentage"], 60)
         self.assertEqual(calls, [["wpctl", "get-volume", "@DEFAULT_AUDIO_SINK@"]])
+
+    def test_status_displays_boosted_volume(self):
+        for volume, expected in ((1.05, 105), (1.25, 125), (1.49, 150), (1.5, 150)):
+            for muted in (False, True):
+                with self.subTest(volume=volume, muted=muted):
+                    result, _, calls = self.run_volume(volume, "status", muted)
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    status = json.loads(result.stdout)
+                    self.assertIn(f"{expected}%", status["text"])
+                    self.assertEqual(status["percentage"], expected)
+                    self.assertEqual(calls, [["wpctl", "get-volume", "@DEFAULT_AUDIO_SINK@"]])
+
+    def test_boosted_osd_keeps_percentage_text_and_valid_progress_hint(self):
+        result, _, calls = self.run_volume(1.45, "up")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        notifications = [call for call in calls if call[0] == "notify-send"]
+        self.assertEqual(len(notifications), 1)
+        self.assertEqual(notifications[0][-2:], ["Volume", "150%"])
+        self.assertIn("--hint=int:value:100", notifications[0])
 
     def test_audio_errors_do_not_send_notifications(self):
         for failure in ("fail_get", "fail_set"):
