@@ -97,19 +97,6 @@ command. Change this absolute path for another account. Filename patterns use
 strftime and omit the extension. For ad-hoc CLI overrides, put options **before**
 the positional `all` target.
 
-The live pointer is also hidden during region selection. `noctalia-shell.lua`
-temporarily sets Hyprland's `cursor.invisible` while any mapped
-`noctalia-screenshot-region` layer exists, then restores the value from before
-selection. This is separate from `show_cursor = false`, which only affects the
-saved image. Layer events react immediately; the existing 200ms controller timer
-covers delayed unmaps and disappearing surfaces. Completion, Esc, and
-controller/config unload release the override; a reloaded controller rechecks
-any still-open selector. Normal mouse settings and shortcuts are unchanged; no
-background helper is needed. As this is a temporary global flag, another tool
-should not change `cursor.invisible` during selection. Live checks confirmed the
-crosshair disappears, completed regions still save, and completion/cancellation
-restore the cursor, including after reloading during selection.
-
 Live checks verified the launcher panel opens/closes, decoded a 2560×1600
 full-screen PNG, completed a region drag yielding a decoded 320×224 PNG, and
 verified the saved full-screen image was also copied as a readable clipboard PNG.
