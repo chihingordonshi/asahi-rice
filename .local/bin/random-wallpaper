@@ -1,27 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Serialize rotation requests and ignore rapid repeated clicks. The long-lived
-# swaybg process belongs to its own service, never this oneshot's cgroup.
-runtime_dir="${XDG_RUNTIME_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}}"
-mkdir -p -- "$runtime_dir"
-lock_file="$runtime_dir/random-wallpaper-${UID:-$(id -u)}.lock"
-stamp_file="$runtime_dir/random-wallpaper-${UID:-$(id -u)}.stamp"
-cooldown_ms=1500
-
-exec 9>"$lock_file"
-flock --nonblock 9 || exit 0
-
-now_ms=$(date +%s%3N)
-last_ms=0
-if [[ -r "$stamp_file" ]]; then
-    read -r last_ms < "$stamp_file" || last_ms=0
-fi
-
-if [[ "$last_ms" =~ ^[0-9]+$ ]] && (( now_ms - last_ms < cooldown_ms )); then
-    exit 0
-fi
-
-systemctl --user restart swaybg-wallpaper.service
-# Failed restarts must remain retryable immediately.
-printf '%s\n' "$now_ms" > "$stamp_file"
+# Noctalia owns library scanning, selection, persistence, and rendering.
+# An optional connector targets a single output; no argument targets all outputs.
+exec noctalia msg wallpaper-random "$@"

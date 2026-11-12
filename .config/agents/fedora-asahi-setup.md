@@ -18,10 +18,11 @@ machine, and the setup has been live and in daily use since:
 
 - **Hyprland install path**: `lionheartp/Hyprland` COPR, not `technochip/Hyprland-aarch64`
   (named below) — that one turned out to be deprecated by its own maintainer.
-- **Shell/panel**: **waybar**, not ironbar, HyprPanel/Wayle, or eww. (ironbar was the first
-  pick, briefly deployed, then swapped for waybar the same day — see the README's decisions
-  log for why.) Quickshell-based options (caelestia, noctalia) remain a dead end on this
-  hardware, as predicted below.
+- **Shell/panel (updated November 2026)**: Fedora's **native Noctalia 5.4+**, not
+  the old Quickshell implementation discussed below. Noctalia owns the bar, native
+  control popups, and wallpaper rendering/rotation. Waybar and obsolete frontends
+  have been removed; historical source remains but is not deployed. See
+  `setup/noctalia.md` and `setup/system-state.md` for current configuration.
 
 The rest of this document — the reasoning, the ruled-out alternatives, the known hardware
 gaps, the macOS-side notes — is still accurate background and worth reading before touching

@@ -230,7 +230,7 @@ PY
 }
 
 wallpaper() {
-    systemctl --user restart swaybg-wallpaper.service
+    "$HOME/.local/bin/random-wallpaper" "$@"
 }
 
 week1() {

@@ -84,8 +84,6 @@
 .config/hypr/programs.lua
 .config/hypr/scheme/current.lua
 .config/hypr/scripts/cairo-clock.py
-.config/hypr/scripts/waybar-autohide
-.config/hypr/waybar.lua
 .config/hypr/window-rules.lua
 .config/hypr/workspace-rules.lua
 .config/hypr/workspaces.lua
@@ -116,7 +114,6 @@
 .config/noctalia/palettes/Waybar.json
 .config/nvim/init.lua
 .config/opencode/opencode.jsonc
-.config/pavucontrol.ini
 .config/plasma-localerc
 .config/plasma-org.kde.plasma.desktop-appletsrc
 .config/plasmashellrc
@@ -131,12 +128,7 @@
 .config/systemd/user/codex-touchbar.service
 .config/systemd/user/graphical-session.target.wants/hypridle.service
 .config/systemd/user/random-wallpaper.service
-.config/systemd/user/random-wallpaper.timer
-.config/systemd/user/swaybg-wallpaper.service
-.config/systemd/user/waybar.service.d/restart.conf
 .config/systemd/user/timers.target.wants/asahi-rice-sync.timer
-.config/waybar/config.jsonc
-.config/waybar/style.css
 .config/wireplumber/wireplumber.conf.d/51-bluetooth-no-hfp.conf
 .config/xsettingsd/xsettingsd.conf
 .gitconfig
@@ -168,13 +160,7 @@
 .local/bin/random-wallpaper.sh
 .local/bin/touchbar
 .local/bin/unimatrix
-.local/bin/waybar-bluetooth.sh
-.local/bin/waybar-cpu.sh
-.local/bin/waybar-memory.sh
-.local/bin/waybar-kitty-art.sh
 .local/bin/waybar-level
-.local/bin/waybar-power-profile-cycle.sh
-.local/bin/waybar-power-profile.sh
 .local/share/applications/brave-icloud-photos-pwa.desktop
 .local/share/applications/brave-zoom-pwa.desktop
 .local/share/applications/chrome-mnnncmnfcndlghkomlbaadoonfnjcadg-Profile_1.desktop

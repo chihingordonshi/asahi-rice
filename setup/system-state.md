@@ -468,7 +468,8 @@ least-privilege default for other installations.
 ## Native Noctalia shell (supersedes the earlier panel/wallpaper notes)
 
 Fedora's native `noctalia` 5.4.1 replaces Waybar at Hyprland session startup.
-The old Waybar service is disabled, not removed; its config and helpers remain.
+Waybar and its obsolete frontends are now uninstalled (see cleanup below);
+historical config/helpers remain in Git but are no longer deployed.
 The 36px fixed dark/lavender bar uses native network, Bluetooth, and audio popups.
 Standalone iwd, tuned-ppd, Mako, hypridle, Rofi, and the existing media-key helpers
 are retained. The IBus bar widget is removed; Super+R still switches languages.
@@ -499,3 +500,25 @@ The original settings and preservation/reconstruction artifacts are backed up in
 `~/.local/state/asahi-rice/backups/noctalia-20261111-125017/`. See
 [`noctalia.md`](noctalia.md) for configuration precedence, the template undo-hook
 caveat, reproducible checks, interactive verification, and reversible rollback.
+
+### Native wallpaper helper and legacy frontend cleanup (2026-11-12)
+
+The new wallpaper button beside the tray invokes Noctalia's native
+`wallpaper-random` action. `wallpaper [connector]`, `random-wallpaper`, and the
+compatibility name `random-wallpaper.sh` use `noctalia msg wallpaper-random`;
+Noctalia alone scans the recursive library, selects/persists images, and renders.
+The existing 900-second native automation is unchanged.
+
+Removed RPMs: `waybar`, `swaybg`, `pavucontrol`, `wiremix`, `wofi`, `blueman`.
+DNF's `clean_requirements_on_remove=False` preserved shared dependencies.
+Removed Cargo-owned `impala` with `cargo uninstall --root ~/.local impala` and
+the standalone `~/.local/bin/bluetuith`. Waypaper and ironbar were already absent.
+Legacy package/deployment manifest entries were removed; old renderer/timer owners
+are inactive. Repository-owned deployment symlinks were retired into
+`~/.local/state/asahi-rice/backups/legacy-ui-20261112-110025/`, while independent
+configuration files and local media/state were preserved. The historical restarting
+swaybg unit must not be used with the new one-shot compatibility helper.
+
+Kept Noctalia, Mako, Rofi, standalone iwd, BlueZ, PipeWire/WirePlumber, hypridle,
+hyprlock, tuned-ppd, and `waybar-level` for native bar/media-key controls.
+Existing Noctalia runtime overrides and unrelated desktop settings were preserved.

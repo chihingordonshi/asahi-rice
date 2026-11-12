@@ -21,7 +21,7 @@ class NoctaliaSetupTest(unittest.TestCase):
         self.assertEqual(bar["thickness"], 36)
         self.assertEqual(bar["start"], ["suspend", "kill", "cpu", "memory", "power_profile", "workspaces"])
         self.assertEqual(bar["center"], ["clock"])
-        self.assertEqual(bar["end"], ["tray", "brightness", "volume", "bluetooth", "network", "battery"])
+        self.assertEqual(bar["end"], ["tray", "wallpaper", "brightness", "volume", "bluetooth", "network", "battery"])
         self.assertNotIn("ibus", CONFIG["widget"])
         self.assertEqual(CONFIG["widget"]["network"]["actions"]["left"], "panel-toggle control-center network")
         # Missing overrides deliberately select Noctalia's native audio/BT panels.
@@ -37,6 +37,10 @@ class NoctaliaSetupTest(unittest.TestCase):
             self.assertIn("waybar-level", CONFIG["widget"][name]["actions"]["scroll_up"])
 
     def test_wallpaper_rotation_and_minimal_services(self):
+        button = CONFIG["widget"]["wallpaper"]
+        self.assertEqual(button["type"], "custom_button")
+        self.assertEqual(button["glyph"], "wallpaper")
+        self.assertEqual(button["actions"], {"left": "wallpaper-random"})
         wallpaper = CONFIG["wallpaper"]
         self.assertTrue(wallpaper["enabled"])
         self.assertTrue(wallpaper["directory"].endswith("/Pictures/Wallpapers"))

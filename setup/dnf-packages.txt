@@ -76,7 +76,6 @@ ibus-gtk3
 ibus-gtk4
 ibus-rime
 ifuse
-ironbar
 iwd
 jq
 json-c-devel
@@ -140,7 +139,6 @@ nv-codec-headers
 nyancat
 openal-soft-devel
 openh264
-pavucontrol
 pinta
 pipewire-devel
 pipewire-jack-audio-connection-kit-devel
@@ -170,7 +168,6 @@ shim-aa64
 sl
 socat
 sqlite
-swaybg
 systemd-manager-tui
 systemd-oomd-defaults
 tiny-dfr
@@ -186,11 +183,9 @@ update-m1n1
 vapoursynth-devel
 vim-enhanced
 vulkan-loader-devel
-waybar
 wayland-devel
 wayland-protocols-devel
 wev
-wiremix
 yt-dlp
 zimg-devel
 zlib-ng-compat-devel

@@ -45,8 +45,8 @@ Review the hardware-pinned settings and package list before running it on anothe
      automatically). The `technochip/Hyprland-aarch64` COPR named in
      `fedora-asahi-setup.md` is deprecated by its own maintainer — use
      `lionheartp/Hyprland` instead.
-   - Fedora's main repos → `noctalia` (native v5 shell), `waybar` (rollback), `cava`, `btop`, `fastfetch`, `kvantum`,
-     `kvantum-qt5`, `mako`, `rofi`, `swaybg`, `network-manager-applet`, `wl-clipboard`,
+   - Fedora's main repos → `noctalia` (native v5 shell), `cava`, `btop`, `fastfetch`, `kvantum`,
+     `kvantum-qt5`, `mako`, `rofi`, `wl-clipboard`,
      `brightnessctl`, `grim`, `slurp`, `playerctl`, `ibus`, `ibus-rime`, `librime-lua`,
      `exfatprogs`, `gtk4-layer-shell`, `python3-gobject`, `python3-cairo` (the last
      three are for `hypr-quickmenu` and the Cairo clock in `autostart.lua` — both are
@@ -58,7 +58,8 @@ Review the hardware-pinned settings and package list before running it on anothe
    - Noctalia renders wallpapers and randomly rotates images every 15 minutes,
      including subfolders of `~/Pictures/Wallpapers`. Adjust the machine-local
      absolute directory in `.config/noctalia/config.toml` when using another account.
-     Keep the old `swaybg` renderer and rotation timer inactive.
+     The wallpaper button and Zsh `wallpaper` command request an immediate native
+     random selection. Legacy Waybar/frontends and swaybg are no longer installed.
    - `dolphin` (file manager) and `firefox` (browser) — swap for your own picks if you
      want different ones; `programs.lua` (see below) needs to match whatever you choose.
    - Optional: the caelestia-widget replacements need `bluedevil` (for `kcmshell6
@@ -76,20 +77,20 @@ Review the hardware-pinned settings and package list before running it on anothe
    own `$HOME`. Run `setup/link-home.sh`; it preserves replaced files under
    `~/.local/state/asahi-rice/backups/` and creates file-by-file symlinks.
    - `.local/bin/` specifically is a grab-bag, not all of it Hyprland config — the
-     scripts actually referenced by the Hypr/waybar config are `hypr-quickmenu`,
-     `hypr-overview`, `hypr-workspace-watch`, `mac-screenshot`,
-     `ibus-language`, and the `waybar-*.sh`
-     helpers (`waybar-cpu.sh`, `waybar-memory.sh`, `waybar-bluetooth.sh`,
-     `waybar-kitty-art.sh`, `waybar-power-profile*.sh`).
+     active desktop helpers include `hypr-quickmenu`, `hypr-overview`,
+     `hypr-workspace-watch`, `mac-screenshot`, `ibus-language`, `noctalia-bar-apply`,
+     `random-wallpaper`, and `waybar-level` (still used for audio/brightness).
+     Other old Waybar helpers remain as historical source but are not deployed.
      Everything else in there is unrelated CLI tooling retained from the old
      copy-based sync setup — copy it too if you want it, skip
      it if you're only after the rice.
    - **Do not copy `.config/systemd/user/asahi-rice-sync.{service,timer}`, or enable
      them.** That unit pushes to `github.com/chihingordonshi/asahi-rice` — it's Chi
      Hin's repo sync, not a general-purpose tool, and you don't have push access to it
-     anyway. Everything else under `.config/systemd/user/` (`hypridle.service`,
-     `random-wallpaper.{service,timer}`, `swaybg-wallpaper.service`) is
-     machine-generic and safe to bring over. `codex-touchbar.service` is also safe,
+     anyway. Use `setup/home-files.txt`, not every historical unit: the old
+     `random-wallpaper.timer` and `swaybg-wallpaper.service` are retired and must
+     not be enabled. The manual `random-wallpaper.service` now sends Noctalia IPC.
+     `hypridle.service` is machine-generic. `codex-touchbar.service` is also safe,
      but only useful after installing its narrow sudoers rule and adding the Codex
      `notify` setting or linking the Pi extension described below. Enable the
      recorded set with the installer or from `setup/user-services.txt`.
@@ -161,7 +162,7 @@ live partition — see "Build history" below for what that involved).
 | `.config/hypr/scheme/`, `.config/hypr/hyprtoolkit.conf` | Color scheme + Hyprland toolkit config, copied from `dot-files` unchanged |
 | `.config/hypr-quickmenu/` | Config for the hand-rolled HUD launcher (`.local/bin/hypr-quickmenu`), autostarted |
 | `.config/noctalia/`, `.config/hypr/noctalia-shell.lua` | Active native v5 shell: minimal 36px bar, native control popups, wallpaper rotation, tiled-only hiding (no edge reveal) |
-| `.config/waybar/` | Previous bar configuration, retained for rollback |
+| `.config/waybar/` | Historical bar configuration; no longer deployed, packages removed |
 | `.config/mako/` | Notification daemon |
 | `.config/rofi/` | App launcher, bound to SUPER+D |
 | `.config/fuzzel/` | App launcher, alternate to rofi |
@@ -176,12 +177,12 @@ live partition — see "Build history" below for what that involved).
 | `.config/neofetch/` | Superseded by fastfetch; kept as a leftover, not actively used |
 | `.config/wireplumber/` | Audio routing tweak (disables Bluetooth HFP) |
 | `.config/qt6ct/`, `.config/Kvantum/`, `.config/kdeglobals` | Qt application theming under Hyprland; Plasma itself is no longer the fallback desktop |
-| `.config/pavucontrol.ini` | Audio mixer settings |
+| `.config/pavucontrol.ini` | Historical audio mixer settings; no longer deployed |
 | `.config/mpv/`, `.local/bin/mpv-gesture` | Minimal mpv controls plus native Hyprland two-finger pinch zoom and scroll panning |
 | `.config/gtk-{3,4}.0/`, selected KDE configs | Durable toolkit, display, shortcut and file association settings; legacy Plasma settings are retained |
 | `.config/gh/config.yml` | Non-secret GitHub CLI preferences; `hosts.yml` is ignored because it contains the token |
 | `.config/autostart/` | XDG autostart entries |
-| `.config/systemd/user/` | User systemd units — `hypridle`, `random-wallpaper`, `swaybg-wallpaper` are machine-generic; `asahi-rice-sync` is Chi Hin-specific, do not copy (see replication step 3) |
+| `.config/systemd/user/` | User units; deploy only the manifest set, not retired wallpaper units. `asahi-rice-sync` is Chi Hin-specific, do not copy (see replication step 3) |
 | `.config/agents/fedora-asahi-setup.md` | The original research/decisions briefing this whole setup is built from |
 | `.local/bin/` | Scripts the config actually references, plus unrelated CLI tools retained from the old copy-based sync setup — see replication step 3 for which is which |
 | `.local/share/applications/` | Desktop-entry overrides (e.g. Electron app launch flags) |
@@ -233,8 +234,10 @@ timeout is the sole way this machine locks.
 
 **Noctalia owns wallpaper selection and rotation.** Its picker renders the selected
 image immediately, and native automation picks a random image every 900 seconds.
-The old `swaybg-wallpaper.service`, `random-wallpaper.timer`, scripts, and manual
-`wallpaper` command are retained but inactive; do not start a competing renderer.
+Click the wallpaper button beside the tray or run `wallpaper` for an immediate
+native random selection; `wallpaper eDP-1` targets one output. Both script entry
+points now delegate to Noctalia. The old swaybg unit/timer are no longer deployed,
+and the legacy renderer/frontends are uninstalled; do not start a competing renderer.
 The fixed Waybar palette does not follow wallpaper colors or rewrite app themes.
 See [configuration, verification, and rollback](setup/noctalia.md).
 

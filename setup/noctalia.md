@@ -15,11 +15,15 @@ No Quickshell, plugins, or system service changes are required.
 - `.config/hypr/noctalia-shell.lua`: official no-animation layer rule, floating
   settings window, tiled-only hiding without edge reveal, and Super+B/Super+X pin/unpin
   with an immediate IPC refresh.
-- `autostart.lua` starts `noctalia` once at session startup. Waybar's service is
-  excluded from the enablement manifest; its files and controllers remain intact.
+- `autostart.lua` starts `noctalia` once at session startup. Legacy Waybar files
+  remain as historical source, but are no longer deployed or installed.
 - Noctalia owns wallpaper rendering. Random rotation runs every **900 seconds**,
   recursively under `/home/chihin/Pictures/Wallpapers`. Change this absolute path
-  when deploying to another account. The previous swaybg service/timer stay inactive.
+  when deploying to another account. Click the wallpaper button beside the tray
+  for an immediate native `wallpaper-random` action. The Zsh `wallpaper` function
+  and `.local/bin/random-wallpaper` send the same IPC; optionally pass a connector
+  such as `wallpaper eDP-1`. `random-wallpaper.sh` is a compatibility alias, not a
+  renderer. No separate image scanner, state file, service restart, or timer is needed.
 
 Workspace events reconcile visibility immediately; a 200ms fallback timer reads
 native compositor objects, not shell commands. Noctalia's global shell animations
@@ -87,6 +91,19 @@ systemctl --user disable waybar.service
 
 This does not stop a running bar. Prefer the next logout/login for a live Waybar
 cutover; do not kill desktop UI processes just to reload their configuration.
+Also stop/disable the old `random-wallpaper.timer` and `swaybg-wallpaper.service`
+before migrating the helpers. Retire only verified repository-owned home symlinks
+for legacy entries removed from `setup/home-files.txt`; linking is additive and
+will not remove them automatically. In particular, the historical swaybg unit has
+`Restart=always`: never run it with the new one-shot IPC compatibility helper.
+
+The live cleanup removed `waybar`, `swaybg`, `pavucontrol`, `wiremix`, `wofi`, and
+`blueman` with DNF dependency cleanup disabled, Cargo-installed `impala`, and the
+standalone `~/.local/bin/bluetuith`. Waypaper and ironbar were already absent.
+The package manifest no longer installs the obsolete frontends. User configuration,
+wallpaper libraries, and shared desktop backends were preserved; `waybar-level`
+remains actively used by Noctalia and the media keys. Retired deployment symlinks
+are backed up under `~/.local/state/asahi-rice/backups/legacy-ui-20261112-110025/`.
 
 Noctalia merges configuration-directory TOML first, then applies overrides from
 `~/.local/state/noctalia/settings.toml`. Preserve that file and unrelated avatar,
@@ -125,15 +142,20 @@ rendering is active. Suspend/resume and visual fidelity require interactive chec
 
 ## Roll back without deleting configuration
 
-1. In `hyprland.lua`, restore `require("waybar")` instead of
-   `require("noctalia-shell")`; restore the Super+B callback to
+1. Reinstall Waybar and whichever old network/Bluetooth/audio frontends you want,
+   and deliberately restore their configuration/controller/helper deployment
+   entries from Git or the backup. In `hyprland.lua`, restore `require("waybar")`
+   instead of `require("noctalia-shell")`; restore the Super+B callback to
    `ToggleWaybarVisibility` in `keybindings.lua`.
 2. Replace `hl.exec_cmd("noctalia")` in `autostart.lua` with
    `hl.exec_cmd("systemctl --user start waybar.service")`.
 3. Restore `waybar.service` in `setup/user-services.txt`, then run
    `systemctl --user enable waybar.service` (without `--now`).
-4. Disable Noctalia wallpaper automation/rendering if also rolling back wallpaper
-   ownership. Do not run both renderers; old swaybg remains optional, not automatic.
+4. Prefer retaining Noctalia wallpaper ownership. If also rolling that back,
+   reinstall swaybg and restore the old renderer scripts/units from Git history
+   before disabling Noctalia wallpaper automation/rendering. The current
+   `random-wallpaper.sh` sends Noctalia IPC and cannot serve the old restarting unit.
+   Never run both renderers.
 5. Log out and back in. Noctalia files and the existing state backup can remain.
    Restoring old settings wholesale may re-enable app-theme hooks; do so only when
    deliberately restoring that previous behavior.
