@@ -99,6 +99,7 @@ eval "$(zoxide init zsh --cmd cd)"
 
 # opencode
 export PATH=/home/chihin/.opencode/bin:$PATH
+export PATH="$HOME/Projects/utils-venv/.venv/bin:$PATH"
 
 if [ -e /home/chihin/.nix-profile/etc/profile.d/nix.sh ]; then . /home/chihin/.nix-profile/etc/profile.d/nix.sh; fi # added by Nix installer
 
