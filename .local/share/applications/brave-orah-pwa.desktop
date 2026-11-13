@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Orah
+Comment=Orah student portal (Brave web app)
+Exec=brave-browser "--profile-directory=Profile 1" --app=https://app.orah.com/student/home
+Icon=brave-orah-pwa-Profile_1
+Terminal=false
+Categories=Education;
+StartupWMClass=brave-app.orah.com__student_home-Profile_1

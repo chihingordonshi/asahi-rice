@@ -159,6 +159,7 @@
 .local/bin/unimatrix
 .local/bin/waybar-level
 .local/share/applications/brave-icloud-photos-pwa.desktop
+.local/share/applications/brave-orah-pwa.desktop
 .local/share/applications/brave-zoom-pwa.desktop
 .local/share/applications/chrome-mnnncmnfcndlghkomlbaadoonfnjcadg-Profile_1.desktop
 .local/share/applications/claude-code-url-handler.desktop
@@ -169,6 +170,7 @@
 .local/share/applications/navidrome.desktop
 .local/share/applications/touchbar-defender.desktop
 .local/share/applications/wechat.desktop
+.local/share/icons/hicolor/32x32/apps/brave-orah-pwa-Profile_1.png
 .local/share/icons/hicolor/512x512/apps/navidrome.png
 .local/share/touchbar-animations/codex-train.mkv
 .local/share/touchbar-animations/codex-vines.mkv
