@@ -24,12 +24,7 @@ alias ll='eza -lah --icons --group-directories-first --git'
 alias la='eza -a --icons --group-directories-first'
 alias tree='eza --tree --icons --group-directories-first'
 alias bat='bat --paging=never'
-alias grep='rg'
-alias find='fd'
-alias du='dust'
-alias df='duf'
 alias ..='cd ..'
-alias ~='cd ~'
 alias so='source .zshrc'
 alias ff='fastfetch'
 
@@ -97,8 +92,6 @@ export PATH
 
 eval "$(zoxide init zsh --cmd cd)"
 
-# opencode
-export PATH=/home/chihin/.opencode/bin:$PATH
 export PATH="$HOME/Projects/utils-venv/.venv/bin:$PATH"
 
 if [ -e /home/chihin/.nix-profile/etc/profile.d/nix.sh ]; then . /home/chihin/.nix-profile/etc/profile.d/nix.sh; fi # added by Nix installer
