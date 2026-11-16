@@ -38,6 +38,7 @@ alias music='cmus'
 alias ipynb='cd ~/amsr-venv && source .venv/bin/activate && uv run jupyter lab'
 alias pluto='cd ~/amsr-venv && ./julia -e "using Pluto; Pluto.run()"'
 alias amsr='cd ~/amsr-venv && source .venv/bin/activate'
+alias julia='~/amsr-venv/julia'
 
 [[ -f /usr/share/zsh/plugins/zsh-autocomplete/zsh-autocomplete.plugin.zsh ]] && source /usr/share/zsh/plugins/zsh-autocomplete/zsh-autocomplete.plugin.zsh
 [[ -f ~/.local/share/zsh-autocomplete/zsh-autocomplete.plugin.zsh ]] && source ~/.local/share/zsh-autocomplete/zsh-autocomplete.plugin.zsh
