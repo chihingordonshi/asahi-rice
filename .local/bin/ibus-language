@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One global English/Rime switch, shared by Hyprland and Waybar.
+# English/Rime switch for the focused input context, shared by Hyprland and Waybar.
 set -euo pipefail
 
 case "${1:-toggle}" in
@@ -28,7 +28,7 @@ case "${1:-toggle}" in
             *) text="$engine" ;;
         esac
         jq -cn --arg text "$text" --arg engine "$engine" \
-            '{text:$text, tooltip:("Input method: " + $engine + " (Super+R or click to switch; global)")}'
+            '{text:$text, tooltip:("Input method: " + $engine + " (Super+R or click to switch; per input context)")}'
         ;;
     *)
         printf 'Usage: ibus-language [toggle|status]\n' >&2

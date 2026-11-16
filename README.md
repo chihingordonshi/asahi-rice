@@ -107,7 +107,7 @@ Review the hardware-pinned settings and package list before running it on anothe
    `localectl status`, not guessed. Re-run those two commands on your own machine and
    adjust if anything differs (e.g. a non-US keyboard, or a different M1 panel
    variant).
-5. **IBus uses English and Rime Ice, switched globally with Super+R.** Run
+5. **IBus uses English and Rime Ice, remembered per input context with Super+R.** Run
    `setup/configure-ibus.sh` in your user session (also run by the installer).
    Supply your Rime Ice dictionaries/Lua and learned data separately; they are not
    stored in Git. Before linking the custom patches, an existing `~/rime` directory
@@ -168,7 +168,7 @@ live partition — see "Build history" below for what that involved).
 | `.config/noctalia/`, `.config/hypr/noctalia-shell.lua` | Active native v5 shell: bar, launcher, screen capture, native control popups, wallpaper rotation, tiled-only hiding (no edge reveal) |
 | `.config/waybar/` | Historical bar configuration; no longer deployed, packages removed |
 | `.config/mako/` | Notification daemon |
-| `.config/ibus/rime/*.custom.yaml`, `.local/bin/ibus-language` | Minimal Rime Ice profile and global English/Chinese switch; old Fcitx configs remain only for rollback |
+| `.config/ibus/rime/*.custom.yaml`, `.local/bin/ibus-language` | Minimal Rime Ice profile and per-context English/Chinese switch; old Fcitx configs remain only for rollback |
 | `.config/kitty/` | Terminal |
 | `.config/fish/` | Alternate shell config (`.zshrc` is the default) |
 | `.config/nvim/` | Neovim config |
@@ -247,11 +247,14 @@ See [configuration, verification, and rollback](setup/noctalia.md).
 native Wayland input-method-v2 bridge enabled. Leave `GTK_IM_MODULE` and
 `QT_IM_MODULE` unset for native Wayland; `XMODIFIERS=@im=ibus` covers XWayland.
 Super+R calls `ibus-language toggle` (there is no IBus bar widget), selecting only
-`xkb:us::eng` or `rime`. `use-global-engine=true` shares that selection across apps.
+`xkb:us::eng` or `rime`. `use-global-engine=false` lets the GTK panel remember
+that selection per input context instead of sharing it across apps. Applications
+may share contexts between fields or windows; native Wayland behavior also depends
+on the input-method bridge.
 Competing IBus/emoji shortcuts, the extra tray icon and property toolbar are disabled;
 the horizontal candidate popup remains. Rime's profile lists only `rime_ice`, shows
 8 candidates, and disables Shift language switching so it cannot silently diverge
-from the global engine. F4 still opens Rime's advanced options.
+from the selected IBus engine. F4 still opens Rime's advanced options.
 
 This machine's `~/.config/ibus/rime` points to the existing `~/rime`, preserving its
 Rime Ice dictionaries, Lua and learned user database. Only the three `*.custom.yaml`

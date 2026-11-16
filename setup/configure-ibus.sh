@@ -4,7 +4,8 @@ set -euo pipefail
 
 gsettings set org.freedesktop.ibus.general preload-engines "['xkb:us::eng', 'rime']"
 gsettings set org.freedesktop.ibus.general engines-order "['xkb:us::eng', 'rime']"
-gsettings set org.freedesktop.ibus.general use-global-engine true
+# Let the GTK panel remember the selected engine for each input context.
+gsettings set org.freedesktop.ibus.general use-global-engine false
 gsettings set org.freedesktop.ibus.general use-system-keyboard-layout true
 gsettings set org.freedesktop.ibus.general embed-preedit-text false
 

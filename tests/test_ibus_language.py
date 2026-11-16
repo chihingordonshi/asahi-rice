@@ -78,7 +78,7 @@ class IBusLanguageTest(unittest.TestCase):
                 status = json.loads(result.stdout)
                 self.assertEqual(status["text"], text)
                 self.assertIn("Super+R", status["tooltip"])
-                self.assertIn("global", status["tooltip"])
+                self.assertIn("per input context", status["tooltip"])
                 self.assertEqual(json.loads(self.state.read_text())["engine"], engine)
 
     def test_toggle_uses_only_english_and_rime(self):
@@ -123,7 +123,7 @@ class IBusLanguageTest(unittest.TestCase):
         self.assertEqual(result.returncode, 2)
         self.assertEqual(self.calls.read_text(), "")
 
-    def test_minimal_global_profile_and_no_competing_shortcuts(self):
+    def test_per_context_profile_and_no_competing_shortcuts(self):
         result = subprocess.run([str(CONFIGURE)], env=self.env, text=True,
                                 capture_output=True, timeout=5)
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -132,7 +132,7 @@ class IBusLanguageTest(unittest.TestCase):
         general = "org.freedesktop.ibus.general"
         panel = "org.freedesktop.ibus.panel"
         self.assertEqual(settings[general, "preload-engines"], "['xkb:us::eng', 'rime']")
-        self.assertEqual(settings[general, "use-global-engine"], "true")
+        self.assertEqual(settings[general, "use-global-engine"], "false")
         self.assertEqual(settings[panel, "show-icon-on-systray"], "false")
         self.assertEqual(settings[panel, "show"], "0")
         for (schema, key), value in settings.items():
