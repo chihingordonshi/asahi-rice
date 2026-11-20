@@ -41,6 +41,21 @@ hl.window_rule({
     no_shadow   = true,
 })
 
+-- IBus uses a regular GTK Wayland window for candidates from XWayland apps.
+-- Keep that fallback compact and out of the tiling/focus cycle. Native
+-- input-method protocol popups are not managed clients and remain unaffected.
+hl.window_rule({
+    name = "ibus-candidate",
+    match = {
+        class = "^ibus-ui-gtk3$",
+        xwayland = false,
+    },
+    float = true,
+    no_focus = true,
+    size = { 400, 40 },
+    persistent_size = false,
+})
+
 -- Hyprland Run launcher
 hl.window_rule({
     name  = "move-hyprland-run",

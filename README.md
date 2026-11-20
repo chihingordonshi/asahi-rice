@@ -251,6 +251,10 @@ Super+R calls `ibus-language toggle` (there is no IBus bar widget), selecting on
 that selection per input context instead of sharing it across apps. Applications
 may share contexts between fields or windows; native Wayland behavior also depends
 on the input-method bridge.
+The persistent `ibus-candidate` Hyprland rule keeps the GTK fallback candidate
+window for XWayland apps floating and non-focusable, requests a compact 400×40
+size (subject to GTK's minimum content size), and disables remembered sizing.
+Native input-method protocol popups are unaffected.
 Competing IBus/emoji shortcuts, the extra tray icon and property toolbar are disabled;
 the horizontal candidate popup remains. Rime's profile lists only `rime_ice`, shows
 8 candidates, and disables Shift language switching so it cannot silently diverge

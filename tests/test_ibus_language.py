@@ -3,6 +3,7 @@
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -138,6 +139,29 @@ class IBusLanguageTest(unittest.TestCase):
         for (schema, key), value in settings.items():
             if schema.endswith(".hotkey") or key in ("hotkey", "unicode-hotkey"):
                 self.assertEqual(value, "[]", (schema, key))
+
+    def test_candidate_fallback_rule_is_persistent_compact_and_non_focusing(self):
+        lua = shutil.which("lua") or shutil.which("luajit")
+        if not lua:
+            self.skipTest("Lua interpreter unavailable")
+        script = '''
+            hl = { window_rule = function(rule)
+                if rule.name == "ibus-candidate" then
+                    print(table.concat({rule.match.class,
+                        tostring(rule.match.xwayland), tostring(rule.float),
+                        tostring(rule.no_focus), tostring(rule.size[1]),
+                        tostring(rule.size[2]), tostring(rule.persistent_size),
+                        tostring(rule.min_size), tostring(rule.max_size)}, "\\t"))
+                end
+            end }
+            dofile(%s)
+        ''' % json.dumps(str(ROOT / ".config/hypr/window-rules.lua"))
+        result = subprocess.run([lua, "-"], input=script, text=True,
+                                capture_output=True, timeout=5, check=True)
+        self.assertEqual(result.stdout.splitlines(), [
+            "\t".join(("^ibus-ui-gtk3$", "false", "true", "true", "400", "40",
+                       "false", "nil", "nil")),
+        ])
 
     def test_hyprland_and_waybar_share_the_same_switch(self):
         bindings = (ROOT / ".config/hypr/keybindings.lua").read_text()
