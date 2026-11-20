@@ -65,7 +65,7 @@ reserve_space = false
 show_on_workspace_switch = false
 start = ["suspend", "kill", "cpu", "memory", "power_profile", "workspaces"]
 center = ["clock"]
-end = ["tray", "wallpaper", "brightness", "volume", "bluetooth", "network", "battery"]
+end = ["tray", "ibus_restart", "wallpaper", "brightness", "volume", "bluetooth", "network", "battery"]
 
 [widget.suspend]
 type = "custom_button"
@@ -124,6 +124,13 @@ drawer = false
 capsule = true
 capsule_fill = "#7f7f7f"
 capsule_padding = 8
+
+[widget.ibus_restart]
+type = "custom_button"
+glyph = "keyboard"
+tooltip = "Restart IBus (discards unfinished composition; preserves settings and Rime data)"
+[widget.ibus_restart.actions]
+left = "exec ~/.local/bin/ibus-restart"
 
 [widget.wallpaper]
 type = "custom_button"

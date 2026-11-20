@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Recover IBus without resetting preferences or touching Rime dictionaries/data.
+set -euo pipefail
+
+# Ignore overlapping clicks; close the lock FD in the daemon so it is not held
+# for the rest of the session. Preserve the native Wayland candidate bridge.
+exec flock --nonblock --close "${XDG_RUNTIME_DIR:?}/ibus-restart.lock" \
+    env -u GTK_IM_MODULE -u QT_IM_MODULE \
+    ibus-daemon --daemonize --replace --xim --restart \
+    --panel='/usr/libexec/ibus-ui-gtk3 --enable-wayland-im' \
+    --emoji-extension=disable

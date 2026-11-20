@@ -9,7 +9,9 @@ No Quickshell, plugins, or system service changes are required.
 
 - `.config/noctalia/config.toml`: minimal top bar, native network/Bluetooth/audio
   popups, launcher, native screen capture, and wallpaper selection/rotation.
-  IBus remains on Super+R, not the bar.
+  IBus language switching remains on Super+R; the keyboard button beside the
+  tray restarts IBus without resetting preferences or Rime data. An unfinished
+  composition is discarded.
 - `.config/noctalia/palettes/Waybar.json`: fixed dark/lavender colors matching the
   previous bar. Both palette variants are required by the installed native loader;
   both deliberately use the same dark colors.

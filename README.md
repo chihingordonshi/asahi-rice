@@ -246,7 +246,7 @@ See [configuration, verification, and rollback](setup/noctalia.md).
 **IBus + Rime.** Hyprland starts one IBus daemon with its GTK candidate panel's
 native Wayland input-method-v2 bridge enabled. Leave `GTK_IM_MODULE` and
 `QT_IM_MODULE` unset for native Wayland; `XMODIFIERS=@im=ibus` covers XWayland.
-Super+R calls `ibus-language toggle` (there is no IBus bar widget), selecting only
+Super+R calls `ibus-language toggle` (no language-status bar widget), selecting only
 `xkb:us::eng` or `rime`. `use-global-engine=false` lets the GTK panel remember
 that selection per input context instead of sharing it across apps. Applications
 may share contexts between fields or windows; native Wayland behavior also depends
@@ -255,6 +255,9 @@ The persistent `ibus-candidate` Hyprland rule keeps the GTK fallback candidate
 window for XWayland apps floating and non-focusable, requests a compact 400×40
 size (subject to GTK's minimum content size), and disables remembered sizing.
 Native input-method protocol popups are unaffected.
+The keyboard button beside Noctalia's tray runs `~/.local/bin/ibus-restart` to
+recover a stuck daemon with the same Wayland/XWayland options as login. Restarting
+discards unfinished composition but preserves preferences and Rime data.
 Competing IBus/emoji shortcuts, the extra tray icon and property toolbar are disabled;
 the horizontal candidate popup remains. Rime's profile lists only `rime_ice`, shows
 8 candidates, and disables Shift language switching so it cannot silently diverge

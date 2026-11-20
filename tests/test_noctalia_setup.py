@@ -22,7 +22,7 @@ class NoctaliaSetupTest(unittest.TestCase):
         self.assertEqual(bar["thickness"], 36)
         self.assertEqual(bar["start"], ["suspend", "kill", "cpu", "memory", "power_profile", "workspaces"])
         self.assertEqual(bar["center"], ["clock"])
-        self.assertEqual(bar["end"], ["tray", "wallpaper", "brightness", "volume", "bluetooth", "network", "battery"])
+        self.assertEqual(bar["end"], ["tray", "ibus_restart", "wallpaper", "brightness", "volume", "bluetooth", "network", "battery"])
         self.assertNotIn("ibus", CONFIG["widget"])
         self.assertEqual(CONFIG["widget"]["network"]["actions"]["left"], "panel-toggle control-center network")
         # Missing overrides deliberately select Noctalia's native audio/BT panels.
@@ -37,6 +37,16 @@ class NoctaliaSetupTest(unittest.TestCase):
         for name in ("brightness", "volume"):
             self.assertIn("waybar-level", CONFIG["widget"][name]["actions"]["scroll_up"])
         self.assertTrue(CONFIG["audio"]["enable_overdrive"])
+
+    def test_ibus_restart_button_and_helper_deployment(self):
+        button = CONFIG["widget"]["ibus_restart"]
+        self.assertEqual(button["type"], "custom_button")
+        self.assertEqual(button["glyph"], "keyboard")
+        self.assertEqual(button["actions"], {"left": "exec ~/.local/bin/ibus-restart"})
+        self.assertIn("unfinished composition", button["tooltip"])
+        files = (ROOT / "setup/home-files.txt").read_text().splitlines()
+        self.assertIn(".local/bin/ibus-restart", files)
+        self.assertTrue(os.access(ROOT / ".local/bin/ibus-restart", os.X_OK))
 
     def test_wallpaper_rotation_and_minimal_services(self):
         button = CONFIG["widget"]["wallpaper"]

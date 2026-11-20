@@ -24,6 +24,10 @@ with open(os.environ["MOCK_CALLS"], "a") as log:
     log.write(json.dumps([Path(sys.argv[0]).name, *args]) + "\n")
 if Path(sys.argv[0]).name == "gsettings":
     sys.exit(0)
+if Path(sys.argv[0]).name == "ibus-daemon":
+    if "GTK_IM_MODULE" in os.environ or "QT_IM_MODULE" in os.environ:
+        sys.exit(90)
+    sys.exit(int(os.environ.get("MOCK_RESTART_EXIT", "0")))
 state_path = Path(os.environ["MOCK_STATE"])
 state = json.loads(state_path.read_text())
 if not state.get("available", True):
@@ -54,7 +58,7 @@ class IBusLanguageTest(unittest.TestCase):
         self.state.write_text(json.dumps({"engine": "xkb:us::eng"}))
         bin_dir = self.directory / "bin"
         bin_dir.mkdir()
-        for name in ("ibus", "gsettings"):
+        for name in ("ibus", "gsettings", "ibus-daemon"):
             path = bin_dir / name
             path.write_text(f"#!{sys.executable}\n{MOCK}")
             path.chmod(0o755)
@@ -139,6 +143,23 @@ class IBusLanguageTest(unittest.TestCase):
         for (schema, key), value in settings.items():
             if schema.endswith(".hotkey") or key in ("hotkey", "unicode-hotkey"):
                 self.assertEqual(value, "[]", (schema, key))
+
+    def test_restart_preserves_wayland_bridge_and_propagates_failure(self):
+        for exit_code in (0, 3):
+            with self.subTest(exit_code=exit_code):
+                self.calls.write_text("")
+                result = subprocess.run(
+                    [str(ROOT / ".local/bin/ibus-restart")],
+                    env={**self.env, "GTK_IM_MODULE": "ibus", "QT_IM_MODULE": "ibus",
+                         "MOCK_RESTART_EXIT": str(exit_code)},
+                    text=True, capture_output=True, timeout=5)
+                self.assertEqual(result.returncode, exit_code, result.stderr)
+                calls = [json.loads(line) for line in self.calls.read_text().splitlines()]
+                self.assertEqual(calls, [[
+                    "ibus-daemon", "--daemonize", "--replace", "--xim", "--restart",
+                    "--panel=/usr/libexec/ibus-ui-gtk3 --enable-wayland-im",
+                    "--emoji-extension=disable",
+                ]])
 
     def test_candidate_fallback_rule_is_persistent_compact_and_non_focusing(self):
         lua = shutil.which("lua") or shutil.which("luajit")

@@ -145,6 +145,7 @@
 .local/bin/hypr-quickmenu
 .local/bin/hypr-workspace-watch
 .local/bin/ibus-language
+.local/bin/ibus-restart
 .local/bin/noctalia-bar-apply
 .local/bin/iphone-last-photos.sh
 .local/bin/mpv-gesture
