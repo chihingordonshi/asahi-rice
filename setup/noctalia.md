@@ -1,6 +1,6 @@
 # Native Noctalia shell
 
-The active shell is Fedora's native Noctalia 5.4 with Hyprland 0.57 Lua integration,
+The active shell is Fedora's native Noctalia with Hyprland 0.57 Lua integration,
 not Quickshell. It owns the bar, launcher, control popups, screenshots and wallpapers.
 
 ## Configuration
