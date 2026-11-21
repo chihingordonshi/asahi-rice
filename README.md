@@ -150,9 +150,12 @@ live partition — see "Build history" below for what that involved).
   turns two-finger pinch into cursor-centric video zoom; ordinary two-finger vertical
   and horizontal scrolling pans the zoomed video. Ctrl+wheel remains a mouse zoom
   fallback, Alt+plus/minus zooms, Alt+arrows pans, and Alt+Backspace resets the view.
-- LocalSend is a system Flatpak. WeChat uses the separately installed official RPM;
-  its desktop override selects XWayland to avoid native-Wayland click-coordinate
-  mismatches when tiled, and hides the old Flatpak launcher without deleting data.
+- LocalSend is a system Flatpak. WeChat uses the separately installed user Flatpak;
+  its desktop override explicitly enables the X11 socket, disables Wayland, and
+  selects Qt's XCB/IBus backend to keep resizing and Chinese input working. It
+  unsets experimental IBus sync mode and hides the obsolete RPM launcher. These
+  options affect only WeChat; its Flatpak's `fallback-x11` permission alone is not
+  enough when Wayland is available.
   WPS 365 remains user-scoped because its proprietary extra-data installer fails to
   apply SELinux labels system-wide on this machine; its existing user installation works.
 - WARP is installed in `warp+doh` mode. Device registration and identity remain in

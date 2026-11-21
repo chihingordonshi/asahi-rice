@@ -1,4 +1,13 @@
 [Desktop Entry]
+Name=WeChat
+Name[zh_CN]=微信
+Exec=/usr/bin/flatpak run --socket=x11 --nosocket=wayland --unset-env=IBUS_ENABLE_SYNC_MODE --env=QT_QPA_PLATFORM=xcb --env=QT_IM_MODULE=ibus --env=GTK_IM_MODULE=ibus --env=XMODIFIERS=@im=ibus --talk-name=org.freedesktop.IBus --branch=stable --arch=aarch64 --command=wechat --file-forwarding com.tencent.WeChat @@u %U @@
+Terminal=false
 Type=Application
-Name=WeChat (Flatpak)
-Hidden=false
+Icon=com.tencent.WeChat
+StartupWMClass=wechat
+Categories=Network;
+Keywords=wechat;weixin;
+Comment=WeChat Desktop
+Comment[zh_CN]=微信桌面版
+X-Flatpak=com.tencent.WeChat

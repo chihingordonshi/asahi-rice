@@ -68,21 +68,31 @@ class WeChatSetupTest(unittest.TestCase):
         config.read(ROOT / ".local/share/applications" / name)
         return config["Desktop Entry"]
 
-    def test_rpm_launcher_uses_xwayland_to_keep_input_and_rendering_in_sync(self):
+    def test_obsolete_rpm_launcher_is_hidden(self):
         entry = self.desktop_entry("wechat.desktop")
         self.assertEqual(shlex.split(entry["Exec"]), [
             "env", "QT_QPA_PLATFORM=xcb", "/usr/bin/wechat", "%U",
         ])
         self.assertEqual(entry["TryExec"], "/usr/bin/wechat")
         self.assertEqual(entry["StartupWMClass"], "wechat")
+        self.assertTrue(entry.getboolean("Hidden"))
         self.assertFalse(entry.getboolean("Terminal"))
 
-    def test_stale_flatpak_launcher_is_hidden_and_not_reinstalled(self):
+    def test_flatpak_launcher_selects_x11_socket_and_ibus_without_sync_mode(self):
         entry = self.desktop_entry("com.tencent.WeChat.desktop")
-        self.assertTrue(entry.getboolean("Hidden"))
-        self.assertNotIn("Exec", entry)
-        apps = (ROOT / "setup/flatpak-apps.txt").read_text().splitlines()
-        self.assertFalse(any("com.tencent.WeChat" in line for line in apps))
+        self.assertFalse(entry.getboolean("Hidden", fallback=False))
+        self.assertFalse(entry.getboolean("Terminal"))
+        self.assertEqual(entry["StartupWMClass"], "wechat")
+        self.assertEqual(entry["X-Flatpak"], "com.tencent.WeChat")
+        args = shlex.split(entry["Exec"])
+        self.assertEqual(args[:2], ["/usr/bin/flatpak", "run"])
+        for option in ("--socket=x11", "--nosocket=wayland",
+                       "--env=QT_QPA_PLATFORM=xcb", "--env=QT_IM_MODULE=ibus",
+                       "--unset-env=IBUS_ENABLE_SYNC_MODE"):
+            self.assertIn(option, args)
+        self.assertIn("--file-forwarding", args)
+        self.assertEqual(args[-4:], ["com.tencent.WeChat", "@@u", "%U", "@@"])
+        self.assertFalse(any(arg.startswith("--env=IBUS_ENABLE_SYNC_MODE=") for arg in args))
 
     def test_both_launcher_overrides_are_deployed(self):
         manifest = (ROOT / "setup/home-files.txt").read_text().splitlines()

@@ -138,7 +138,7 @@ hl.window_rule({
 
 -- Allow the main window to resize normally without forcing any WeChat window
 -- tiled or floating. Meme pickers, dialogs and other subwindows keep their hints.
--- The RPM desktop launcher uses XWayland to keep rendering and input in sync.
+-- The Flatpak desktop launcher uses XWayland to keep rendering and input in sync.
 hl.window_rule({
     name = "wechat-main-size-hint",
     match = {
