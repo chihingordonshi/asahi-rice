@@ -194,7 +194,7 @@ live partition — see "Build history" below for what that involved).
 | `.local/share/touchbar-animations/` | Deterministic 2008×60 FFV1 train/vines assets shared by Codex and Pi completion notifications; regenerate them with `tools/generate-codex-touchbar-animations.py` |
 | `.pi/agent/extensions/touchbar-notify.ts` | Personal Pi extension that hands completed interactive responses to the existing Codex Touch Bar service |
 | `~/Pictures/Wallpapers/` | Local, Git-ignored media library used by the wallpaper rotation timer; supply your own images |
-| `.zshrc`, `.p10k.zsh`, `.zsh_functions` | Shell, prompt, and a couple of manual-trigger helper functions |
+| `.zshrc`, `.p10k.zsh`, `.zsh_functions` | Shell, prompt, and manual-trigger helpers, including [`reboot-gentoo`](setup/gentoo-boot.md) for a one-shot Gentoo boot |
 | `setup/` | Reproducible RPM/Flatpak/repository/service manifests plus installer, linker, and audit scripts |
 
 ## Deliberately left out
