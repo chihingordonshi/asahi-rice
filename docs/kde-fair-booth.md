@@ -1,5 +1,8 @@
 # KDE fair booth
 
+Optional Plasma demonstration, separate from the default Hyprland session.
+Requires a working Plasma installation and the local wallpaper asset below.
+
 ## Prepare after logging in to Plasma
 
 The desktop uses the dark glass-sphere wallpaper, a floating launcher and task panel at the bottom, and a slim floating top panel with the application menu plus CPU and memory widgets. The bottom panel also has the pager, system tray, clock, and Show Desktop. The wallpaper is a local asset; keep `~/Pictures/Wallpapers/original/glass-sphere.jpg` available on the booth machine.

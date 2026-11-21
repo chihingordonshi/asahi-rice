@@ -1,444 +1,126 @@
 # asahi-rice
 
-Reproducible configuration for Chi Hin's M1 MacBook running **Fedora Asahi Remix**.
-It covers the installed application set, third-party repositories, Flatpak scopes,
-user services, durable desktop/app configuration, and file-by-file symlink
-deployment. See `.config/agents/fedora-asahi-setup.md` for the original reasoning.
+Live configuration for Chi Hin's M1 MacBook running **Fedora Asahi Remix**.
+Deployed home files are symlinked into this checkout; package, repository, Flatpak,
+and user-service manifests live in [`setup/`](setup/).
 
-These files were originally curated from [dot-files](https://github.com/chihingordonshi/dot-files)
-(the Arch/XPS16 rice), then adapted and extended for this machine specifically. They are
-**live**: each tracked home file is symlinked from `$HOME` into this worktree, and
-`asahi-rice-sync` commits and pushes worktree changes once a day (see "Status" below).
+## Current desktop
 
-**New here?** Start with [Replicating this on your own M1](#replicating-this-on-your-own-m1)
-— it's the one section written as a checklist rather than a log.
+- **Hyprland**, configured in Lua, started through **UWSM** from SDDM.
+- **Native Noctalia** provides the bar, launcher, network/Bluetooth/audio popups,
+  screenshots, and recursive wallpaper rotation every 15 minutes.
+- **Mako** handles notifications; **hypridle/hyprlock** lock after 15 minutes
+  and before suspend. Idle locking leaves the display awake.
+- **IBus + Rime Ice** provide English/Chinese input, switched per input context
+  with Super+R. The keyboard button beside the tray restarts a stuck IBus daemon.
+- **Standalone iwd** manages Wi-Fi; **systemd-resolved** follows network/VPN DNS.
+  **tuned-ppd** provides power profiles independently of DNS and wallpapers.
+- **Kitty**, Dolphin, Zsh/Powerlevel10k, Qt/Kvantum and GTK settings provide the
+  application environment. Fastfetch is the active system-info tool.
+- Codex and interactive Pi completions share an alternating train/vines
+  **Touch Bar** notification service; overlapping completions are skipped.
 
-- [Replicating this on your own M1](#replicating-this-on-your-own-m1) — the checklist, start here
-- [What's here and why](#whats-here-and-why) — every tracked path, one line each
-- [Deliberately left out](#deliberately-left-out) — things considered and skipped, and why
-- [Key decisions and gotchas](#key-decisions-and-gotchas) — grouped by topic, the "why" behind non-obvious choices
-- [Open question to revisit](#open-question-to-revisit--caelestia-may-no-longer-be-aarch64-dead) — one unresolved item
-- [Critical finding — SDDM session selection](#critical-finding--log-in-via-hyprland-uwsm-managed-not-plain-hyprland) — read before your first login
-- [Status](#status) — what's live right now
-- [Provenance](#provenance) — how this repo was built
-- [Build history](#build-history) — condensed changelog, newest info wins over anything above
+Waybar, Fcitx and other inactive configurations remain in the tree, but their
+presence does not mean they are deployed. **`setup/home-files.txt` is the deployment
+list**, not every tracked path. The optional [KDE booth setup](docs/kde-fair-booth.md)
+is separate from the default Hyprland session.
 
-If you only read one thing before touching the M1: the "Critical finding" section on the
-SDDM session selection. Getting that wrong silently breaks portals, polkit, and the keyring.
+## Setup
 
-## Replicating this on your own M1
+Review the manifests and scripts before running them on another machine:
 
-`setup/install.sh` is the idempotent bootstrap for an M1 running Fedora Asahi Remix.
-It enables the recorded repositories, installs the explicit RPM/Flatpak manifests,
-links every path in `setup/home-files.txt`, enables the recorded user services,
-and configures SDDM's macOS-inspired login screen for the next boot (without stopping
-the current session). See [`setup/system-state.md`](setup/system-state.md) for deployment
-and the one-time offline removal of KDE Plasma.
-Review the hardware-pinned settings and package list before running it on another M1.
+| File | Purpose |
+| --- | --- |
+| [`setup/copr-repos.txt`](setup/copr-repos.txt) | COPR repositories; Hyprland comes from `lionheartp/Hyprland` |
+| [`setup/dnf-packages.txt`](setup/dnf-packages.txt) | Explicit RPM packages |
+| [`setup/flatpak-apps.txt`](setup/flatpak-apps.txt) | Flatpak application IDs and installation scopes |
+| [`setup/external-sources.tsv`](setup/external-sources.tsv) | Pinned external software sources |
+| [`setup/home-files.txt`](setup/home-files.txt) | File-by-file home symlinks |
+| [`setup/user-services.txt`](setup/user-services.txt) | User units to enable |
 
-1. **Enable COPRs, then install packages.** (List verified against this machine's
-   actual `rpm -q` / `dnf repoquery --installed` output, not reconstructed from memory.)
-   - `lionheartp/Hyprland` COPR → `hyprland`, `hyprland-uwsm`, `hypridle`, `hyprlock`,
-     `hyprpolkitagent`, `hyprsunset`, `kitty`, `qt6ct`,
-     `xdg-desktop-portal-hyprland` (plus their own deps — `hyprutils`, `hyprlang`,
-     `hyprcursor`, `hyprgraphics`, `aquamarine`, etc. — `dnf` pulls those in
-     automatically). The `technochip/Hyprland-aarch64` COPR named in
-     `fedora-asahi-setup.md` is deprecated by its own maintainer — use
-     `lionheartp/Hyprland` instead.
-   - Fedora's main repos → `noctalia` (native v5 shell), `cava`, `btop`, `fastfetch`, `kvantum`,
-     `kvantum-qt5`, `mako`, `wl-clipboard`,
-     `brightnessctl`, `playerctl`, `ibus`, `ibus-rime`, `librime-lua`,
-     `exfatprogs`, `gtk4-layer-shell`, `python3-gobject`, `python3-cairo` (the last
-     three are for `hypr-quickmenu` and the Cairo clock in `autostart.lua` — both are
-     Python/GTK4, and silently no-op at startup if these are missing), plus
-     `python3-pillow` for reproducibly generating the Codex Touch Bar animations.
-   - `.config/neofetch/` exists in this repo but `neofetch` itself isn't installed here
-     — `fastfetch` (`.config/fastfetch/`) is what's actually live; the neofetch config
-     is a leftover from before the switch. Skip installing `neofetch` unless you want it.
-   - Noctalia renders wallpapers and randomly rotates images every 15 minutes,
-     including subfolders of `~/Pictures/Wallpapers`. Adjust the machine-local
-     absolute directory in `.config/noctalia/config.toml` when using another account.
-     The wallpaper button and Zsh `wallpaper` command request an immediate native
-     random selection. Noctalia also owns the app launcher (`Super+D`), region capture
-     (`Super+A`), and all-output capture (`Super+Shift+A`). PNGs are saved to
-     `~/Pictures/Screenshots` and copied to the clipboard. Rofi/Fuzzel, Slurp, and
-     `mac-screenshot` are retired; Grim stays as a dependency of Hyprland's desktop
-     portal. Legacy Waybar/frontends and swaybg are no longer installed.
-   - `dolphin` (file manager) and `firefox` (browser) — swap for your own picks if you
-     want different ones; `programs.lua` (see below) needs to match whatever you choose.
-   - Optional: the caelestia-widget replacements need `bluedevil` (for `kcmshell6
-     kcm_bluetooth`) and whatever proxy client you use (Chi Hin's is
-     `/opt/clash-party/mihomo-party`, installed separately, not via `dnf`).
-   - Skip anything under "Deliberately left out" below unless you specifically want it.
-2. **Install the font.** JetBrains Mono Nerd Font, from the official
-   [`ryanoasis/nerd-fonts`](https://github.com/ryanoasis/nerd-fonts) GitHub release, unzipped
-   into `~/.local/share/fonts`, then `fc-cache`. Everything here (waybar, kitty, the
-   Cairo clock) assumes this exact font is present.
-3. **Link the config files into `$HOME`.** Every path under `.config/`, `.local/bin/`,
-   `.local/share/applications/`, plus the top-level dotfiles
-   (`.zshrc`, `.p10k.zsh`, `.zsh_functions`, Bash startup files, `.gitconfig`, `.vimrc`,
-   `.Xresources`, and `.gtkrc-2.0`) in this repo maps 1:1 onto the same path under your
-   own `$HOME`. Run `setup/link-home.sh`; it preserves replaced files under
-   `~/.local/state/asahi-rice/backups/` and creates file-by-file symlinks.
-   - `.local/bin/` specifically is a grab-bag, not all of it Hyprland config — the
-     active desktop helpers include `hypr-quickmenu`, `hypr-overview`,
-     `hypr-workspace-watch`, `ibus-language`, `noctalia-bar-apply`,
-     `random-wallpaper`, and `waybar-level` (still used for audio/brightness).
-     Other old Waybar helpers remain as historical source but are not deployed.
-     Everything else in there is unrelated CLI tooling retained from the old
-     copy-based sync setup — copy it too if you want it, skip
-     it if you're only after the rice.
-   - **Do not copy `.config/systemd/user/asahi-rice-sync.{service,timer}`, or enable
-     them.** That unit pushes to `github.com/chihingordonshi/asahi-rice` — it's Chi
-     Hin's repo sync, not a general-purpose tool, and you don't have push access to it
-     anyway. Use `setup/home-files.txt`, not every historical unit: the old
-     `random-wallpaper.timer` and `swaybg-wallpaper.service` are retired and must
-     not be enabled. The manual `random-wallpaper.service` now sends Noctalia IPC.
-     `hypridle.service` is machine-generic. `codex-touchbar.service` is also safe,
-     but only useful after installing its narrow sudoers rule and adding the Codex
-     `notify` setting or linking the Pi extension described below. Enable the
-     recorded set with the installer or from `setup/user-services.txt`.
-   - `.gitconfig` contains Chi Hin's public Git identity and the `gh` credential-helper
-     command. The actual GitHub token remains only in ignored `.config/gh/hosts.yml`.
-4. **Verify the hardware-pinned values before trusting them, even on identical
-   hardware.** `.config/hypr/monitors.lua` hardcodes `output = "eDP-1", mode =
-   "2560x1600@60", scale = 1.6` and `.config/hypr/input.lua` hardcodes `kb_layout =
-   "us"` — both read from this specific machine via `hyprctl monitors -j` and
-   `localectl status`, not guessed. Re-run those two commands on your own machine and
-   adjust if anything differs (e.g. a non-US keyboard, or a different M1 panel
-   variant).
-5. **IBus uses English and Rime Ice, remembered per input context with Super+R.** Run
-   `setup/configure-ibus.sh` in your user session (also run by the installer).
-   Supply your Rime Ice dictionaries/Lua and learned data separately; they are not
-   stored in Git. Before linking the custom patches, an existing `~/rime` directory
-   can be linked as `~/.config/ibus/rime`. Stop Fcitx before sharing its Rime data
-   with IBus, and never run both frontends against the same learned database.
-   Log out/in after switching input-method frameworks.
-6. **Use "Hyprland (uwsm-managed)", not plain "Hyprland."**
-   The SDDM theme pins `/usr/share/wayland-sessions/hyprland-uwsm.desktop` without
-   showing a session picker. This is not optional — see "Critical finding" below
-   for why plain Hyprland silently breaks portals, polkit, and the D-Bus
-   secret-service keyring. `hyprland-uwsm` (from step 1) provides this session entry.
-7. **The installer uses `sudo` for system packages, repositories, WARP, and system-wide
-   Flatpaks.** Cloudflare account registration remains a separate interactive step:
-   `warp-cli registration new && warp-cli connect`.
-   - Optional convenience: put your user in `wheel` with passwordless sudo, so you're
-     not typing your password for every `dnf`/`copr` command in step 1 —
-     `sudo usermod -aG wheel <you>`, then in `sudo visudo` add (or uncomment)
-     `%wheel  ALL=(ALL)  NOPASSWD: ALL`. This is fine for a personal single-user
-     laptop like this one; it's a real security tradeoff (any process running as your
-     user can now get root with no prompt) and not something to do on a shared or
-     work machine.
+Before installing:
 
-Optional extras that took real chasing on Chi Hin's machine and might not be worth
-repeating on yours: the sticky-notes app (`org.x.sticky`, an unpackaged Fedora RPM
-installed via `rpm -i --nodeps` plus two chased runtime deps — see "Key decisions and
-gotchas" below), and a shared exFAT partition between macOS and Fedora (destructive,
-only do this if you actually want cross-OS file sharing and are comfortable resizing a
-live partition — see "Build history" below for what that involved).
+1. Verify the panel/output settings in `.config/hypr/monitors.lua`
+   (`eDP-1`, `2560x1600@60`, scale `1.6`), US keyboard settings in `input.lua`,
+   and absolute wallpaper/screenshot paths in `.config/noctalia/config.toml`.
+2. Install JetBrains Mono Nerd Font locally and refresh `fc-cache`. SDDM also
+   needs a root-owned **Bibata Original Classic** cursor theme; see
+   [system configuration](setup/system-state.md#sddm-login-screen).
+3. Review personal Git identity, desktop launchers, and the username in
+   `setup/codex-touchbar.sudoers`.
+4. **On a replica, omit `asahi-rice-sync.timer` and its service/home links.**
+   The supplied timer automatically commits and pushes to Chi Hin's repository.
+   The installer enables all units listed in `setup/user-services.txt`.
+5. Supply Rime Ice dictionaries/Lua and learned data separately. Existing
+   `~/rime` data can be linked as `~/.config/ibus/rime`; never share the live
+   database between IBus and Fcitx concurrently.
 
-## Media, WARP, and Flatpak notes
+```sh
+# Installs/upgrades packages, configures system files, links home files,
+# and enables services. Uses sudo; review before running.
+setup/install.sh
+```
 
-- Fedora's restricted `ffmpeg-free` build is replaced with RPM Fusion's full `ffmpeg`.
-  The manifest also installs GStreamer libav, OpenH264, dav1d, bad-freeworld, and ugly
-  plugins. `setup/audit.sh` checks the common H.264, HEVC, AV1, VP9, AAC, Opus,
-  Vorbis, MP3, and FLAC decode paths.
-- The apparent mpv MP4 failure was caused by macOS AppleDouble `._*.mp4` metadata
-  files on the shared exFAT volume, not the real videos. The metadata files were moved
-  to the volume's trash; the matching MP4s decode correctly in mpv.
-- mpv remains the minimal Hyprland-friendly player. A small Hyprland gesture bridge
-  turns two-finger pinch into cursor-centric video zoom; ordinary two-finger vertical
-  and horizontal scrolling pans the zoomed video. Ctrl+wheel remains a mouse zoom
-  fallback, Alt+plus/minus zooms, Alt+arrows pans, and Alt+Backspace resets the view.
-- LocalSend is a system Flatpak. WeChat uses the separately installed user Flatpak;
-  its desktop override explicitly enables the X11 socket, disables Wayland, and
-  selects Qt's XCB/IBus backend to keep resizing and Chinese input working. It
-  unsets experimental IBus sync mode and hides the obsolete RPM launcher. These
-  options affect only WeChat; its Flatpak's `fallback-x11` permission alone is not
-  enough when Wayland is available.
-  WPS 365 remains user-scoped because its proprietary extra-data installer fails to
-  apply SELinux labels system-wide on this machine; its existing user installation works.
-- WARP is installed in `warp+doh` mode. Device registration and identity remain in
-  Cloudflare's local state and are intentionally never committed.
+The installer configures SDDM for the next boot without stopping the current
+session. It does **not** reproduce partitioning, the iwd migration, or every
+machine-specific system adjustment; those are described in
+[`setup/system-state.md`](setup/system-state.md).
+Cloudflare registration is interactive: `warp-cli registration new && warp-cli connect`.
+WeChat is a separately installed user Flatpak, not part of the bootstrap manifest;
+its launcher selects X11/IBus. LocalSend is system-scoped; WPS 365 is user-scoped
+because its extra-data installer fails system-wide SELinux labeling here.
 
-## What's here and why
+To deploy home files without installing packages:
 
-| Path | What it is |
-|---|---|
-| `.config/hypr/` | Hyprland config, in Lua (not hyprlang `.conf` — see "Key decisions"). `hyprland.lua` is the autogenerated `require()` stub; the 14 files it requires (`monitors`, `programs`, `autostart`, `environment`, `permissions`, `appearance`, `animations`, `workspace-rules`, `layouts`, `misc`, `input`, `transparency`, `keybindings`, `window-rules`) are hand-authored |
-| `.config/hypr/scheme/`, `.config/hypr/hyprtoolkit.conf` | Color scheme + Hyprland toolkit config, copied from `dot-files` unchanged |
-| `.config/hypr-quickmenu/` | Config for the hand-rolled HUD launcher (`.local/bin/hypr-quickmenu`), autostarted |
-| `.config/noctalia/`, `.config/hypr/noctalia-shell.lua` | Active native v5 shell: bar, launcher, screen capture, native control popups, wallpaper rotation, tiled-only hiding (no edge reveal) |
-| `.config/waybar/` | Historical bar configuration; no longer deployed, packages removed |
-| `.config/mako/` | Notification daemon |
-| `.config/ibus/rime/*.custom.yaml`, `.local/bin/ibus-language` | Minimal Rime Ice profile and per-context English/Chinese switch; old Fcitx configs remain only for rollback |
-| `.config/kitty/` | Terminal |
-| `.config/fish/` | Alternate shell config (`.zshrc` is the default) |
-| `.config/nvim/` | Neovim config |
-| `.config/cava/` | Audio visualizer config + themes + shaders |
-| `.config/kew/` | Terminal music player configured for the local library, with a Rosé Pine Moon theme and Kitty cover art |
-| `.config/btop/` | System monitor |
-| `.config/fastfetch/` | System-info banner — the currently-used one (see "neofetch" note below) |
-| `.config/neofetch/` | Superseded by fastfetch; kept as a leftover, not actively used |
-| `.config/wireplumber/` | Audio routing tweak (disables Bluetooth HFP) |
-| `.config/qt6ct/`, `.config/Kvantum/`, `.config/kdeglobals` | Qt application theming under Hyprland; Plasma itself is no longer the fallback desktop |
-| `.config/pavucontrol.ini` | Historical audio mixer settings; no longer deployed |
-| `.config/mpv/`, `.local/bin/mpv-gesture` | Minimal mpv controls plus native Hyprland two-finger pinch zoom and scroll panning |
-| `.config/gtk-{3,4}.0/`, selected KDE configs | Durable toolkit, display, shortcut and file association settings; legacy Plasma settings are retained |
-| `.config/gh/config.yml` | Non-secret GitHub CLI preferences; `hosts.yml` is ignored because it contains the token |
-| `.config/autostart/` | XDG autostart entries |
-| `.config/systemd/user/` | User units; deploy only the manifest set, not retired wallpaper units. `asahi-rice-sync` is Chi Hin-specific, do not copy (see replication step 3) |
-| `.config/agents/fedora-asahi-setup.md` | The original research/decisions briefing this whole setup is built from |
-| `.local/bin/` | Scripts the config actually references, plus unrelated CLI tools retained from the old copy-based sync setup — see replication step 3 for which is which |
-| `.local/share/applications/` | Desktop-entry overrides (e.g. Electron app launch flags) |
-| `.local/share/touchbar-animations/` | Deterministic 2008×60 FFV1 train/vines assets shared by Codex and Pi completion notifications; regenerate them with `tools/generate-codex-touchbar-animations.py` |
-| `.pi/agent/extensions/touchbar-notify.ts` | Personal Pi extension that hands completed interactive responses to the existing Codex Touch Bar service |
-| `~/Pictures/Wallpapers/` | Local, Git-ignored media library used by the wallpaper rotation timer; supply your own images |
-| `.zshrc`, `.p10k.zsh`, `.zsh_functions` | Shell, prompt, and manual-trigger helpers, including [`reboot-gentoo`](setup/gentoo-boot.md) for a one-shot Gentoo boot |
-| `setup/` | Reproducible RPM/Flatpak/repository/service manifests plus installer, linker, and audit scripts |
+```sh
+setup/link-home.sh
+setup/configure-ibus.sh  # Run in the user session.
+```
 
-## Deliberately left out
+Replaced files are preserved under `~/.local/state/asahi-rice/backups/`.
+Linking is additive: removing a manifest entry does not remove its old home link.
 
-- **`.config/caelestia/`** — Quickshell has a known unresolved aarch64-linux execution
-  bug, so caelestia won't run on this machine; waybar replaced it (see "What's here and
-  why"). One aarch64 COPR build has since appeared — worth re-testing, see "Open
-  question to revisit" below.
-- **`.config/obs-studio/`** — explicitly out of scope, this machine isn't for
-  streaming/recording.
-- **`.config/spicetify/`** — Spotify theming, rice extra not needed for the stated
-  schoolday-only scope.
-- **`.config/nix-darwin/`** — macOS-specific, irrelevant on Fedora.
-- **Sweet-Purple icon theme** — cosmetic, skipped to keep this minimal per the "not a
-  rice project" goal in the setup notes.
+**Use “Hyprland (uwsm-managed)”, not plain Hyprland.** The SDDM theme pins
+`/usr/share/wayland-sessions/hyprland-uwsm.desktop`. UWSM activates the graphical
+session targets needed by portals, polkit and the secret-service keyring.
 
-## Key decisions and gotchas
+## Everyday controls
 
-**Package sources.** The Hyprland stack (`hyprland`, `hyprland-uwsm`, `hypridle`,
-`hyprlock`, `hyprpolkitagent`, `hyprsunset`, `kitty`, `qt6ct`,
-`xdg-desktop-portal-hyprland`) comes from the `lionheartp/Hyprland` COPR, not
-`technochip/Hyprland-aarch64` (deprecated by its own maintainer). The active panel is
-**Noctalia 5.4+**, the native Fedora package, not the old Quickshell shell. Waybar
-and its helpers remain available for rollback; see [Noctalia setup](setup/noctalia.md).
+| Shortcut | Action |
+| --- | --- |
+| Super+Q / power button | Kitty |
+| Super+D | Noctalia launcher |
+| Super+A / Super+Shift+A | Region / all-output screenshot; saves PNG and copies to clipboard |
+| Super+R | English / Rime |
+| Super+X / Super+. | Pin/unpin the bar |
+| `wallpaper [connector]` | Select a random wallpaper through Noctalia |
 
-**Hyprland config is Lua, not hyprlang `.conf`.** `hyprland.lua` loads the individual
-modules, including `noctalia-shell.lua`. On the installed Hyprland 0.57.2,
-`hyprctl reload config-only` re-evaluates configuration, bindings, and controllers;
-`hyprland.start` autostart commands still run only at session startup.
+The bar stays visible on empty/floating-only workspaces and hides on tiled ones,
+without top-edge reveal. Pinning reserves its 36px height. A delayed/blank workspace
+widget after showing the bar remains unresolved; see [Noctalia](setup/noctalia.md).
 
-**Power button.** A short press opens Kitty in Hyprland, matching Super+Q.
-`setup/install.sh` installs `setup/logind-power-button.conf` to disable logind's
-power-button shutdown action; see `setup/system-state.md` for deployment and undo.
-Holding the physical button can still force the Mac off in firmware.
+## Maintenance and reference
 
-**`hypridle` config location.** Goes in `~/.config/hypr/hypridle.conf`, not
-`~/.config/hypridle/` (unlike most other apps' per-app-directory convention). This
-build's `hyprctl dispatch` parses its argument as a Lua expression, so DPMS calls need
-`hyprctl dispatch 'hl.dsp.dpms({action = "on"})'`, not the plain `dpms on/off` syntax in
-generic hypridle docs. Autolock is 10 minutes, no manual lock keybind — hypridle's
-timeout is the sole way this machine locks.
+- [Noctalia configuration and checks](setup/noctalia.md)
+- [System configuration and recovery](setup/system-state.md)
+- [Codex/Pi Touch Bar setup and player rebuilds](docs/touchbar.md)
+- [Gentoo boot and `reboot-gentoo`](setup/gentoo-boot.md)
+- [`which-one`: installed package lookup](docs/which-one.md)
+- [Mouse acceleration and disabled custom curve](docs/macos-mouse-acceleration.md)
+- [SDDM theme](setup/sddm/themes/macos/README.md)
 
-**Noctalia owns wallpaper selection and rotation.** Its picker renders the selected
-image immediately, and native automation picks a random image every 900 seconds.
-Click the wallpaper button beside the tray or run `wallpaper` for an immediate
-native random selection; `wallpaper eDP-1` targets one output. Both script entry
-points now delegate to Noctalia. The old swaybg unit/timer are no longer deployed,
-and the legacy renderer/frontends are uninstalled; do not start a competing renderer.
-The fixed Waybar palette does not follow wallpaper colors or rewrite app themes.
-See [configuration, verification, and rollback](setup/noctalia.md).
+```sh
+python3 -m unittest discover -s tests
+bun test tests/pi-touchbar.test.ts
+```
 
-**IBus + Rime.** Hyprland starts one IBus daemon with its GTK candidate panel's
-native Wayland input-method-v2 bridge enabled. Leave `GTK_IM_MODULE` and
-`QT_IM_MODULE` unset for native Wayland; `XMODIFIERS=@im=ibus` covers XWayland.
-Super+R calls `ibus-language toggle` (no language-status bar widget), selecting only
-`xkb:us::eng` or `rime`. `use-global-engine=false` lets the GTK panel remember
-that selection per input context instead of sharing it across apps. Applications
-may share contexts between fields or windows; native Wayland behavior also depends
-on the input-method bridge.
-The persistent `ibus-candidate` Hyprland rule keeps the GTK fallback candidate
-window for XWayland apps floating and non-focusable, requests a compact 400×40
-size (subject to GTK's minimum content size), and disables remembered sizing.
-Native input-method protocol popups are unaffected.
-The keyboard button beside Noctalia's tray runs `~/.local/bin/ibus-restart` to
-recover a stuck daemon with the same Wayland/XWayland options as login. Restarting
-discards unfinished composition but preserves preferences and Rime data.
-Competing IBus/emoji shortcuts, the extra tray icon and property toolbar are disabled;
-the horizontal candidate popup remains. Rime's profile lists only `rime_ice`, shows
-8 candidates, and disables Shift language switching so it cannot silently diverge
-from the selected IBus engine. F4 still opens Rime's advanced options.
+`setup/audit.sh` additionally checks live deployment, packages, codecs and services.
+It also invokes the narrow sudo permission to start `tiny-dfr`; it is not a purely
+read-only check. Reload Hyprland Lua with `hyprctl reload config-only` and inspect
+`hyprctl configerrors`; startup commands only run at login. Avoid killing live UI
+processes just to reload configuration.
 
-This machine's `~/.config/ibus/rime` points to the existing `~/rime`, preserving its
-Rime Ice dictionaries, Lua and learned user database. Only the three `*.custom.yaml`
-patches are linked from this repository; generated builds and learned words stay
-local. Do not run Fcitx and IBus against that directory concurrently. The old Fcitx
-packages/configs are retained for rollback but are no longer started. Run regression
-checks with `python3 tests/test_ibus_language.py`; test candidate placement and
-Super+R in native Wayland and XWayland applications after logging out/in.
-
-**Icon theme.** `Papirus-Dark` isn't installed on this machine; bar configs use
-`Adwaita` instead, which does have the specific symbolic icons the default module
-profiles reference. Waybar uses Inter for text and JetBrains Mono Nerd Font for
-icon glyphs; icon-only buttons explicitly select the patched font. The custom
-power-profile button uses simple monochrome rocket / scale-balance / leaf glyphs
-for performance / balanced / power-saver, all in the same neutral foreground.
-It stays visible with an unavailable tooltip if its D-Bus service is missing or
-unreachable.
-
-**Never `pkill` a live UI process (waybar, etc.) to force a config reload.** Save the
-file and let it pick up the change on its own; killing/relaunching mid-session is
-disruptive. Use `systemctl --user restart waybar.service` to recover or explicitly
-restart Waybar. `hyprctl reload` remains fine for Hyprland-owned Lua config changes.
-
-**Codex and Pi completion animations.** The user-level Codex config contains
-`notify = ["/home/chihin/.local/bin/codex-touchbar-notify"]`, following Codex's
-documented single-JSON-argument notification interface. The notifier accepts only
-`agent-turn-complete` and atomically drops a small event below
-`~/.local/state/codex-touchbar/`; it never handles the display or runs privileged
-commands. `codex-touchbar.service` consumes only fresh events, alternates the train and
-vines persistently, and calls the existing silent, non-looping `touchbar play` path.
-Events received while playback is active are discarded, not queued. The player and
-unit both restore `tiny-dfr` after normal playback, errors, or shutdown. The feature
-itself invokes only the two commands in `setup/codex-touchbar.sudoers`; there is no
-root animation daemon. This machine retains its pre-existing wheel-wide `NOPASSWD`
-policy by owner choice, while the feature-specific rule keeps replicas from needing
-that broader policy. Codex clients must be restarted after adding or changing the
-top-level `notify` setting.
-
-`touchbar play` uses the locally rebuilt `.build/touchbar-mpv/mpv`, with the
-legacy `~/.local/src/mpv-touchbar/build/mpv` as a fallback when no rebuild exists.
-The custom player needs the narrow-panel stride fix saved in
-`tools/mpv-touchbar-padding.patch` (mpv 0.41.0, source revision `41f6a64`). After
-FFmpeg ABI upgrades, run `tools/build-touchbar-mpv.sh [patched-source-directory]`;
-it defaults to `~/.local/src/mpv-touchbar`, leaves that source unchanged, and never
-downloads code or installs system files. Existing Meson/Ninja, compiler, and
-FFmpeg/libplacebo/libass/libdrm/ALSA/PulseAudio development dependencies are needed.
-The helper checks that mpv starts before stopping services, discovers the connected
-60×2008 DSI panel instead of assuming a DRM card number, and requires current
-read/write access to its device (normally through the `video` group).
-`TOUCHBAR_MPV_BIN` can explicitly select another stride-patched build. Test the
-helper without hardware using `python3 tests/test_touchbar.py`.
-
-Pi uses `~/.pi/agent/extensions/touchbar-notify.ts`, linked by
-`setup/link-home.sh`. It listens for `agent_settled`, not individual model/tool
-turns or `agent_end`, so retries, compaction, and queued continuations finish before
-notifying. Only interactive TUI sessions notify; JSON/print/RPC workers and
-subagents are silent. The extension calls the same notifier with session/leaf IDs
-only, never prompt or response text, and bounds delivery to two seconds. Both
-clients share the existing service, queue, busy-event policy, and persistent
-train/vines selection; no second daemon or additional sudo permissions are needed.
-Run `/reload` in an existing Pi session (or restart Pi) after linking the extension.
-Test with `bun test tests/pi-touchbar.test.ts` and
-`python3 tests/test_codex_touchbar.py`; the audit runs Pi tests when Bun is available.
-
-**`.gitconfig` is tracked, credentials are not.** It records the public author identity
-and `gh` credential-helper integration. `.config/gh/hosts.yml`, browser profiles,
-proxy state, key material, cookies, histories, databases, and caches are excluded.
-
-**caelestia-widget replacements**, mapped onto real tools and added as waybar buttons
-(caelestia's quick-access widgets don't exist without caelestia installed):
-
-| Caelestia widget | Backing tool |
-|---|---|
-| Kill unresponsive window | Waybar `custom/kill` → `hyprctl kill` on mouse release (avoids cancelling the picker with the initiating click); select a window to force-close, Esc cancels (unsaved work may be lost) |
-| Bluetooth | Noctalia's native Bluetooth popup |
-| Random wallpaper | Noctalia wallpaper picker and native random rotation every 15 minutes |
-| Proxy client | `/opt/clash-party/mihomo-party` |
-| Power profile | Custom D-Bus scripts backed by `tuned-ppd`; rocket / scale / leaf for performance / balanced / power-saver |
-| Wifi settings | Noctalia's native Network popup, using the existing standalone iwd backend |
-| Lock screen | not on the bar — superseded by hypridle's 15-minute autolock |
-| Workspace overview | not done — needs the `hyprexpo` plugin compiled via `hyprpm`, flagged as a future step |
-
-**Left un-replicated on purpose:** `power-profiles-daemon` (conflicts with `tuned-ppd`,
-which provides the same D-Bus interface when installed) and `safeeyes` (not packaged
-for Fedora). This machine runs `tuned.service` and `tuned-ppd.service`, both enabled
-at boot; the bootstrap installs and enables them for Waybar profile switching.
-Cloudflare WARP is installed from Cloudflare's official Fedora repository by the setup
-script; registration is kept interactive and its identity/state is not committed.
-Sticky notes (`org.x.sticky`, real package `linuxmint/sticky` via the `yselkowitz/xapps`
-COPR) needed `rpm -i --nodeps` due to a naming bug in that COPR's spec
-(`python3-xapps-override` vs. the real `python3-xapps-overrides`), plus two chased
-runtime deps (`gspell`, `python3-xapp`).
-
-## Open question to revisit — caelestia may no longer be aarch64-dead
-
-While checking COPRs for Hyprland/ironbar, found **`celestelove/caelestia`**, a COPR that
-successfully built `caelestia-shell` (v2.3.0-1) for **`fedora-44-aarch64`** specifically.
-The original setup notes ruled out caelestia entirely because of a documented
-engine-level Quickshell aarch64-linux execution failure — a packaging build succeeding
-doesn't prove that bug is actually fixed (build ≠ runs), but it's evidence worth
-re-checking before treating "caelestia is a wall on this hardware" as still true. Not
-acted on — the waybar setup stands unless Chi Hin wants to reopen it after someone
-actually test-runs `caelestia-shell` from that COPR.
-
-## Critical finding — log in via "Hyprland (uwsm-managed)", not plain "Hyprland"
-
-Logging into plain "Hyprland" at the SDDM screen never reaches
-`graphical-session.target`, so portals, polkit, and the D-Bus secret-service keyring
-never activate. That's what caused a broken `gh auth` keyring, a missing wallpaper
-daemon (Hyprland was drawing its own placeholder background — fixed by adding
-`swaybg`), and other session-level breakage that initially looked like separate config
-bugs but weren't.
-
-**The fix is starting the uwsm-managed session, not plain Hyprland.** The current
-SDDM theme has no user/session pickers and pins
-`/usr/share/wayland-sessions/hyprland-uwsm.desktop`; missing that entry disables
-sign-in instead of silently selecting plain Hyprland. Its
-`uwsm start -e -D Hyprland hyprland.desktop` command properly binds startup to
-`graphical-session-pre.target` → `graphical-session.target`,
-which is what actually activates portals, polkit, and D-Bus secret-service in the right
-order. The manual `dbus-update-activation-environment`/`kwalletd6`/`hyprpolkitagent`
-lines in `autostart.lua` are left in as a defensive fallback, but aren't the real fix.
-
-## Status
-
-This repo is the source of truth for its tracked home files. The corresponding paths
-under `$HOME` are file-by-file symlinks into the clone; `asahi-rice-sync` commits and
-pushes worktree changes automatically once a day without copying files (see
-`.local/bin/asahi-rice-sync`). The full config — Lua Hyprland config, waybar, fonts,
-fcitx5, app set — is deployed and in daily use via a real `uwsm`-managed Hyprland
-session. Codex and interactive Pi completions share `codex-touchbar.service`:
-successive idle turns alternate between the generated train and growing-vines
-animations, while overlapping completions are intentionally skipped.
-
-## Provenance
-
-Built by an AI coding agent (Claude Code) working from
-`.config/agents/fedora-asahi-setup.md`, with Chi Hin running anything requiring `sudo`
-or interactive confirmation — the agent never had a root shell. Source material is
-[dot-files](https://github.com/chihingordonshi/dot-files) (the Arch/XPS16 rice): files
-were copied as-is where hardware-independent, rewritten where machine-specific (monitor
-and keyboard values, package availability), or authored fresh where nothing existed to
-copy from (the 14 Hyprland Lua submodules). Package installs, COPR enablement, and the
-exFAT partition work (see "Build history" below) were all run interactively by Chi Hin.
-
-## Build history
-
-Condensed changelog — see git log for exact diffs, and the sections above for anything
-still relevant to replicating or maintaining this setup.
-
-- **2026-09-18** — Added silent alternating Codex completion animations on the Touch
-  Bar, with deterministic FFV1 assets, an atomic notification handoff, a supervised
-  unprivileged user daemon, and a two-command `tiny-dfr` sudo boundary.
-
-- **2026-09-07** — Added a reproducible Fedora bootstrap, explicit package/Flatpak/
-  repository/service manifests, safe symlink deployment and auditing, broader durable
-  app configuration coverage, full RPM Fusion media codecs, Cloudflare WARP, and mpv
-  cursor-centric zoom. Removed macOS AppleDouble metadata that masqueraded as broken
-  MP4 videos. Migrated WeChat to a system Flatpak; WPS remains user-scoped due to its
-  upstream SELinux extra-data failure.
-- **2026-08-10** — Initial build: Hyprland (Lua config), ironbar panel, core app set,
-  JetBrains Mono Nerd Font.
-- **2026-08-10 (later)** — Real Hyprland config landed once `dot-files` got proper
-  content pushed for the first time; panel switched ironbar → waybar; app gaps closed
-  (rofi launcher, sticky notes, Pinyin input packages, touch bar media-key default).
-- **2026-08-10 (later still)** — Remaining app configs (kitty, cava, btop, qt6ct,
-  Kvantum, wireplumber, fish, nvim, etc.) actually deployed to `$HOME` — day one had
-  only staged them in the repo. caelestia-widget replacements added to waybar.
-- **2026-08-10 (evening)** — Wallpaper rotation timer, hypridle autolock, monitor-scale
-  keybind (1.6x base, toggles to 1x/2x), waybar icon pass, KDE app redundancy audited.
-- **2026-08-11** — Removed redundant KDE apps (konsole, plasma-systemmonitor, Okular —
-  kitty/btop/WPS 365 cover the same ground). Fixed a fcitx5 trigger-key regression.
-- **2026-08-11 (later)** — Executed the Fedora/macOS shared exFAT partition: shrank the
-  Fedora btrfs root by 256GiB, created and formatted a new exFAT partition, mounted at
-  `~/share` with `uid=1000,gid=1000,umask=022` (exFAT has no native Unix permissions) and
-  `nofail` in `/etc/fstab`. Added a `wallpaper()` zsh function as a manual trigger for
-  the rotation timer.
+Credentials, browser profiles, Rime learned data, caches and wallpaper media stay
+outside Git. `.gitconfig` contains public identity and the `gh` helper command,
+not the GitHub token. The personal `asahi-rice-sync` timer commits and pushes
+tracked-home changes daily; see [its script](.local/bin/asahi-rice-sync).

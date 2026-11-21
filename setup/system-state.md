@@ -1,31 +1,28 @@
-# Machine-specific system state
+# System configuration
 
-Home configuration is always deployed as file-by-file symlinks. System files are
-installed from the bootstrap script or documented here; `/etc` is deliberately not
-symlinked into a user-owned Git checkout.
+Home files are symlinked through `setup/home-files.txt`. System files are
+root-owned copies, **not** symlinks into this user-owned checkout. The bootstrap
+covers packages, SDDM, power-button handling and Touch Bar permissions; networking,
+firewall policy, optional service reductions and storage below are machine-specific.
 
-## SDDM login screen (no Plasma desktop)
+## SDDM login screen
 
-`setup/install-sddm.sh` installs the self-contained macOS-inspired Qt 6 theme from
-`setup/sddm/themes/macos/` into `/usr/local/share/sddm/themes/macos/`, and installs
-`setup/sddm/10-macos.conf` into `/etc/sddm.conf.d/10-macos.conf`. These are root-owned
-copies, not symlinks into this checkout. Run the script again after changing the
-sources. SDDM uses Weston in kiosk mode, not KWin or Plasma, for its Wayland greeter.
-`setup/sddm/weston.ini` is installed at `/etc/sddm/weston.ini`; it scales this
-MacBook's 2560×1600 `eDP-1` panel by 2 for a readable Retina login screen without
-changing Hyprland's separate 1.6 scale. Verify the output name before reuse.
-The same Weston file explicitly enables libinput devices, touchpad tap-to-click
-and tap-and-drag for the greeter. SDDM uses **Bibata Original Classic** at size 24,
-configured in `setup/sddm/10-macos.conf`, matching the existing Hyprland cursor.
-These input/cursor settings take effect on the next greeter launch; they do not
-alter Hyprland's input preferences. The original SVG background and icons do not
-need external downloads or Apple assets.
+`setup/install-sddm.sh` installs:
 
-Before running the installer on a new host, install a trusted copy of the
-Bibata Original Classic Xcursor theme system-wide. This machine uses the existing
-v2.0.6 assets, copied from the user's theme rather than downloaded or loaded from
-home by the greeter. Cursor aliases must be relative links within the theme.
-For an existing local installation:
+| Source | System destination |
+| --- | --- |
+| `setup/sddm/themes/macos/` | `/usr/local/share/sddm/themes/macos/` |
+| `setup/sddm/10-macos.conf` | `/etc/sddm.conf.d/10-macos.conf` |
+| `setup/sddm/weston.ini` | `/etc/sddm/weston.ini` |
+
+Rerun the installer after changing these sources. The greeter uses Weston kiosk,
+not a Plasma session. Its `eDP-1` scale is 2, independently of Hyprland's 1.6;
+libinput tap-to-click and tap-and-drag are enabled for the greeter.
+
+Install a trusted **Bibata Original Classic** Xcursor theme as a root-owned copy
+in `/usr/share/icons/Bibata-Original-Classic/` before deploying. The installer
+requires `cursors/left_ptr`; aliases must be relative links within the theme.
+For an existing local copy:
 
 ```sh
 cursor_source="$HOME/.local/share/icons/Bibata-Original-Classic"
@@ -38,128 +35,46 @@ sudo find "$cursor_target" -type f -exec chmod 0644 {} +
 sudo restorecon -RF "$cursor_target"
 ```
 
-The installer checks for the system cursor's `cursors/left_ptr` before deploying
-SDDM. Cursor binaries are not stored in Git; existing Adwaita packages are not
-uninstalled.
+The theme restores the saved account, hides account/session pickers, and pins
+`/usr/share/wayland-sessions/hyprland-uwsm.desktop`. Missing that session disables
+sign-in rather than falling back to plain Hyprland. Password authentication stays
+enabled; no autologin or PAM changes are made. UWSM is required for graphical
+session targets, portals, polkit and the keyring.
 
-On first deployment, `/var/lib/sddm/state.conf` preselects the current user and
-**Hyprland (uwsm-managed)**. Subsequent deployments preserve the remembered state.
-The theme shows no user/session pickers: it restores the saved account and pins
-`sessionFile` to `/usr/share/wayland-sessions/hyprland-uwsm.desktop`, regardless of
-the remembered session index. If that session is unavailable, sign-in is disabled
-rather than falling back to plain Hyprland.
-Password authentication remains enabled; no autologin or PAM changes are made.
-The installer disables Plasma Login Manager and enables SDDM for the **next boot**,
-without stopping/restarting the running login manager or terminating a session.
-The generic Asahi release identity replaces the Plasma-specific identity; the
-Asahi kernel, audio, firmware, platform packages, standalone apps and shared Qt/KDE
-libraries remain installed. Legacy Plasma home settings are retained, not activated.
+The installer enables SDDM for the **next boot** without stopping the live login
+manager. It does not automatically remove Plasma. If explicitly removing an active
+desktop/login manager, use a reviewed DNF offline transaction rather than risking
+uninstall hooks terminating the session. Check with `sudo dnf5 offline status`;
+`sudo dnf5 offline reboot` applies it and ends the session. Do not broadly autoremove
+shared Asahi, networking, firmware or Qt/KDE application dependencies.
 
-KDE Plasma and the running Plasma Login Manager are removed in a reviewed DNF
-**offline** transaction, so their uninstall scripts cannot terminate the live session.
-Check a pending transaction with `sudo dnf5 offline status`. To apply it immediately
-when ready to end the session, use `sudo dnf5 offline reboot`. A transaction armed
-using `sudo env DNF_SYSTEM_UPGRADE_NO_REBOOT=1 dnf5 offline reboot` runs at the next
-normal reboot without rebooting at the time it is armed. Changing packages invalidates
-a pending transaction; rerun the removal command shown by `offline status` and arm it
-again before rebooting. This staging is a one-time migration step, not part of the
-bootstrap or theme installer. No broad autoremove or whole-environment removal is
-used, to preserve networking, firmware, fonts and apps.
+See the [theme README](sddm/themes/macos/README.md) for requirements and smoke tests.
 
-## Standalone iwd Wi-Fi and low-idle DNS
+## Wi-Fi and DNS
 
-Wi-Fi authentication, IPv4 DHCP and IPv6 are managed by `iwd.service`.
-**DNS follows the normal network/VPN configuration**, without a static WARP pin.
-iwd publishes DHCP DNS/search domains to `systemd-resolved`; WARP installs its own
-DNS route while connected and removes it on disconnect, allowing network DNS to
-take over. Resolved stays enabled and running in every power profile, including
-power-saver, so DNS fallback and `.local` remain available.
-NetworkManager, its dispatcher/wait-online units, and wpa_supplicant are stopped,
-disabled and masked to prevent competing managers. `systemd-networkd` stays
-disabled; iwd's built-in network configuration avoids another daemon.
-The NetworkManager daemon, plugins, TUI, applet and editor were subsequently
-removed (10 packages, about 13 MiB installed size) without unrelated autoremove.
-`NetworkManager-libnm` and `libnma` remain because removing them would also remove
-Blueman and firewall-config; these are libraries, not idle daemons. Original
-connection files and a root-only configuration archive remain for rollback.
-WARP and Tailscale remain independently managed, not iwd profiles.
+- `iwd.service` manages Wi-Fi authentication, DHCP and IPv6 on `wld0`.
+  NetworkManager and wpa_supplicant are disabled/masked; systemd-networkd is
+  disabled. Retained libnm/libnma libraries are not network-management daemons.
+- `setup/iwd-main.conf` is copied to `/etc/iwd/main.conf`. It enables built-in
+  networking, systemd name resolution, per-network MAC randomization and IPv6.
+  Disconnected scanning starts at 30 seconds, capped at 300 seconds.
+- `setup/resolved-low-power.conf` is copied to
+  `/etc/systemd/resolved.conf.d/90-low-power.conf`: LLMNR off, mDNS resolver-only
+  (`MulticastDNS=resolve`), caching on.
+- `/etc/resolv.conf` points to `/run/systemd/resolve/stub-resolv.conf`
+  (`127.0.0.53`). No static WARP DNS pin or global fallback servers are configured.
 
-Root-owned copies of these configuration sources are installed, not symlinks:
+Resolved runs in **every power profile**. iwd supplies DHCP DNS/search domains;
+WARP supplies its DNS route while connected and removes it on disconnect.
+Network DNS then takes over. More-specific network search domains can take
+precedence over WARP's `~.` route: this is split DNS, not a promise that every query
+uses WARP. Application DoH and explicit DNS servers are outside this policy.
+WARP and Tailscale are managed independently of iwd.
 
-- `setup/iwd-main.conf` → `/etc/iwd/main.conf`: built-in IP configuration,
-  `NameResolvingService=systemd`, per-network MAC randomization, IPv6 and a 30-second
-  initial disconnected scan interval (maximum 300 seconds). DHCP DNS/search domains
-  are passed to resolved. Automatic reconnection and roaming remain enabled.
-  The Broadcom default interface `wld0` is preserved.
-- `setup/resolved-low-power.conf` →
-  `/etc/systemd/resolved.conf.d/90-low-power.conf`: disables LLMNR, keeps mDNS in
-  **resolver-only** mode (`MulticastDNS=resolve`) and keeps DNS caching enabled.
-  With resolved running, `.local` works without advertising or answering questions.
-- `/etc/resolv.conf` is restored to the managed stub symlink
-  `/run/systemd/resolve/stub-resolv.conf` (`127.0.0.53`), not a static WARP file.
-  The `95-warp-dns.conf` override is removed. Neither global DNS servers nor
-  fallback/domain-routing policy are pinned by the local configuration.
-
-NSS remains authselect-managed and unchanged. Resolved handles ordinary DNS and
-mDNS; both NSS clients and direct resolv.conf users follow its dynamic routing.
-The current network supplies `bsn.net`, which can legitimately take precedence
-for campus names over WARP's `~.` route. This is normal split DNS, not a guarantee
-that every query goes through WARP whenever connected. Application-specific DoH or
-explicitly selected DNS servers are outside this policy.
-
-The initial experiment on 2026-11-02 disabled both LLMNR and mDNS. Matched
-40-second samples showed CPU dropping from 3.15% of one core to 0.00% at the
-measurement resolution, and voluntary context switches from 55.95/s to 0.57/s.
-A later sample with iwd connected gave 0.025% resolver CPU and 0.35 voluntary
-switches/s; iwd used 0.00% CPU. **Those are historical results for the initially
-rejected mDNS-disabled configuration**, which broke required `.local` lookups.
-mDNS was subsequently restored to resolver-only mode; the near-zero sample is
-not a measurement of the current configuration. A later power-saver experiment
-stopped the daemon entirely, but that policy has been retired to restore normal
-network/VPN DNS fallback. These are activity measurements, not measured
-wattage/battery life. A subsequent 40-second sample with resolver-only
-mDNS restored (including one service-discovery verification) measured 1.35%
-resolver CPU and 37.40 voluntary switches/s; results depend on LAN traffic.
-`iw dev wld0 get power_save` reports on.
-
-Resolver-only mode alone disables responding, not reception: lookup replies must
-still come in, and mDNS replies normally use multicast. Without the client-only
-filter below, unrelated queries and unsolicited announcements still reach the
-multicast socket. A blanket inbound UDP/5353 block
-would break `.local`; ordinary established-connection rules do not reliably match
-multicast replies. The client-only filter below instead drops multicast
-**questions only**, retaining all incoming answers. See
-[RFC 6762 sections 5–6](https://www.rfc-editor.org/rfc/rfc6762.html).
-
-Eight saved station profiles (including a hidden phone network) were migrated to
-root-only `/var/lib/iwd` files, mode 0600 under a 0700 directory. The active SSID's
-MAC was preserved with its `AddressOverride`, retaining its DHCP identity.
-`ANDOVER11-test` had no available saved credential and was not converted. The two
-old NetworkManager hotspot profiles were retained but not converted. Never store
-these passwords, identity material or machine-specific profiles in Git.
-
-### Waybar network controls
-
-- **Left-click the network icon:** `~/.local/bin/impala` 0.8.1. `Tab` switches
-  panels, `s` scans, Enter connects/disconnects; in New Networks, `n` connects a
-  hidden SSID; in Known Networks, `t` toggles autoconnect and `d` forgets a network.
-- **Right-click:** the upstream `iwctl` interactive console, including connection
-  details, hidden networks, saved-network properties, adapters, WPS and hotspot
-  commands. Type `help` to list available commands. There is no middle-click action.
-- There is no custom networking application or wrapper. Both utilities run only
-  when opened, so they add no idle polling daemon. This is Wi-Fi management,
-  not a replacement UI for NetworkManager-specific VPN/wired
-  profiles. NetworkManager and its applet are uninstalled, and `nm-applet` is
-  removed from Hyprland startup. Waybar's network status uses netlink, not NM.
-
-Impala was built user-locally from the reviewed, pinned crates.io package using
-`cargo install impala --version 0.8.1 --locked --root "$HOME/.local"`.
-`iwctl` was already installed as part of iwd. System network switching is
-intentionally not done automatically by the generic bootstrap installer.
-
-For full credential/static IP/DNS/IPv6/802.1X editing beyond the properties exposed
-by `iwctl`, use the existing `sudoedit` and Vim from a terminal (not a separate
-Waybar click action):
+Use Noctalia's native network popup or `iwctl` for Wi-Fi management. Full static
+IP/DNS/802.1X settings live in `/var/lib/iwd/*.psk`, `*.open` or `*.8021x`;
+non-simple SSIDs use encoded filenames. Profiles and credentials stay root-only
+(directory `0700`, files `0600`) and must never enter Git. For careful editing:
 
 ```sh
 sudo ls /var/lib/iwd
@@ -167,135 +82,69 @@ SUDO_EDITOR='vim -N -u NONE -U NONE -n -i NONE --cmd "set nomodeline nobackup no
   sudoedit -- '/var/lib/iwd/SSID.psk'
 ```
 
-Choose the actual `.psk`, `.open` or `.8021x` filename; non-simple SSIDs have
-hex-encoded filenames. Vim `:wq` saves and `:q!` cancels. This runs the editor as
-the caller, without plugins, modelines, swap, undo, viminfo or backup files.
-Reconnect to apply IP/DNS/security changes. See `man 5 iwd.network` for all keys.
-Impala/iwctl are Wi-Fi managers, not graphical full-profile form editors.
+Choose the real filename and reconnect after changes. See `iwd.network(5)`.
+Noctalia's Bluetooth popup uses BlueZ; `bluetoothctl` is available for CLI control.
 
-### Verification and rollback
+### Client-only multicast DNS
 
-Verify iwd, `iw dev wld0 get power_save`, `warp-cli status`, `dig example.com`
-(server should be the `127.0.0.53` stub), `getent ahostsv4 example.com`,
-`resolvectl status` and an HTTPS request. Check mDNS with
-`resolvectl --cache=no --protocol=mdns --interface=wld0 query chsrv.local`.
+`setup/mdns-client-only.nft` is installed at `/etc/nftables/mdns-client-only.nft`;
+`setup/mdns-client-only.service` is installed under `/etc/systemd/system/` and
+enabled. This oneshot service owns only the `inet mdns_client_only` table, not
+firewalld or VPN rules.
 
-After removing the static pin, iwd supplied `172.16.75.9` / `172.16.75.10` and
-`bsn.net` on `wld0`. WARP connected with its own local DNS proxies and `~.` route;
-there were no global static DNS servers. A brief guarded WARP disconnect verified
-that an uncached, ordinary `example.com` query selected `wld0` without forcing an
-interface, NSS worked, and public HTTPS returned 200. After reconnection, WARP
-was healthy, its DNS route returned, and uncached DNS/HTTPS worked again.
-The managed resolv.conf symlink survived both transitions. In power-saver,
-uncached `chsrv.local` returned `172.16.9.135` through mDNS and local HTTP returned
-302. Resolved and both sockets are enabled, with the old runtime masks removed;
-the boot stop helper and its sudo grant are removed. All three live Waybar profile
-transitions preserved resolved's PID and the wallpaper configuration checksum.
-The 41 relevant networking/desktop regression tests, shell/unit syntax checks,
-sudoers validation and scoped whitespace checks passed. The three-minute DNS/WARP
-recovery guard was cancelled after the connectivity checks. A physical reboot was
-not performed.
+On `wld0`, it drops incoming multicast UDP/5353 **questions** (DNS QR=0), retaining
+answers, unsolicited announcements, outgoing queries, unicast packets and ordinary
+DNS. Resolver-only mode still permits `.local` lookups. This reduces userspace
+query handling, not radio/kernel reception or all multicast traffic.
+**Disable the filter if this machine must advertise/respond to mDNS services.**
 
-Original service/resolver state and root-only migration records are in
-`/var/lib/network-power-migration/`, including
-`networkmanager-config-before-removal.tar.gz` and the original RPM package list.
-Since NetworkManager was removed, reinstall it **while iwd still provides Wi-Fi**
-before restoring the original system networking:
+```sh
+sudo nft list table inet mdns_client_only
+sudo systemctl disable --now mdns-client-only.service
+# Re-enable deliberately:
+sudo systemctl enable --now mdns-client-only.service
+```
+
+Stopping the service removes only its own table. The bootstrap does not install
+this firewall policy or switch network managers automatically. See
+[RFC 6762 sections 5–6](https://www.rfc-editor.org/rfc/rfc6762.html).
+
+### Network verification and recovery
+
+Check `systemctl status iwd systemd-resolved`, `iw dev wld0 get power_save`,
+`warp-cli status`, `resolvectl status`, `dig example.com`,
+`getent ahostsv4 example.com`, and HTTPS connectivity. Use a known local host with
+`resolvectl --cache=no --protocol=mdns --interface=wld0 query HOST.local`.
+Verify uncached DNS with WARP both connected and disconnected when safe.
+
+Root-only network backups and a rollback script live in
+`/var/lib/network-power-migration/`. To restore NetworkManager, reinstall it
+**while iwd still provides Wi-Fi**, then use the reviewed local rollback script:
 
 ```sh
 sudo dnf5 install NetworkManager NetworkManager-wifi
 sudo bash /var/lib/network-power-migration/rollback.sh
 ```
 
-The rollback script now refuses before changing networking if NetworkManager is
-not installed. When proceeding, it checks the old WARP-only DNS restore helper
-(which is now a no-op because that policy was already undone), then disables the
-client-only mDNS filter.
+The script refuses if NetworkManager is absent. It restores the original manager
+and resolver policy and disables the client-only filter; migrated iwd profiles
+remain inactive. Verify these local backup files before relying on recovery.
 
-It then stops/disables iwd, unmasks/re-enables NetworkManager (and its original
-related units), removes only the two new system configuration copies, and reloads
-resolved to restore the previous multicast policy. Original NetworkManager
-profiles are untouched; migrated iwd profiles remain available but inactive.
-The home/Waybar utilities are separate: after reinstalling the applet, restore
-the old Waybar click command and Hyprland `nm-applet` startup line, then run
-`nm-applet`.
+## Power profiles and optional idle services
 
-References: local `iwd.config(5)`, `iwd.network(5)`, `iwctl(1)`, `resolved.conf(5)`;
-[upstream iwd configuration](https://kernel.googlesource.com/pub/scm/network/wireless/iwd/+/master/src/iwd.config.rst),
-[Impala](https://github.com/pythops/impala).
+`tuned.service` and `tuned-ppd.service` provide performance/balanced/power-saver
+through the power-profiles D-Bus interfaces. The bootstrap installs/enables them.
+Profiles do not stop resolved, change DNS policy or alter wallpaper rotation.
+Noctalia is the active shell; retained Waybar power helpers are not the deployed UI.
 
-## On-demand Bluetooth controls
-
-Use the already-installed **bluetuith 0.2.7**, not a newly built replacement.
-Waybar's native `bluetooth` module sits beside Wi-Fi and uses D-Bus status events,
-not shell polling. Left-click opens `~/.local/bin/bluetuith`; right-click opens
-`bluetoothctl`; there is no middle-click action. Both use floating 800×500 Kitty
-windows, matching Wi-Fi. No wrapper script, new package or custom TUI config is
-needed. Install bluetuith separately before using these bindings on a new machine.
-
-The `Hidden=true` override in `.config/autostart/blueman.desktop` suppresses the
-old tray applet; its current user unit is stopped. BlueZ remains running, the
-existing radio power/rfkill state is preserved, and no devices were re-paired.
-To return to the old tray, disable this override and run `blueman-applet`.
-DNS/WARP and power-profile/wallpaper behavior are unchanged.
-
-## XDG autostart cleanup
-
-UWSM/systemd processes XDG autostart independently of Hyprland's Lua startup.
-The four remaining `.config/autostart` files are minimal `Hidden=true` overrides
-for system entries: Blueman, imsettings, Xwayland Video Bridge and the SELinux
-troubleshooter tray. Removing these files would allow the distro entries to start.
-The SELinux tray now uses `Hidden=true` rather than the GNOME-only disable flag;
-SELinux enforcement and system logging are unchanged.
-
-Removed the duplicate Fcitx desktop launcher (Hyprland's `autostart.lua` already
-starts Fcitx) and obsolete NetworkManager, Kalendar and KDE Connect overrides
-whose system autostart entries are absent. The corresponding home symlinks and
-manifest entries are removed too. The running Fcitx process is left alone.
-
-## Additional idle CPU and RAM reductions
-
-The major CPU problem was the legacy shell Waybar auto-hide controller, not the
-Wi-Fi daemon: its 10 Hz loop repeatedly spawned `pgrep`, `date`, three `hyprctl`
-clients, two `jq` processes and `sleep`. `.config/hypr/waybar.lua` now uses the
-installed Hyprland 0.57 native Lua timer/query API. It checks cursor state in-process
-at 100 ms, spawning only on actual visibility transitions. Super+B, empty-workspace
-visibility, 200 ms top-edge reveal, 72 px hover, startup grace and config-reload
-state are preserved. The legacy shell file remains for compatibility but is no
-longer started. Existing user-disabled clock/quickmenu startup lines were preserved.
-
-Waybar uses native `cpu` (5 s) and `memory` (15 s) modules instead of recurring shell
-pipelines. Memory process details are available on demand by clicking it for btop.
-The minute-resolution clock now updates each minute; its tooltip no longer claims
-live seconds. Fcitx polls every 3 s, and power-profile status every 30 s (clicks
-still refresh immediately).
-Brightness/volume fallback polling is 10/5 s; existing helper/hotkey changes still
-refresh immediately through signals, preserving perceptual brightness and OSDs.
-
-A 30-second before sample and a subsequent 60-second sample gave:
-
-| CPU, percent of one core | Before | After desktop changes |
-| --- | ---: | ---: |
-| Hyprland service group, including spawned descendants | 35.82% | 2.16% |
-| Waybar service group, including helpers | 3.53% | 1.01% |
-
-These are live-desktop activity samples, not isolated whole-system idle-power
-measurements. The before/after windows differ, and LAN traffic varies. Agent and
-terminal activity is outside these service groups. No wattage or battery-life
-saving is claimed.
-
-With no cellular modems detected, `ModemManager.service` is stopped, disabled and
-masked against D-Bus activation. Automatic ABRT journal/core/oops/Xorg collectors
-(`abrtd`, `abrt-journal-core`, `abrt-oops`, `abrt-xorg`) are stopped and disabled.
-Their combined prior proportional resident footprint was about **86 MiB PSS**;
-this is not a guaranteed physical-memory delta. Normal systemd coredumps,
-journald, auditd, SELinux enforcement, firewalld, Bluetooth, VPNs and speaker
-protection remain enabled. No generic x86 power knobs or aggressive PCIe changes
-were applied; Apple CPU idle, `schedutil` and Wi-Fi power save remain in use.
-Service state before changes is recorded root-only in
+ModemManager is disabled/masked on this machine; automatic ABRT collectors are
+disabled. Normal systemd coredumps, journald, auditd, SELinux, firewalld, Bluetooth,
+VPNs and speaker protection remain enabled. Apple CPU idle, `schedutil` and Wi-Fi
+power save remain in use. No battery-life or wattage saving is established here.
+The root-only optional-service backup is
 `/var/lib/network-power-migration/idle-services-before.json`.
 
-Restore those optional services with:
+To restore the optional services:
 
 ```sh
 sudo systemctl unmask ModemManager.service
@@ -303,238 +152,55 @@ sudo systemctl enable --now ModemManager.service abrtd.service \
   abrt-journal-core.service abrt-oops.service abrt-xorg.service
 ```
 
-### Client-only multicast DNS filter
+The four `.config/autostart/` `Hidden=true` overrides suppress Blueman, imsettings,
+Xwayland Video Bridge and the SELinux troubleshooter tray. Removing an override
+allows its system launcher to run. This does not disable SELinux enforcement.
+Hyprland starts IBus directly; no separate Fcitx startup is active.
 
-`setup/mdns-client-only.nft` is installed as `/etc/nftables/mdns-client-only.nft`,
-with `setup/mdns-client-only.service` installed under `/etc/systemd/system/` and
-enabled. The service is **oneshot**, not a polling daemon. It owns only the
-`inet mdns_client_only` nftables table and does not flush firewalld/VPN rules.
+## Power button
 
-On physical Wi-Fi `wld0`, it drops only incoming UDP/5353 packets addressed to
-IPv4/IPv6 mDNS multicast groups with DNS QR=0 (questions). DNS QR=1 answers,
-including unsolicited announcements, outgoing queries, unicast packets and normal
-DNS are unchanged. This avoids waking userspace to parse other devices' questions.
-It does not prevent Wi-Fi hardware/kernel reception or eliminate response traffic.
-**Trade-off:** no mDNS responder on this machine can hear those multicast queries;
-disable the filter if this host must advertise/respond to local services.
+`setup/logind-power-button.conf` is installed as
+`/etc/systemd/logind.conf.d/90-power-button.conf`, root-owned mode `0644`.
+`HandlePowerKey=ignore` and `HandlePowerKeyLongPress=ignore` leave the key to
+Hyprland, where `XF86PowerOff` opens Kitty like Super+Q. Apply logind changes with
+`sudo systemctl reload systemd-logind.service`, not a restart.
 
-A 60-second trial reduced resolved from 1.60% CPU / 34.20 voluntary switches/s to
-1.30% / 13.65 switches/s, while dropping about 3,600 incoming questions. This is
-traffic-dependent, not a guarantee of proportional power savings. Fresh uncached
-`chsrv.local` resolution, general DNS-SD responses, local HTTP 302, public HTTPS
-200, WARP, nft syntax, service reload and stop/start rollback were verified.
-The IPv6 rule was syntax/QR-logic checked; no IPv6-only test host was provided.
+To undo, remove the Hyprland binding and the system drop-in, then reload Hyprland
+and logind. Menu/command shutdown remains available. Holding the physical button
+can still force power-off in firmware.
 
-Inspect or reversibly disable the filter with:
+## Applications and storage
 
-```sh
-sudo nft list table inet mdns_client_only
-sudo systemctl disable --now mdns-client-only.service
-```
+- WARP comes from Cloudflare's official repository; registration and device
+  identity stay outside Git. `setup/install-external.sh` installs the pinned
+  upstream ARM64 lazygit release recorded in `setup/external-sources.tsv`.
+- WeChat uses a separately installed **user Flatpak**. Its desktop override enables
+  X11, disables Wayland, selects Qt XCB/IBus and unsets experimental IBus sync mode.
+  The RPM launcher is hidden. Main-window rules ignore maximum-size hints without
+  forcing tiling/floating; subwindows keep their own hints. Test click alignment,
+  resizing and Chinese input together.
+- The LibreWolf repository backup is `/etc/yum.repos.d/librewolf.repo.disabled`;
+  LibreWolf and its profile are untouched. Renaming it back to `librewolf.repo`
+  re-enables the repository. Inspect with `dnf -C repo list --all`.
+- Shared exFAT storage is mounted at `~/share`. Its fstab entry is machine-specific:
 
-Re-enable with `sudo systemctl enable --now mdns-client-only.service`. Stopping it
-removes only its own table. With resolved running, resolver-only `.local` support
-remains enabled either way. No host addresses were pinned, and incoming answers
-are not restricted to one test server. The generic bootstrap does not automatically install this
-machine-specific firewall policy or switch networking.
+  ```fstab
+  UUID=6A79-D0DA /home/chihin/share exfat uid=1000,gid=1000,umask=022,nofail 0 0
+  ```
 
-## Waybar power profiles
+  Verify UUID/owner IDs with `lsblk -f` and `id` before reuse. `._*` AppleDouble
+  files are metadata, not playable media. Partition creation/resizing is not a
+  bootstrap operation.
 
-Fedora's `tuned` and `tuned-ppd` packages provide the power-profile backend;
-`tuned.service` and `tuned-ppd.service` are enabled and running. Replicate with:
+## Desktop-specific references
 
-```sh
-sudo dnf install tuned-ppd
-sudo systemctl enable --now tuned.service tuned-ppd.service
-```
+- [Noctalia](noctalia.md) owns wallpaper rendering/rotation and native launch/capture.
+  Do not enable the retained swaybg unit or random-wallpaper timer alongside it.
+- [Touch Bar](../docs/touchbar.md) documents the narrow `tiny-dfr` sudo boundary,
+  notification service and local player build.
+- [Gentoo boot](gentoo-boot.md) documents the separate ESP and one-shot reboot helper.
 
-`tuned-ppd` exposes both `net.hadess.PowerProfiles` and
-`org.freedesktop.UPower.PowerProfiles` on the system bus. Waybar's custom helpers
-use the former to read and cycle performance / balanced / power-saver; their
-rocket / scale / leaf symbols are monochrome Nerd Font glyphs, not color emoji.
-There are no per-profile color overrides. The active profile remains a runtime
-choice, not a setting pinned by the bootstrap. On this machine all three profiles
-are advertised by the backend. Changing profiles does not affect wallpaper
-rotation; swaybg is the only wallpaper renderer.
-
-### DNS is independent of power profiles
-
-The WARP-only DNS pin and resolver power-switching experiment have been undone.
-Waybar now changes only the CPU power profile; rapid clicks remain serialized with
-a runtime flock. It does not stop/start/mask resolved or change the wallpaper.
-Resolved remains running in power-saver, balanced and performance. Stopping it
-would break the restored DHCP-DNS fallback, so its old profile and boot hooks and
-the extra sudo grant have also been removed from the system. No replacement DNS
-package, polling helper or background profile listener was installed.
-
-The following tracked sources are **retired, inert placeholders, not installation
-instructions**: `setup/warp-resolv.conf`, `setup/resolved-warp-dns.conf`,
-`setup/resolved-{power-saver,performance,power-saver-at-boot}.service`, and
-`setup/power-profile-resolver.sudoers`. They contain no DNS pins, resolver-stop
-commands, enableable boot action or sudo grant. Do not install them.
-
-The root-only pre-pin copies remain under
-`/var/lib/network-power-migration/warp-dns-before/`. Its restore script was run
-successfully and its `applied` marker cleared; later calls are no-ops. Full
-NetworkManager rollback still refuses to stop iwd until NM has been reinstalled.
-
-## Power button opens a terminal
-
-`/etc/systemd/logind.conf.d/90-power-button.conf` is installed from
-`setup/logind-power-button.conf` with owner `root:root` and mode `0644`.
-It sets `HandlePowerKey=ignore` and `HandlePowerKeyLongPress=ignore`, so logind
-does not shut down the machine when the power button is pressed. Apply it with
-`sudo systemctl reload systemd-logind.service`; restarting logind is unnecessary.
-
-`.config/hypr/keybindings.lua` binds `XF86PowerOff` to the configured terminal
-(Kitty), just like Super+Q, without repeating or running while the screen is locked.
-The shortcut also works while modifier keys are held. Software cannot prevent the
-Mac's firmware-level forced power-off from holding the physical button down.
-
-To restore the default, remove that Hyprland binding and this `/etc` drop-in, then
-reload Hyprland and logind. Normal menu/command shutdown remains available throughout.
-
-## Shared exFAT volume
-
-The macOS/Fedora shared volume is mounted by this `/etc/fstab` entry. Its UUID and the
-numeric owner IDs are machine-specific and must be verified with `lsblk -f` and `id`
-before reuse:
-
-    UUID=6A79-D0DA /home/chihin/share exfat uid=1000,gid=1000,umask=022,nofail 0 0
-
-## Static wallpaper rendering and rotation (disabled)
-
-`swaybg-wallpaper.service` and `random-wallpaper.timer` are stopped; the timer is
-not enabled. Hyprland no longer starts either unit, Waybar's shuffle button is
-hidden, and setup does not enable the timer or recreate its `timers.target.wants`
-link. The historical enablement link is retained only in the repository, outside
-the active home-link manifest.
-
-The service definitions, optional helper scripts, `wallpaper` shell function, and
-wallpaper library are retained. The renderer can still be started explicitly;
-its optional timer rotates static images every 10 minutes. No packages or images
-were removed, and ordinary mpv playback is unaffected.
-
-To opt back in (restore the renderer's home link with `setup/link-home.sh` if needed):
-
-```sh
-systemctl --user daemon-reload
-systemctl --user start swaybg-wallpaper.service
-systemctl --user enable --now random-wallpaper.timer
-```
-
-## System-installed local software
-
-- Cloudflare WARP is installed from the official repo created by `setup/install.sh`.
-  Registration and device identity stay outside Git.
-- `lazygit` v0.64.0 is installed from its pinned upstream ARM64 release by
-  `setup/install-external.sh`.
-
-## WeChat tiled input and LibreWolf repository removal
-
-WeChat uses the user-installed official `wechat-4.1.13.26-1.aarch64` RPM, not the
-old Flatpak. `.local/share/applications/wechat.desktop` starts `/usr/bin/wechat`
-with `QT_QPA_PLATFORM=xcb`, so Qt uses XWayland. On this machine the native Wayland
-window retained old click coordinates when forced beyond its maximum-size hint.
-No WeChat rule forces tiling or floating. Only main-window titles (`Weixin`,
-`WeChat`, `微信`) ignore the maximum-size hint to allow normal resizing; meme
-pickers and other subwindows retain their own size/floating hints. Changing size
-policy alone is not enough to verify correct input. No global Qt/display
-environment changes are made.
-
-The `.local/share/applications/com.tencent.WeChat.desktop` `Hidden=true` override
-hides the duplicate Flatpak entry. The stale Flatpak process was stopped, but its
-installation and chat data are preserved. The bootstrap no longer installs it.
-Install the official ARM64 RPM separately before using the native launcher on a
-new host. Remove the two home launcher symlinks to restore the package launchers.
-
-The LibreWolf Software Repository was removed from active DNF configuration by
-renaming `/etc/yum.repos.d/librewolf.repo` to `librewolf.repo.disabled`. DNF reads
-only `*.repo`; the disabled copy is a reversible system backup, not a Git source.
-LibreWolf itself and its profile are untouched. To restore the repository, rename
-that file back to `librewolf.repo` with sudo. Verify with `dnf -C repo list --all`.
-
-## Codex Touch Bar privilege boundary
-
-`/etc/sudoers.d/codex-touchbar` is installed from `setup/codex-touchbar.sudoers`
-with owner `root:root` and mode `0440`. It grants `chihin` passwordless access to
-exactly `systemctl stop tiny-dfr` and `systemctl start tiny-dfr`, allowing the
-unprivileged animation player to borrow the panel and restore its normal media-key
-daemon. `setup/install.sh` validates the source with `visudo` before installing it.
-This machine also retains its older `%wheel ALL=(ALL) NOPASSWD: ALL` policy by owner
-choice, so the feature-specific entry is redundant here but remains the reproducible
-least-privilege default for other installations.
-
-## Native Noctalia shell (supersedes the earlier panel/wallpaper notes)
-
-Fedora's native `noctalia` 5.4.1 replaces Waybar at Hyprland session startup.
-Waybar and its obsolete frontends are now uninstalled (see cleanup below);
-historical config/helpers remain in Git but are no longer deployed.
-The 36px fixed dark/lavender bar uses native network, Bluetooth, and audio popups.
-Standalone iwd, tuned-ppd, Mako, hypridle, and the existing media-key helpers
-are retained. Noctalia now also owns launching and screenshots (see below).
-The IBus bar widget is removed; Super+R still switches languages.
-
-`noctalia-shell.lua` handles workspace switches immediately and uses a
-compositor-native 200ms fallback timer to enable edge-reveal hiding only when the
-current workspace has a mapped, non-hidden tiled window. Shell animations are
-disabled globally and auto-hide delay is zero, so workspace switches hide instantly.
-Empty/floating-only workspaces stay visible; Super+B and Super+X both toggle pinned
-visibility and force fresh visibility/reservation IPC. Manual show stays pinned
-through window polls, workspace switches, and config reloads, reserving its 36px
-height. Unpinning releases the gap and immediately resamples current windows.
-The serialized `noctalia-bar-apply` helper
-applies only the latest requested reservation/mode. Outside manual refreshes, IPC
-runs only on changes or discovery of a new shell process. After showing, the helper
-re-announces the active workspace's unchanged name as an experimental snapshot
-refresh. The patch was restored at the user's request after failing user verification;
-the rendering delay remains unresolved. See the note in `noctalia.md`; existing
-pin/unpin behavior is unchanged.
-There is no dependency on the old generated `noctalia.lua` theme module.
-
-Noctalia now renders selected wallpapers and randomly rotates the recursive
-`~/Pictures/Wallpapers` collection every 15 minutes. The separate swaybg service
-and old random-wallpaper timer remain inactive. App-theme templates and duplicate
-notification, OSD, clipboard, locking, and dock services are disabled.
-
-The original settings and preservation/reconstruction artifacts are backed up in
-`~/.local/state/asahi-rice/backups/noctalia-20261111-125017/`. See
-[`noctalia.md`](noctalia.md) for configuration precedence, the template undo-hook
-caveat, reproducible checks, interactive verification, and reversible rollback.
-
-### Native wallpaper helper and legacy frontend cleanup (2026-11-12)
-
-The new wallpaper button beside the tray invokes Noctalia's native
-`wallpaper-random` action. `wallpaper [connector]`, `random-wallpaper`, and the
-compatibility name `random-wallpaper.sh` use `noctalia msg wallpaper-random`;
-Noctalia alone scans the recursive library, selects/persists images, and renders.
-The existing 900-second native automation is unchanged.
-
-Removed RPMs: `waybar`, `swaybg`, `pavucontrol`, `wiremix`, `wofi`, `blueman`.
-DNF's `clean_requirements_on_remove=False` preserved shared dependencies.
-Removed Cargo-owned `impala` with `cargo uninstall --root ~/.local impala` and
-the standalone `~/.local/bin/bluetuith`. Waypaper and ironbar were already absent.
-Legacy package/deployment manifest entries were removed; old renderer/timer owners
-are inactive. Repository-owned deployment symlinks were retired into
-`~/.local/state/asahi-rice/backups/legacy-ui-20261112-110025/`, while independent
-configuration files and local media/state were preserved. The historical restarting
-swaybg unit must not be used with the new one-shot compatibility helper.
-
-Kept Noctalia, Mako, Rofi, standalone iwd, BlueZ, PipeWire/WirePlumber, hypridle,
-hyprlock, tuned-ppd, and `waybar-level` for native bar/media-key controls.
-Existing Noctalia runtime overrides and unrelated desktop settings were preserved.
-
-### Native launcher and screen capture (2026-11-12)
-
-`Super+D` now toggles Noctalia's launcher. `Super+A` selects a region and
-`Super+Shift+A` captures all outputs through native Noctalia IPC. Captures remain
-PNG files in `~/Pictures/Screenshots`, with a clipboard copy. Live validation
-confirmed launcher open/close and decoded full-screen and selected-region images.
-
-Removed Rofi's RPM with autoremove disabled after verification; Fuzzel and Slurp
-were already absent. Removed the obsolete Rofi/Fuzzel config and `mac-screenshot`
-helper from source/deployment manifests. Their verified home symlinks were retired
-into `~/.local/state/asahi-rice/backups/noctalia-capture-20261112/`.
-Grim was deliberately retained: a DNF preview showed its removal would also remove
-`xdg-desktop-portal-hyprland`. No portal, shared clipboard backend, or unrelated
-Noctalia runtime setting was removed or rewritten.
+Retired `warp-resolv.conf`, `resolved-warp-dns.conf`,
+`resolved-{power-saver,performance,power-saver-at-boot}.service` and
+`power-profile-resolver.sudoers` sources are inert placeholders, **not installation
+instructions**. Do not install them or restore DNS/power-profile coupling.

@@ -4,7 +4,7 @@ The zsh function lives in `~/.zsh_functions`. Load it in an existing shell:
 
 ```zsh
 source ~/.zsh_functions
-which-one impala
+which-one kitty
 which-one Hyprland
 which-one codex
 which-one LocalSend

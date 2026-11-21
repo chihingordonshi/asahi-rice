@@ -1,191 +1,106 @@
 # Native Noctalia shell
 
-Verified with Fedora's `noctalia` 5.4.1 and Hyprland 0.57.2 on Fedora Asahi Remix.
-Follow the [Hyprland guide](https://docs.noctalia.dev/noctalia/compositor-settings/hyprland/)
-selectively: existing shortcuts, window gaps, opacity, and rounding are preserved.
-No Quickshell, plugins, or system service changes are required.
+The active shell is Fedora's native Noctalia 5.4 with Hyprland 0.57 Lua integration,
+not Quickshell. It owns the bar, launcher, control popups, screenshots and wallpapers.
 
-## Configuration and startup
+## Configuration
 
-- `.config/noctalia/config.toml`: minimal top bar, native network/Bluetooth/audio
-  popups, launcher, native screen capture, and wallpaper selection/rotation.
-  IBus language switching remains on Super+R; the keyboard button beside the
-  tray restarts IBus without resetting preferences or Rime data. An unfinished
-  composition is discarded.
-- `.config/noctalia/palettes/Waybar.json`: fixed dark/lavender colors matching the
-  previous bar. Both palette variants are required by the installed native loader;
-  both deliberately use the same dark colors.
-- `.config/hypr/noctalia-shell.lua`: official no-animation layer rule, floating
-  settings window, tiled-only hiding without edge reveal, and Super+B/Super+X pin/unpin
-  with an immediate IPC refresh.
-- `autostart.lua` starts `noctalia` once at session startup. Legacy Waybar files
-  remain as historical source, but are no longer deployed or installed.
-- Noctalia owns wallpaper rendering. Random rotation runs every **900 seconds**,
-  recursively under `/home/chihin/Pictures/Wallpapers`. Change this absolute path
-  when deploying to another account. Click the wallpaper button beside the tray
-  for an immediate native `wallpaper-random` action. The Zsh `wallpaper` function
-  and `.local/bin/random-wallpaper` send the same IPC; optionally pass a connector
-  such as `wallpaper eDP-1`. `random-wallpaper.sh` is a compatibility alias, not a
-  renderer. No separate image scanner, state file, service restart, or timer is needed.
+| Path | Purpose |
+| --- | --- |
+| `.config/noctalia/config.toml` | Bar, widgets, native controls, capture and wallpaper settings |
+| `.config/noctalia/palettes/Waybar.json` | Fixed dark/lavender palette; both variants use the same dark colors |
+| `.config/hypr/noctalia-shell.lua` | Layer rules, workspace-dependent visibility, pin/unpin bindings |
+| `.local/bin/noctalia-bar-apply` | Serialized visibility/reservation IPC |
+| `.config/hypr/autostart.lua` | Starts Noctalia once at session startup |
 
-Workspace events reconcile visibility immediately; a 200ms fallback timer reads
-native compositor objects, not shell commands. Noctalia's global shell animations
-are disabled (including popup transitions), so workspace switches do not slowly
-slide the bar away. Native auto-hide and workspace-switch reveal stay disabled.
-Empty and floating-only current workspaces remain visible; a mapped, non-hidden
-**tiled** window explicitly hides the bar, blocking top-edge/pointer reveal. An active special
-workspace takes precedence. Super+B and Super+X both toggle pinned visibility and
-force fresh visibility/reservation IPC. Pinning keeps the bar shown through window
-polls and workspace switches, reserving its 36px height above tiled windows.
-Unpinning releases the gap and immediately resamples the current workspace's windows.
-Pin state survives config reloads in `$XDG_RUNTIME_DIR/noctalia-bar.force-show`.
-`.local/bin/noctalia-bar-apply` serializes changes, sets only the local
-`bar.default.reserve_space` override, disables runtime auto-hide, then sends
-`bar-show`/`bar-hide` after the settings reload. Queued jobs read the newest desired
-state, preventing stale rapid toggles. The wallpaper layer allows shell discovery
-when the hidden bar has no layer, including after a compositor reload.
-Outside manual refreshes, only visibility/reservation changes or a new shell process
-send IPC. Behavior follows
-the focused workspace globally, not independently per
-monitor. The bar remains visible until the shell is discovered at startup.
+Noctalia applies `~/.local/state/noctalia/settings.toml` overrides after the config
+TOML. Preserve unrelated local avatar, wallpaper and lockscreen state; reconcile
+only conflicting settings. The fixed palette uses theme source `custom` and custom
+palette `Waybar`.
 
-**Unresolved workspace/widget delay — experimental patch retained:** the user
-reported a blank windows/workspaces section for about eight seconds after showing
-the bar, or until a window/workspace event. The helper calls `hyprctl eval` after
-`bar-show` to re-announce the active workspace's unchanged name with
-`hl.dsp.workspace.rename`, triggering Noctalia's snapshot handler. It runs under
-the existing serialization lock, skips missing/unnamed workspaces, and adds no
-polling or background process. Local captures looked promising, but the user
-reproduced the failure; those captures and mocked IPC tests did not establish a
-reliable fix. The patch was briefly reverted, then restored at the user's request.
-Earlier pin/unpin behavior and shared visibility/reservation IPC refresh remain
-unchanged. Reservation-triggered widget reconstruction is a possible contributor,
-not a confirmed root cause; the rendering delay remains unresolved.
+**Template caveat:** disabling previously applied app-theme templates runs undo
+hooks that can delete generated files and remove application includes. Back up all
+affected outputs, application configs and template bookkeeping before changing
+these settings. The obsolete generated `require("noctalia").apply_theme()` hook
+is not loaded; do not re-enable it as part of a routine reload.
 
-Version/dependency checks found Noctalia **5.4.1**, Hyprland **0.57.2**, and Wayland
-client **1.26.0**; all 97 runtime RPM requirements resolved, shared libraries loaded,
-and `rpm -V noctalia` was clean. Cached Fedora metadata offered the installed
-versions, and [upstream's latest release](https://github.com/noctalia-dev/noctalia/releases/latest)
-was also 5.4.1. No package upgrades/downgrades were made. Related reports
-[#1436](https://github.com/noctalia-dev/noctalia/issues/1436) (stale occupied state)
-and [#3254](https://github.com/noctalia-dev/noctalia/issues/3254) (missing persistent
-workspaces after reload) are not exact matches for the reported delay.
+## Bar behavior
 
-Mako still owns notifications, the existing level helpers retain perceptual
-brightness and 5% volume steps capped at **150%** (including media keys).
-Noctalia audio overdrive also permits 150% in its native controls. Notification
-text shows the boosted percentage while its progress hint stays within 0–100.
-Hypridle owns locking, Noctalia owns launching and screenshots, and tuned-ppd owns
-power profiles.
-Noctalia notification/OSD daemons,
-idle/lock actions, dock, clipboard history, plugins, weather, app-theme templates,
-and the optional blurred overview backdrop are disabled. NetworkManager is not
-required: Noctalia also supports the existing standalone iwd backend.
+The 36px bar stays visible on empty or floating-only workspaces and hides when the
+focused workspace has a mapped, non-hidden tiled window. An active special
+workspace takes precedence. This follows focus globally, not independently per
+monitor. Top-edge reveal and native auto-hide are disabled.
 
-Deliberate visual differences: native workspace labels/glyphs and brightness's
-hardware-percentage label need not exactly match Waybar's rewritten labels and
-perceptual percentage. Scroll/key adjustments still use the original helpers.
+Workspace events reconcile immediately; a compositor-native 200ms fallback timer
+reads state without shell polling. **Super+X / Super+.** toggle pinned visibility.
+Pinning reserves 36px above tiled windows; unpinning releases that gap and resamples
+the current workspace. Pin state survives config reloads in
+`$XDG_RUNTIME_DIR/noctalia-bar.force-show`. Shell animations are disabled.
 
-## Launcher and screen capture
+`noctalia-bar-apply` serializes requests, applies the latest desired state, sets
+only the local `bar.default.reserve_space` override, and sends `bar-show`/`bar-hide`
+after settings reload. Outside manual refreshes, IPC runs only on changes or
+shell discovery. The bar remains visible until startup discovery completes.
 
-- **Super+D** toggles `noctalia msg panel-toggle launcher`.
-- **Super+A** starts `noctalia msg screenshot-region`; drag to capture, Esc cancels.
-- **Super+Shift+A** runs `noctalia msg screenshot-fullscreen all`, preserving the
-  previous all-output capture behavior rather than only the focused monitor.
+**Known issue:** the workspace/window widget can remain blank for about eight
+seconds after showing, or until a window/workspace event. The helper re-announces
+the active workspace's unchanged name through `hl.dsp.workspace.rename` as an
+experimental snapshot refresh. This is **not a reliable fix**; the rendering delay
+remains unresolved. Mocked IPC tests do not establish visual correctness.
 
-`[shell.screenshot]` saves PNGs in `/home/chihin/Pictures/Screenshots` and copies
-captures to the clipboard without an annotation/confirmation step or external
-command. Change this absolute path for another account. Filename patterns use
-strftime and omit the extension. For ad-hoc CLI overrides, put options **before**
-the positional `all` target.
+## Controls and ownership
 
-Live checks verified the launcher panel opens/closes, decoded a 2560×1600
-full-screen PNG, completed a region drag yielding a decoded 320×224 PNG, and
-verified the saved full-screen image was also copied as a readable clipboard PNG.
-Rofi was removed with DNF autoremove disabled; Fuzzel and Slurp were already absent.
-The obsolete Rofi/Fuzzel configuration and `mac-screenshot` helper were removed
-from source and deployment manifests; repository-owned home symlinks were backed
-up under `~/.local/state/asahi-rice/backups/noctalia-capture-20261112/`.
-**Grim must remain installed**: Fedora's `xdg-desktop-portal-hyprland` requires it,
-even though these Noctalia bindings no longer use it. `wl-clipboard` also remains.
+- **Super+D:** toggle the native launcher.
+- **Super+A:** region capture; drag to select, Esc cancels.
+- **Super+Shift+A:** capture all outputs.
+- The wallpaper button, `wallpaper [connector]`, `random-wallpaper` and
+  `random-wallpaper.sh` send native `wallpaper-random` IPC. Noctalia scans and
+  renders the recursive library and rotates randomly every **900 seconds**.
+- The keyboard button restarts IBus without resetting preferences or learned data;
+  unfinished composition is discarded. Super+R switches English/Rime.
+- Native popups manage network, Bluetooth and audio. Standalone iwd is supported;
+  NetworkManager is not required.
+- `waybar-level` remains the active media-key/scroll helper: perceptual brightness,
+  5% volume steps, maximum 150%. Native audio overdrive also allows 150%.
 
-## Deploy and validate
+Wallpaper and screenshot paths are account-specific absolute paths in
+`config.toml`: `/home/chihin/Pictures/Wallpapers` and
+`/home/chihin/Pictures/Screenshots`. Screenshots are PNGs, saved and copied to the
+clipboard without confirmation. CLI capture options precede the positional `all`
+target. Keep Grim installed for `xdg-desktop-portal-hyprland`, and keep `wl-clipboard`.
 
-`setup/link-home.sh` deploys the configuration files and bar helper through the normal
-file-by-file manifest. On a machine previously running Waybar, disable its old
-startup owner explicitly (removing a manifest entry alone does not do this):
+Mako owns notifications; hypridle/hyprlock own locking; tuned-ppd owns power
+profiles. Noctalia's duplicate notification/OSD, idle/lock, dock, clipboard, weather,
+plugins, app-theme templates and blurred overview backdrop are disabled.
+
+## Deployment and checks
+
+`setup/link-home.sh` deploys the shell config and helper. It does not remove old
+links or disable old services. Do not run a competing bar or wallpaper renderer:
+Waybar, `random-wallpaper.timer` and `swaybg-wallpaper.service` are not part of the
+active deployment. In particular, the retained restarting swaybg unit cannot use
+the current one-shot Noctalia IPC helper. Prefer logout/login for shell changes
+rather than killing live UI processes.
 
 ```sh
-systemctl --user disable waybar.service
-```
-
-This does not stop a running bar. Prefer the next logout/login for a live Waybar
-cutover; do not kill desktop UI processes just to reload their configuration.
-Also stop/disable the old `random-wallpaper.timer` and `swaybg-wallpaper.service`
-before migrating the helpers. Retire only verified repository-owned home symlinks
-for legacy entries removed from `setup/home-files.txt`; linking is additive and
-will not remove them automatically. In particular, the historical swaybg unit has
-`Restart=always`: never run it with the new one-shot IPC compatibility helper.
-
-The live cleanup removed `waybar`, `swaybg`, `pavucontrol`, `wiremix`, `wofi`, and
-`blueman` with DNF dependency cleanup disabled, Cargo-installed `impala`, and the
-standalone `~/.local/bin/bluetuith`. Waypaper and ironbar were already absent.
-The package manifest no longer installs the obsolete frontends. User configuration,
-wallpaper libraries, and shared desktop backends were preserved; `waybar-level`
-remains actively used by Noctalia and the media keys. Retired deployment symlinks
-are backed up under `~/.local/state/asahi-rice/backups/legacy-ui-20261112-110025/`.
-
-Noctalia merges configuration-directory TOML first, then applies overrides from
-`~/.local/state/noctalia/settings.toml`. Preserve that file and unrelated avatar,
-wallpaper, and lockscreen state; reconcile only conflicting settings. Its theme
-source/custom palette must be `custom`/`Waybar` for the fixed palette to apply.
-
-**Important:** disabling previously applied app templates runs their undo hooks:
-these can delete generated theme files and remove includes from application config.
-Back up *all* affected outputs, config files, and template bookkeeping before doing
-this on another machine. The initial migration backup is under
-`~/.local/state/asahi-rice/backups/noctalia-20261111-125017/`. Existing generated
-assets were recovered with offline `noctalia theme --render` using the old wallpaper
-palette, without re-enabling live hooks. The recovered Hyprland theme module and
-preserved tracked app configurations were verified against baseline SHA-256 hashes.
-The obsolete generated `require("noctalia").apply_theme()` hook is no longer loaded.
-
-```sh
-python3 -m unittest discover -s tests
+python3 -m unittest discover -s tests -p 'test_noctalia*.py'
 luac -p .config/hypr/noctalia-shell.lua
 noctalia config validate
+```
+
+Read validation output as well as exit status; unknown keys may only warn. After
+an intentional configuration change, reload Noctalia before Hyprland:
+
+```sh
 noctalia msg config-reload
 hyprctl reload config-only
 hyprctl configerrors
 ```
 
-Read validation output as well as the exit status: unknown-key warnings may not
-produce a failure exit status. Reload Noctalia before Hyprland so the controller
-reconciles its runtime mode after shell configuration reloads. New mocked tests in
-`tests/test_noctalia_setup.py` never manipulate the live desktop.
+Manually check tiled/floating/special workspaces, no edge reveal, pin/unpin, control
+popups, launcher, screenshots, wallpaper selection, media keys and suspend/resume.
+Wallpaper selections are logged in `~/.cache/noctalia/noctalia.log`; a
+`noctalia-wallpaper` layer indicates active rendering.
 
-Manually check floating-only versus tiled workspaces, no top-edge reveal, Super+B/Super+X,
-special workspaces, network/Bluetooth/audio popups, wallpaper selection, media
-keys, and suspend/resume. Wallpaper automation logs its selections in
-`~/.cache/noctalia/noctalia.log`; a background `noctalia-wallpaper` layer confirms
-rendering is active. Suspend/resume and visual fidelity require interactive checks.
-
-## Roll back without deleting configuration
-
-1. Reinstall Waybar and whichever old network/Bluetooth/audio frontends you want,
-   and deliberately restore their configuration/controller/helper deployment
-   entries from Git or the backup. In `hyprland.lua`, restore `require("waybar")`
-   instead of `require("noctalia-shell")`; restore the Super+B callback to
-   `ToggleWaybarVisibility` in `keybindings.lua`.
-2. Replace `hl.exec_cmd("noctalia")` in `autostart.lua` with
-   `hl.exec_cmd("systemctl --user start waybar.service")`.
-3. Restore `waybar.service` in `setup/user-services.txt`, then run
-   `systemctl --user enable waybar.service` (without `--now`).
-4. Prefer retaining Noctalia wallpaper ownership. If also rolling that back,
-   reinstall swaybg and restore the old renderer scripts/units from Git history
-   before disabling Noctalia wallpaper automation/rendering. The current
-   `random-wallpaper.sh` sends Noctalia IPC and cannot serve the old restarting unit.
-   Never run both renderers.
-5. Log out and back in. Noctalia files and the existing state backup can remain.
-   Restoring old settings wholesale may re-enable app-theme hooks; do so only when
-   deliberately restoring that previous behavior.
+See the [upstream Hyprland guide](https://docs.noctalia.dev/noctalia/compositor-settings/hyprland/)
+and [system configuration](system-state.md) for backend and deployment details.
