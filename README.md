@@ -93,7 +93,7 @@ session targets needed by portals, polkit and the secret-service keyring.
 | Super+D | Noctalia launcher |
 | Super+A / Super+Shift+A | Region / all-output screenshot; saves PNG and copies to clipboard |
 | Super+R | English / Rime |
-| Super+X / Right Option+. | Pin/unpin the bar |
+| Super+X / Right Option+/ | Pin/unpin the bar |
 | `wallpaper [connector]` | Select a random wallpaper through Noctalia |
 
 The bar stays visible on empty/floating-only workspaces and hides on tiled ones,
