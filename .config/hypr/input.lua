@@ -5,6 +5,9 @@
 
 hl.config({
     input = {
+        -- The custom keymap takes precedence over the layout/options below.
+        -- Both Option keys become Escape; Caps Lock stays Super.
+        kb_file = os.getenv("HOME") .. "/.config/hypr/option-escape.xkb",
         kb_layout  = "us",
         kb_variant = "",
         kb_model   = "",
