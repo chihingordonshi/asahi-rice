@@ -16,7 +16,7 @@ hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
 hl.bind(mainMod .. " + F", hl.dsp.window.float({ action = "toggle" }))
 
 hl.bind(mainMod .. " + X", ToggleNoctaliaVisibility)
-hl.bind(mainMod .. " + PERIOD", ToggleNoctaliaVisibility)
+hl.bind("ALT_R + PERIOD", ToggleNoctaliaVisibility)
 hl.bind(mainMod .. " + P", hl.dsp.window.pseudo())
 hl.bind(mainMod .. " + U", hl.dsp.layout("togglesplit")) -- Dwindle only
 hl.bind(mainMod .. " + SHIFT + L", resize_monitor_2x)

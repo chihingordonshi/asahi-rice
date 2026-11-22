@@ -74,12 +74,12 @@
 .config/hypr/hyprtoolkit.conf
 .config/hypr/input.lua
 .config/hypr/keybindings.lua
+.config/hypr/keyboard.xkb
 .config/hypr/layouts.lua
 .config/hypr/misc.lua
 .config/hypr/monitors.lua
 .config/hypr/mouse-acceleration.lua
 .config/hypr/noctalia-shell.lua
-.config/hypr/option-escape.xkb
 .config/hypr/permissions.lua
 .config/hypr/programs.lua
 .config/hypr/scheme/current.lua

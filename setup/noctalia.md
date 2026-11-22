@@ -32,7 +32,7 @@ workspace takes precedence. This follows focus globally, not independently per
 monitor. Top-edge reveal and native auto-hide are disabled.
 
 Workspace events reconcile immediately; a compositor-native 200ms fallback timer
-reads state without shell polling. **Super+X / Super+.** toggle pinned visibility.
+reads state without shell polling. **Super+X / Right Option+.** toggle pinned visibility.
 Pinning reserves 36px above tiled windows; unpinning releases that gap and resamples
 the current workspace. Pin state survives config reloads in
 `$XDG_RUNTIME_DIR/noctalia-bar.force-show`. Shell animations are disabled.

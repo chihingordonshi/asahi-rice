@@ -79,6 +79,13 @@ class NoctaliaSetupTest(unittest.TestCase):
         self.assertNotIn("rofi", binds)
         self.assertNotIn("mac-screenshot", binds)
 
+    def test_bar_toggle_uses_right_option_instead_of_super_period(self):
+        binds = (ROOT / ".config/hypr/keybindings.lua").read_text()
+        self.assertIn('hl.bind("ALT_R + PERIOD", ToggleNoctaliaVisibility)', binds)
+        self.assertIn('hl.bind(mainMod .. " + X", ToggleNoctaliaVisibility)', binds)
+        self.assertNotIn('hl.bind(mainMod .. " + PERIOD",', binds)
+        self.assertNotIn('hl.bind("ALT + PERIOD",', binds)
+
     def test_native_capture_saves_and_copies_without_extra_tools(self):
         capture = CONFIG["shell"]["screenshot"]
         self.assertTrue(capture["directory"].endswith("/Pictures/Screenshots"))

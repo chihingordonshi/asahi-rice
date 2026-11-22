@@ -88,12 +88,12 @@ session targets needed by portals, polkit and the secret-service keyring.
 
 | Shortcut | Action |
 | --- | --- |
-| Left / right Option | Escape (replaces Alt in Hyprland); Caps Lock remains Super |
+| Right Command | Escape in Hyprland; both Option keys remain Alt, Caps Lock remains Super |
 | Super+Q / power button | Kitty |
 | Super+D | Noctalia launcher |
 | Super+A / Super+Shift+A | Region / all-output screenshot; saves PNG and copies to clipboard |
 | Super+R | English / Rime |
-| Super+X / Super+. | Pin/unpin the bar |
+| Super+X / Right Option+. | Pin/unpin the bar |
 | `wallpaper [connector]` | Select a random wallpaper through Noctalia |
 
 The bar stays visible on empty/floating-only workspaces and hides on tiled ones,

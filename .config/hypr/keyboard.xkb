@@ -1,0 +1,13 @@
+// Keep the standard US layout, both Option keys as Alt, and Caps Lock as Super.
+// Only Right Command becomes an ordinary Escape key, with no Super modifier.
+xkb_keymap {
+    xkb_keycodes { include "evdev+aliases(qwerty)" };
+    xkb_types { include "complete" };
+    xkb_compatibility { include "complete" };
+    xkb_symbols {
+        include "pc+us+inet(evdev)+capslock(super)"
+        name[Group1] = "English (US, Right Command as Escape)";
+        replace key <RWIN> { type[Group1] = "ONE_LEVEL", [ Escape ] };
+        modifier_map None { <RWIN> };
+    };
+};
