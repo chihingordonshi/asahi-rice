@@ -1,0 +1,16 @@
+{
+  ".": {
+    "onEdit": {
+      "*.desktop": "/usr/bin/desktop-file-validate {file}",
+      "*.{sh,bash}": "/usr/bin/env -u BASH_ENV /usr/bin/bash -n -- {file}"
+    },
+    "onStop": false
+  },
+  ".config/hypr": {
+    "onEdit": {
+      "*.lua": "/usr/bin/luajit -b {file} /dev/null",
+      "*.{sh,bash}": "/usr/bin/env -u BASH_ENV /usr/bin/bash -n -- {file}"
+    },
+    "onStop": false
+  }
+}
