@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Brave Web Browser (Zoom link routing)
+Exec=/home/chihin/.local/bin/zoom-link-router %u
+Icon=brave-browser
+Terminal=false
+NoDisplay=true
+MimeType=x-scheme-handler/http;x-scheme-handler/https;x-scheme-handler/zoommtg;x-scheme-handler/zoomus;

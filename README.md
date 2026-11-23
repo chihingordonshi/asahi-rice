@@ -100,6 +100,12 @@ The bar stays visible on empty/floating-only workspaces and hides on tiled ones,
 without top-edge reveal. Pinning reserves its 36px height. A delayed/blank workspace
 widget after showing the bar remains unresolved; see [Noctalia](setup/noctalia.md).
 
+Zoom meeting invites opened through the desktop (including `xdg-open`) go to the
+Zoom Web App in Brave Profile 1. Other web links still open normally in Brave.
+Clicks inside an existing browser tab only reach the desktop handler if Zoom
+hands off a `zoommtg:` or `zoomus:` link. To undo the routing, restore `brave-browser.desktop`
+for HTTP and HTTPS and remove the two Zoom scheme defaults in `~/.config/mimeapps.list`.
+
 ## Maintenance and reference
 
 - [Noctalia configuration and checks](setup/noctalia.md)

@@ -1,0 +1,68 @@
+#!/usr/bin/python3
+"""Open Zoom invites in Brave app mode; leave other web URLs alone."""
+
+import os
+import re
+import sys
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+
+BRAVE = "/usr/bin/brave-browser-stable"
+APP_HOST = "app.zoom.us"
+APP_HOME = f"https://{APP_HOST}/wc/home?source=pwa"
+NATIVE_SCHEMES = ("zoommtg", "zoomus")
+ZOOM_HOST = re.compile(r"(?:[a-z0-9-]+\.)*zoom\.(?:us|com)", re.ASCII | re.IGNORECASE)
+MEETING_ID = r"[0-9]{9,11}"
+
+
+def zoom_destination(link):
+    scheme = link.partition(":")[0].lower()
+    native = scheme in NATIVE_SCHEMES
+    try:
+        url = urlsplit(link)
+    except ValueError:
+        return APP_HOME if native else None
+
+    if not ZOOM_HOST.fullmatch(url.netloc):
+        return APP_HOME if native else None
+
+    if native:
+        if url.path not in ("/join", "/join/"):
+            return APP_HOME
+        params = parse_qsl(url.query, keep_blank_values=True)
+        meeting_id = next((value for key, value in params if key == "confno"), "")
+        if not re.fullmatch(MEETING_ID, meeting_id):
+            return APP_HOME
+        query = urlencode([(key, value) for key, value in params if key not in ("action", "confno")])
+        return urlunsplit(("https", APP_HOST, f"/wc/join/{meeting_id}", query, ""))
+
+    if scheme not in ("http", "https"):
+        return None
+
+    meeting = re.fullmatch(rf"/(?:j|wc/join)/({MEETING_ID})/?", url.path)
+    if not meeting:
+        meeting = re.fullmatch(rf"/wc/({MEETING_ID})/join/?", url.path)
+    room = re.fullmatch(r"/(?:wc/)?my/([a-zA-Z0-9_.-]+)/?", url.path)
+    if meeting:
+        path = f"/wc/join/{meeting[1]}"
+    elif room and room[1] not in (".", ".."):
+        path = f"/wc/my/{room[1]}"
+    else:
+        return None
+
+    # Keep the raw invite query, including Zoom's embedded password and registration tokens.
+    return urlunsplit(("https", APP_HOST, path, url.query, url.fragment))
+
+
+def brave_command(link):
+    command = [BRAVE, "--password-store=basic"]
+    if link is None:
+        return command
+    destination = zoom_destination(link)
+    if destination is not None:
+        return command + ["--profile-directory=Profile 1", f"--app={destination}"]
+    return command + ["--", link]
+
+
+if __name__ == "__main__":
+    argv = brave_command(sys.argv[1] if len(sys.argv) > 1 else None)
+    os.execv(argv[0], argv)

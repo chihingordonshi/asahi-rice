@@ -160,7 +160,9 @@
 .local/bin/touchbar
 .local/bin/unimatrix
 .local/bin/waybar-level
+.local/bin/zoom-link-router
 .local/share/applications/brave-icloud-photos-pwa.desktop
+.local/share/applications/brave-link-router.desktop
 .local/share/applications/brave-orah-pwa.desktop
 .local/share/applications/brave-zoom-pwa.desktop
 .local/share/applications/chrome-mnnncmnfcndlghkomlbaadoonfnjcadg-Profile_1.desktop
