@@ -40,6 +40,8 @@ alias pluto='cd ~/amsr-venv && ./julia -e "using Pluto; Pluto.run()"'
 alias amsr='cd ~/amsr-venv && source .venv/bin/activate'
 alias julia='~/amsr-venv/julia'
 
+alias mount-gentoo='doas mount -o subvol=@ /dev/nvme0n1p11 /mnt/gentoo && doas mount -o subvol=@home /dev/nvme0n1p11 /mnt/gentoo/home && doas mount /dev/nvme0n1p9 /mnt/gentoo/efi'
+
 [[ -f /usr/share/zsh/plugins/zsh-autocomplete/zsh-autocomplete.plugin.zsh ]] && source /usr/share/zsh/plugins/zsh-autocomplete/zsh-autocomplete.plugin.zsh
 [[ -f ~/.local/share/zsh-autocomplete/zsh-autocomplete.plugin.zsh ]] && source ~/.local/share/zsh-autocomplete/zsh-autocomplete.plugin.zsh
 source ~/.zsh_functions
